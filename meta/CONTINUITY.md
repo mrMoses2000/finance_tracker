@@ -3,19 +3,20 @@
 ## ✅ Completed
 - [x] Initial Project Setup (React/Node).
 - [x] Dockerization (Client/Server/DB).
-- [x] Visual Upgrade (Tremor, Glassmorphism).
-- [x] Auth System (Login/Register).
-- [x] Business Logic (Transactions, Budgeting).
-- [x] Auto-migration on startup.
-- [x] **Testing**: Integration tests passed (Jest/Supertest).
-- [x] **Data Restoration**: Restored user's specific Category Config and Expenses from snippet.
-- [x] **Validation**: Verified visual consistency (Dark Glass Theme) on all pages.
-- [x] **Localization**: Added RU/EN/DE support and Premium Dashboard Assets.
+- [x] **Visual Overhaul**: "Obsidian & Gold" Theme (Slate-950, Indigo, Glassmorphism).
+- [x] **Feature**: Advanced Transactions (Search, Filter, Edit, Delete).
+- [x] **Feature**: Budget Dashboard (Standard vs February Modes).
+- [x] **Performance**: Staggered Animations (Framer Motion) & Optimized Tooltips (Tremor).
+- [x] **Testing**: Integration tests passed (`npm test` in `server`).
+- [x] **Localization**: Full RU/EN/DE support with Context API.
 - [x] **Indexing**: Generated index report in meta/INDEX_REPORT.md.
 
 ## 🚧 In Progress / Next Steps
-- [ ] **Deployment**: Prepare CI/CD pipeline (Future Agent).
+- [ ] **Mobile App**: Wrap the responsive web app in Capacitor/React Native if requested.
+- [ ] **Deployment**: Set up production VPS (Hetzner/DigitalOcean) and CI/CD.
 
 ## Critical Warnings
-- The `prisma.config.ts` was causing issues with Docker build, removed in favor of standard env vars.
-- Ensure `DATABASE_URL` is set correctly in `.env` or Docker environment.
+- `BudgetWeb.jsx` serves as the main Dashboard container.
+- `Transactions.jsx` handles the full CRUD table.
+- Use `npm test` in `server/` to verify backend logic before major refactors.
+- The `index.css` contains the global "Obsidian" theme variables and scrollbar styles.

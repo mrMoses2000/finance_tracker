@@ -1,5 +1,5 @@
 # Project Index Report
-Generated on Thu Jan 22 23:03:16 +05 2026
+Generated on Fri Jan 23 00:45:13 +05 2026
 
 ## File Structure
 ```
@@ -7,15 +7,20 @@ Generated on Thu Jan 22 23:03:16 +05 2026
 ./USAGE.md
 ./meta
 ./meta/INDEX_REPORT.md
+./meta/USAGE.md
 ./meta/Info.md
 ./meta/CONTINUITY.md
 ./meta/COMMIT_MESSAGE.md
 ./meta/AGENT_LOG.md
 ./meta/AGENTS.md
 ./server
+./server/test
+./server/test/live.test.js
 ./server/Dockerfile
 ./server/prisma
 ./server/prisma/schema.prisma
+./server/tests
+./server/tests/api.test.cjs
 ./server/index.js
 ./server/migrate.sh
 ./server/package-lock.json
@@ -38,6 +43,7 @@ Generated on Thu Jan 22 23:03:16 +05 2026
 ./client/vite.config.js
 ./client/README.md
 ./client/public
+./client/public/dashboard-preview.png
 ./client/public/vite.svg
 ./client/public/header-bg.png
 ./client/package-lock.json
@@ -45,6 +51,7 @@ Generated on Thu Jan 22 23:03:16 +05 2026
 ./client/eslint.config.js
 ./client/postcss.config.js
 ./client/src
+./client/src/context
 ./client/src/App.css
 ./client/src/index.css
 ./client/src/components
