@@ -15,11 +15,14 @@
     "@tanstack/react-query": "^5.90.19",
     "@tremor/react": "^3.18.7",
     "clsx": "^2.1.1",
+    "formik": "^2.4.9",
     "framer-motion": "^12.28.2",
     "lucide-react": "^0.562.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "tailwind-merge": "^3.4.0"
+    "react-router-dom": "^7.12.0",
+    "tailwind-merge": "^3.4.0",
+    "yup": "^1.7.1"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
