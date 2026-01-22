@@ -2,8 +2,10 @@ import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/Layout';
 import BudgetWeb from './BudgetWeb'; // We will rename/refactor this later
-import Login from './pages/Login';   // Placeholder
-import Register from './pages/Register'; // Placeholder
+import Login from './pages/Login';
+import Register from './pages/Register';
+import Transactions from './pages/Transactions';
+import BudgetPlan from './pages/BudgetPlan';
 
 // Protected Route Wrapper
 const ProtectedRoute = ({ children }) => {
@@ -24,8 +26,8 @@ function App() {
         {/* Protected App Routes */}
         <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
           <Route path="/" element={<BudgetWeb />} />
-          <Route path="/transactions" element={<div className="text-white">Transactions Page Coming Soon</div>} />
-          <Route path="/budget" element={<div className="text-white">Budget Settings Page Coming Soon</div>} />
+          <Route path="/transactions" element={<Transactions />} />
+          <Route path="/budget" element={<BudgetPlan />} />
         </Route>
 
         <Route path="*" element={<Navigate to="/" replace />} />

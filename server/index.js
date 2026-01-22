@@ -41,7 +41,24 @@ app.post('/auth/register', async (req, res) => {
         });
 
         // Seed default categories for new user
-        // ... logic to seed default categories ...
+        const defaultCategories = [
+            { label: 'Жилье и Связь', color: '#0d9488', limit: 1000 },
+            { label: 'Кредиты', color: '#e11d48', limit: 500 },
+            { label: 'Жизнь (Еда)', color: '#ea580c', limit: 600 },
+            { label: 'Досуг', color: '#3b82f6', limit: 300 },
+            { label: 'Транспорт', color: '#64748b', limit: 150 },
+        ];
+
+        for (const cat of defaultCategories) {
+            await prisma.category.create({
+                data: {
+                    userId: user.id,
+                    label: cat.label,
+                    color: cat.color,
+                    limit: cat.limit
+                }
+            });
+        }
 
         res.json({ message: 'User created' });
     } catch (e) {
@@ -94,6 +111,72 @@ app.post('/api/expenses', authenticateToken, async (req, res) => {
             }
         });
         res.json(expense);
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+// --- CATEGORIES / BUDGET ---
+
+// Get Categories (with limits)
+app.get('/api/categories', authenticateToken, async (req, res) => {
+    try {
+        const categories = await prisma.category.findMany({
+            where: { userId: req.user.id }
+        });
+        res.json(categories);
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+// Update Category Limit/Color
+app.put('/api/categories/:id', authenticateToken, async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { label, color, limit } = req.body;
+
+        // Ensure user owns the category
+        const category = await prisma.category.findFirst({
+            where: { id, userId: req.user.id }
+        });
+        if (!category) return res.sendStatus(404);
+
+        const updated = await prisma.category.update({
+            where: { id },
+            data: { label, color, limit: parseFloat(limit || 0) }
+        });
+        res.json(updated);
+    } catch (e) {
+        console.error(e);
+        res.status(500).json({ error: e.message });
+    }
+});
+
+// --- EXPENSES ---
+
+// Delete Expense
+app.delete('/api/expenses/:id', authenticateToken, async (req, res) => {
+    try {
+        const { id } = req.params;
+        // Verify ownership
+        const expense = await prisma.expense.findFirst({
+            where: { id, userId: req.user.id }
+        });
+        if (!expense) return res.sendStatus(404);
+
+        await prisma.expense.delete({ where: { id } });
+        res.json({ success: true });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+// Get User Profile (Currency etc)
+app.get('/api/me', authenticateToken, async (req, res) => {
+    try {
+        const user = await prisma.user.findUnique({ where: { id: req.user.id } });
+        res.json({ name: user.name, email: user.email, currency: user.currency });
     } catch (e) {
         res.status(500).json({ error: e.message });
     }

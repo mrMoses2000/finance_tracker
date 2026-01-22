@@ -23,6 +23,7 @@ model Category {
   id        String    @id @default(uuid())
   label     String
   color     String
+  limit     Float     @default(0)
   type      String    @default("expense") // "expense" | "income"
   userId    String
   user      User      @relation(fields: [userId], references: [id])
