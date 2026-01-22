@@ -79,9 +79,9 @@ const LandingPage = () => {
                 >
                     <div className="absolute inset-0 bg-indigo-500/20 blur-3xl -z-10 rounded-full"></div>
                     <div className="bg-slate-900/50 backdrop-blur-xl border border-white/10 rounded-2xl p-2 shadow-2xl overflow-hidden ring-1 ring-white/10">
-                        <img 
-                            src="/dashboard-preview.png" 
-                            alt="Dashboard Preview" 
+                        <img
+                            src="/futuristic-dashboard.jpg"
+                            alt="Dashboard Preview"
                             className="w-full h-auto rounded-xl shadow-2xl border border-white/5"
                         />
                         <div className="absolute bottom-6 left-0 right-0 text-center pointer-events-none">
