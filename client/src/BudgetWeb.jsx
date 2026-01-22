@@ -5,6 +5,7 @@ import ExpenseChart from './components/Budget/ExpenseChart';
 import ExpenseCalendar from './components/Budget/ExpenseCalendar';
 import CategoryList from './components/Budget/CategoryList';
 import { useBudget } from './hooks/useBudget';
+import { useLanguage } from './context/LanguageContext';
 
 import {
     RATES,
@@ -14,76 +15,65 @@ import {
 } from './data/budgetData';
 
 const BudgetWeb = () => {
-    // --- STATE WITH PERSISTENCE ---
+    const { t, lang } = useLanguage();
+    // --- STATE ---
     const [mode, setMode] = useState(() => localStorage.getItem('budget_mode') || 'standard');
-    const [currency, setCurrency] = useState(() => localStorage.getItem('budget_currency') || 'USD');
+    const [currency, setCurrency] = useState(() => localStorage.getItem('budget_currency') || 'RUB');
 
-    // --- DATA FETCHING ---
+    // --- DATA ---
     const { data, isLoading, isError } = useBudget();
 
-    // Save to localStorage when changed
-    useEffect(() => {
-        localStorage.setItem('budget_mode', mode);
-    }, [mode]);
+    useEffect(() => { localStorage.setItem('budget_mode', mode); }, [mode]);
+    useEffect(() => { localStorage.setItem('budget_currency', currency); }, [currency]);
 
-    useEffect(() => {
-        localStorage.setItem('budget_currency', currency);
-    }, [currency]);
-
-    // Loading State
-    if (isLoading) {
-        return (
-            <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-700"></div>
-            </div>
-        );
-    }
-
-    if (isError) {
-        return <div className="p-8 text-center text-rose-600">Failed to load budget data.</div>;
-    }
+    if (isLoading) return <div className="flex h-screen items-center justify-center text-indigo-400"><div className="animate-spin h-8 w-8 border-2 border-current border-t-transparent rounded-full" /></div>;
+    if (isError) return <div className="p-10 text-center text-rose-400">Error loading data.</div>;
 
     // --- LOGIC ---
-    // Now using data from the hook
-    const currentData = mode === 'standard' ? data.standard : data.february;
+    const allExpenses = data?.standard || [];
+
+    let currentData = allExpenses;
+    if (mode === 'february') {
+        currentData = allExpenses.filter(i =>
+            i.description.includes('Алматы') ||
+            i.description.includes('Февраль') ||
+            (i.date && new Date(i.date).getDate() <= 28)
+        );
+        if (currentData.length === 0) currentData = allExpenses;
+    } else {
+        currentData = allExpenses.filter(i => !i.description.includes('Алматы'));
+    }
 
     const convert = (valUSD) => Math.round(valUSD * RATES[currency]);
 
     const formatMoney = (valUSD) => {
-        return new Intl.NumberFormat('ru-RU').format(convert(valUSD)) + ' ' + SYMBOLS[currency];
+        return new Intl.NumberFormat(lang === 'ru' ? 'ru-RU' : 'en-US').format(convert(valUSD)) + ' ' + SYMBOLS[currency];
     };
 
-    const getTotal = (cat) => currentData.filter(i => cat ? i.category === cat : true).reduce((acc, i) => acc + i.amountUSD, 0);
-
-    const totalExpenses = getTotal();
+    const totalExpenses = currentData.reduce((acc, i) => acc + i.amountUSD, 0);
     const deficit = INCOME_USD - totalExpenses;
 
-    // Pie Chart Data
-    const chartData = Object.keys(CATEGORY_CONFIG).map(key => {
-        const value = getTotal(key);
+    const expensesByCategory = {};
+    currentData.forEach(item => {
+        const catLabel = item.category?.label || 'Other';
+        if (!expensesByCategory[catLabel]) expensesByCategory[catLabel] = 0;
+        expensesByCategory[catLabel] += item.amountUSD;
+    });
+
+    const chartData = Object.entries(expensesByCategory).map(([label, value]) => {
+        const configEntry = Object.values(CATEGORY_CONFIG).find(c => c.label === label);
         return {
-            key,
-            label: CATEGORY_CONFIG[key].label,
-            value,
-            color: CATEGORY_CONFIG[key].color,
+            label: label,
+            value: value,
+            color: configEntry?.color || '#cbd5e1',
             percent: (value / totalExpenses) * 100
         };
-    }).filter(item => item.value > 0);
+    }).filter(i => i.value > 0);
 
-    // Gradient Segments (kept for backward compatibility if needed, but Chart uses Tremor now)
-    let currentAngle = 0;
-    const gradientSegments = chartData.map(item => {
-        const start = currentAngle;
-        const end = currentAngle + item.percent;
-        currentAngle = end;
-        return `${item.color} ${start}% ${end}%`;
-    }).join(', ');
-
-    const calendarItems = currentData.filter(i => i.day).sort((a, b) => a.day - b.day);
+    const calendarItems = [...currentData].sort((a, b) => new Date(a.date).getDate() - new Date(b.date).getDate());
 
     return (
-        <div className="min-h-screen bg-slate-50 text-slate-800 font-sans selection:bg-teal-100 selection:text-teal-900 pb-20">
-
+        <div className="min-h-screen pb-20">
             <Header
                 mode={mode}
                 setMode={setMode}
@@ -91,33 +81,36 @@ const BudgetWeb = () => {
                 setCurrency={setCurrency}
             />
 
-            <div className="max-w-5xl mx-auto px-4 sm:px-6 -mt-16 space-y-8 relative z-20">
-
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 -mt-10 space-y-8 relative z-10">
                 <KPICards
                     totalExpenses={totalExpenses}
                     income={INCOME_USD}
                     deficit={deficit}
                     formatMoney={formatMoney}
+                    t={t}
                 />
 
-                <ExpenseChart
-                    totalExpenses={totalExpenses}
-                    chartData={chartData}
-                    formatMoney={formatMoney}
-                />
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <ExpenseChart
+                        totalExpenses={totalExpenses}
+                        chartData={chartData}
+                        formatMoney={formatMoney}
+                        t={t}
+                    />
+                    <CategoryList
+                        categoryConfig={CATEGORY_CONFIG}
+                        currentData={currentData}
+                        formatMoney={formatMoney}
+                        t={t}
+                    />
+                </div>
 
                 <ExpenseCalendar
                     calendarItems={calendarItems}
                     categoryConfig={CATEGORY_CONFIG}
                     formatMoney={formatMoney}
+                    t={t}
                 />
-
-                <CategoryList
-                    categoryConfig={CATEGORY_CONFIG}
-                    currentData={currentData}
-                    formatMoney={formatMoney}
-                />
-
             </div>
         </div>
     );

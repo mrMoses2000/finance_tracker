@@ -1,47 +1,47 @@
 import React from 'react';
 import { Calendar } from 'lucide-react';
-import { motion } from 'framer-motion';
 
-const ExpenseCalendar = ({ calendarItems, categoryConfig, formatMoney }) => {
+const ExpenseCalendar = ({ calendarItems, categoryConfig, formatMoney, t }) => {
     return (
-        <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-            className="bg-white p-8 rounded-2xl shadow-sm border border-slate-100 ring-1 ring-slate-900/5 print:break-inside-avoid"
-        >
-            <h2 className="text-xl font-bold text-slate-800 mb-8 flex items-center gap-3">
-                <div className="p-2 bg-teal-50 rounded-lg text-teal-600">
+        <div className="glass-panel p-8 rounded-3xl relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-white/10 to-transparent"></div>
+
+            <h2 className="text-xl font-bold text-white mb-8 flex items-center gap-3">
+                <div className="p-2 bg-indigo-500/10 rounded-lg text-indigo-400 border border-indigo-500/20">
                     <Calendar size={22} />
                 </div>
-                Календарь Платежей
+                {t?.calendar?.title || "Payment Calendar"}
             </h2>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                {calendarItems.map((item, idx) => (
-                    <motion.div
-                        key={item.id}
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        whileInView={{ opacity: 1, scale: 1 }}
-                        viewport={{ once: true }}
-                        transition={{ delay: idx * 0.05 }}
-                        whileHover={{ y: -5, borderColor: '#14b8a6' }}
-                        className="relative group bg-slate-50 border border-slate-200 rounded-xl p-4 transition-all duration-300 hover:shadow-lg"
+                {calendarItems.map((item) => (
+                    <div
+                        key={item.id || Math.random()}
+                        className="relative group bg-slate-800/40 border border-white/5 rounded-xl p-4 hover:border-indigo-500/50 hover:bg-slate-800/60 hover:shadow-lg hover:shadow-indigo-500/10 transition-all cursor-default"
                     >
-                        <div className="absolute top-3 right-3 text-xs font-bold text-slate-300 group-hover:text-teal-600 transition-colors bg-white px-1.5 py-0.5 rounded shadow-sm">
-                            {item.day}-е
+                        {/* Date Badge */}
+                        <div className="absolute top-3 right-3 text-xs font-bold text-slate-400 group-hover:text-white bg-slate-900/50 px-2 py-1 rounded-md border border-white/5">
+                            {new Date(item.date).getDate()}
                         </div>
-                        <div style={{ color: categoryConfig[item.category]?.color || '#94a3b8' }} className="mb-3 transition-transform group-hover:scale-110 origin-left">
-                            {item.icon}
+
+                        {/* Icon */}
+                        <div style={{ color: categoryConfig[Object.keys(categoryConfig).find(k => categoryConfig[k].label === item.category?.label)]?.color || '#94a3b8' }} className="mb-3">
+                            <div className="w-8 h-8 bg-current opacity-20 rounded-lg flex items-center justify-center">
+                                <div className="opacity-100 w-2 h-2 rounded-full bg-current shadow-[0_0_10px_currentColor]"></div>
+                            </div>
                         </div>
-                        <div className="font-bold text-slate-800 text-sm leading-tight mb-1.5 pr-6">{item.name}</div>
-                        <div className="text-xs font-mono font-semibold text-slate-600 bg-white inline-block px-1.5 py-0.5 rounded border border-slate-100">{formatMoney(item.amountUSD)}</div>
-                        {item.note && <div className="text-[10px] text-rose-500 mt-2 font-medium bg-rose-50 px-2 py-1 rounded inline-block">{item.note}</div>}
-                    </motion.div>
+
+                        <div className="font-bold text-slate-200 text-sm leading-tight mb-2 line-clamp-2 min-h-[2.5em]">
+                            {item.description}
+                        </div>
+
+                        <div className="text-xs font-mono font-bold text-indigo-300 bg-indigo-500/10 inline-block px-2 py-1 rounded border border-indigo-500/20">
+                            {formatMoney(item.amountUSD)}
+                        </div>
+                    </div>
                 ))}
             </div>
-        </motion.div>
+        </div>
     );
 };
 

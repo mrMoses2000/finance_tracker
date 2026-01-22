@@ -19,7 +19,15 @@ const fetchBudget = async () => {
     }
 
     const json = await res.json();
-    return json;
+
+    // Transform backend data to match Component expectations.
+    // The backend returns { expenses: [...] } with 'amountUSD', 'description', etc.
+    // BudgetWeb.jsx expects { standard: [...], february: [...] }
+
+    return {
+        standard: json.expenses || [],
+        february: [] // Placeholder for now
+    };
 };
 
 export const useBudget = () => {
@@ -27,5 +35,7 @@ export const useBudget = () => {
         queryKey: ['budgetData'],
         queryFn: fetchBudget,
         retry: false,
+        // Provide initial data to prevent undefined errors before fetch completes
+        initialData: { standard: [], february: [] }
     });
 };

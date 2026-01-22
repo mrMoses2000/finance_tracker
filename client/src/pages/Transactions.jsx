@@ -1,13 +1,18 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Loader2, Trash2, Plus, Calendar } from 'lucide-react';
+import { Loader2, Trash2, Plus, Calendar, Edit2, Search, Filter } from 'lucide-react';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useLanguage } from '../context/LanguageContext';
 
 const Transactions = () => {
+    const { t } = useLanguage();
     const queryClient = useQueryClient();
     const token = localStorage.getItem('token');
     const [isModalOpen, setModalOpen] = useState(false);
+    const [editingItem, setEditingItem] = useState(null);
+    const [searchTerm, setSearchTerm] = useState('');
 
     // Fetch Transactions
     const { data: transactions, isLoading } = useQuery({
@@ -19,7 +24,7 @@ const Transactions = () => {
         }
     });
 
-    // Fetch Categories for dropdown
+    // Fetch Categories
     const { data: categories } = useQuery({
         queryKey: ['categories'],
         queryFn: async () => {
@@ -39,84 +44,182 @@ const Transactions = () => {
         onSuccess: () => queryClient.invalidateQueries(['transactions'])
     });
 
+    const handleEdit = (item) => {
+        setEditingItem(item);
+        setModalOpen(true);
+    };
+
+    const handleAddNew = () => {
+        setEditingItem(null);
+        setModalOpen(true);
+    };
+
+    // Filtering
+    const filteredTransactions = transactions?.filter(tx =>
+        tx.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        tx.category?.label.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    // --- ANIMATION VARIANTS (From Context7 Recs) ---
+    const listVariants = {
+        hidden: { opacity: 0 },
+        visible: {
+            opacity: 1,
+            transition: {
+                when: "beforeChildren",
+                staggerChildren: 0.05
+            }
+        }
+    };
+
+    const itemVariants = {
+        hidden: { opacity: 0, x: -20 },
+        visible: { opacity: 1, x: 0 }
+    };
+
     return (
-        <div className="space-y-6">
-            <div className="flex justify-between items-end">
+        <div className="space-y-8 pb-20">
+            {/* Header */}
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold text-teal-100">Transactions</h1>
-                    <p className="text-slate-400">Track and manage your expenses.</p>
+                    <h1 className="text-3xl font-bold text-white mb-2">{t?.nav?.transactions || "Transactions"}</h1>
+                    <p className="text-indigo-200 opacity-70">Manage your financial records.</p>
                 </div>
                 <button
-                    onClick={() => setModalOpen(true)}
-                    className="bg-teal-500 hover:bg-teal-400 text-white px-4 py-2 rounded-lg font-bold flex items-center gap-2 shadow-lg shadow-teal-900/20 transition-all"
+                    onClick={handleAddNew}
+                    className="btn-primary"
                 >
                     <Plus size={18} /> Add Expense
                 </button>
             </div>
 
-            {isLoading ? <Loader2 className="animate-spin text-teal-500 m-8" /> : (
-                <div className="bg-white/5 border border-white/10 rounded-xl overflow-hidden backdrop-blur-sm">
+            {/* Search Bar */}
+            <div className="glass-panel p-2 rounded-xl flex items-center gap-3">
+                <Search className="text-slate-400 ml-2" size={20} />
+                <input
+                    type="text"
+                    placeholder="Search by description or category..."
+                    className="bg-transparent border-none outline-none text-white w-full h-10 placeholder-slate-500"
+                    value={searchTerm}
+                    onChange={e => setSearchTerm(e.target.value)}
+                />
+            </div>
+
+            {isLoading ? <div className="flex justify-center p-20"><Loader2 className="animate-spin text-indigo-500" size={40} /></div> : (
+                <div className="glass-panel rounded-2xl overflow-hidden">
                     <table className="w-full text-left border-collapse">
                         <thead>
-                            <tr className="border-b border-white/10 text-slate-400 text-sm">
-                                <th className="p-4 font-semibold">Date</th>
-                                <th className="p-4 font-semibold">Description</th>
-                                <th className="p-4 font-semibold">Category</th>
-                                <th className="p-4 font-semibold text-right">Amount</th>
-                                <th className="p-4 font-semibold"></th>
+                            <tr className="border-b border-white/5 text-indigo-200/50 text-xs uppercase tracking-wider">
+                                <th className="p-6 font-semibold">Date</th>
+                                <th className="p-6 font-semibold">Description</th>
+                                <th className="p-6 font-semibold">Category</th>
+                                <th className="p-6 font-semibold text-right">Amount</th>
+                                <th className="p-6 font-semibold text-right">Actions</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-white/5">
-                            {transactions?.map(tx => (
-                                <tr key={tx.id} className="hover:bg-white/5 transition-colors">
-                                    <td className="p-4 text-slate-300 text-sm">{new Date(tx.date).toLocaleDateString()}</td>
-                                    <td className="p-4 text-white font-medium">{tx.description}</td>
-                                    <td className="p-4">
-                                        <span
-                                            className="px-2 py-1 rounded text-xs font-bold"
-                                            style={{ backgroundColor: `${tx.category?.color}20`, color: tx.category?.color }}
+                        <tbody
+                            className="divide-y divide-white/5"
+                            // @ts-ignore
+                            as={motion.tbody}
+                        >
+                            <AnimatePresence>
+                                <motion.div
+                                    className="contents" // Use contents to avoid breaking table structure with a div
+                                    variants={listVariants}
+                                    initial="hidden"
+                                    animate="visible"
+                                >
+                                    {filteredTransactions?.map(tx => (
+                                        <motion.tr
+                                            key={tx.id}
+                                            variants={itemVariants}
+                                            exit={{ opacity: 0, scale: 0.95 }}
+                                            className="hover:bg-indigo-500/5 transition-colors group"
                                         >
-                                            {tx.category?.label}
-                                        </span>
-                                    </td>
-                                    <td className="p-4 text-right font-mono text-slate-100">${tx.amountUSD}</td>
-                                    <td className="p-4 text-right">
-                                        <button
-                                            onClick={() => deleteMutation.mutate(tx.id)}
-                                            className="text-slate-500 hover:text-rose-400 transition-colors p-1"
-                                        >
-                                            <Trash2 size={16} />
-                                        </button>
-                                    </td>
-                                </tr>
-                            ))}
+                                            <td className="p-6 text-slate-400 text-sm font-mono">
+                                                <div className="flex items-center gap-2">
+                                                    <Calendar size={14} className="opacity-50" />
+                                                    {new Date(tx.date).toLocaleDateString()}
+                                                </div>
+                                            </td>
+                                            <td className="p-6 text-white font-medium text-base">{tx.description}</td>
+                                            <td className="p-6">
+                                                <span
+                                                    className="px-3 py-1 rounded-full text-xs font-bold border border-current"
+                                                    style={{
+                                                        color: tx.category?.color,
+                                                        backgroundColor: `${tx.category?.color}10`,
+                                                        borderColor: `${tx.category?.color}20`
+                                                    }}
+                                                >
+                                                    {tx.category?.label}
+                                                </span>
+                                            </td>
+                                            <td className="p-6 text-right font-mono text-lg font-bold text-white">${tx.amountUSD}</td>
+                                            <td className="p-6 text-right">
+                                                <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    <button
+                                                        onClick={() => handleEdit(tx)}
+                                                        className="p-2 rounded-lg hover:bg-white/10 text-slate-400 hover:text-indigo-400 transition-colors"
+                                                    >
+                                                        <Edit2 size={16} />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => deleteMutation.mutate(tx.id)}
+                                                        className="p-2 rounded-lg hover:bg-rose-500/10 text-slate-400 hover:text-rose-400 transition-colors"
+                                                    >
+                                                        <Trash2 size={16} />
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </motion.tr>
+                                    ))}
+                                </motion.div>
+                            </AnimatePresence>
                         </tbody>
                     </table>
-                    {transactions?.length === 0 && (
-                        <div className="p-8 text-center text-slate-500">No transactions found.</div>
+                    {filteredTransactions?.length === 0 && (
+                        <div className="p-12 text-center text-slate-500 bg-white/5">
+                            No transactions found matching your search.
+                        </div>
                     )}
                 </div>
             )}
 
-            {isModalOpen && <AddTransactionModal categories={categories} onClose={() => setModalOpen(false)} />}
+            {isModalOpen && (
+                <TransactionModal
+                    categories={categories}
+                    item={editingItem}
+                    onClose={() => setModalOpen(false)}
+                />
+            )}
         </div>
     );
 };
 
-const AddTransactionModal = ({ categories, onClose }) => {
+const TransactionModal = ({ categories, item, onClose }) => {
     const queryClient = useQueryClient();
     const token = localStorage.getItem('token');
+    const isEdit = !!item;
 
     const formik = useFormik({
-        initialValues: { amountUSD: '', description: '', categoryId: '', date: new Date().toISOString().split('T')[0] },
+        initialValues: {
+            amountUSD: item?.amountUSD || '',
+            description: item?.description || '',
+            categoryId: item?.categoryId || '',
+            date: item?.date ? new Date(item.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]
+        },
         validationSchema: Yup.object({
             amountUSD: Yup.number().required('Required').positive('Must be positive'),
             description: Yup.string().required('Required'),
             categoryId: Yup.string().required('Required')
         }),
         onSubmit: async (values) => {
-            await fetch('/api/expenses', {
-                method: 'POST',
+            const url = isEdit ? `/api/expenses/${item.id}` : '/api/expenses';
+            const method = isEdit ? 'PUT' : 'POST';
+
+            await fetch(url, {
+                method,
                 headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
                 body: JSON.stringify(values)
             });
@@ -126,40 +229,47 @@ const AddTransactionModal = ({ categories, onClose }) => {
     });
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <div className="bg-slate-900 border border-white/10 w-full max-w-md rounded-2xl p-6 shadow-2xl relative">
-                <h2 className="text-xl font-bold text-white mb-6">Add New Expense</h2>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+            <div className="glass-panel w-full max-w-md rounded-2xl p-8 shadow-2xl relative">
+                <h2 className="text-2xl font-bold text-white mb-6">
+                    {isEdit ? 'Edit Expense' : 'Add New Expense'}
+                </h2>
 
-                <form onSubmit={formik.handleSubmit} className="space-y-4">
+                <form onSubmit={formik.handleSubmit} className="space-y-5">
                     <div>
-                        <label className="block text-xs font-medium text-slate-400 mb-1">Description</label>
-                        <input {...formik.getFieldProps('description')} className="w-full bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-white outline-none focus:border-teal-500" placeholder="Lunch, Taxi, etc." />
+                        <label className="block text-xs font-bold text-indigo-300 uppercase tracking-wider mb-2">Description</label>
+                        <input {...formik.getFieldProps('description')} className="input-field" placeholder="Lunch, Taxi, etc." autoFocus />
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-xs font-medium text-slate-400 mb-1">Amount ($)</label>
-                            <input type="number" {...formik.getFieldProps('amountUSD')} className="w-full bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-white outline-none focus:border-teal-500" placeholder="0.00" />
+                            <label className="block text-xs font-bold text-indigo-300 uppercase tracking-wider mb-2">Amount ($)</label>
+                            <input type="number" {...formik.getFieldProps('amountUSD')} className="input-field" placeholder="0.00" />
                         </div>
                         <div>
-                            <label className="block text-xs font-medium text-slate-400 mb-1">Date</label>
-                            <input type="date" {...formik.getFieldProps('date')} className="w-full bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-white outline-none focus:border-teal-500" />
+                            <label className="block text-xs font-bold text-indigo-300 uppercase tracking-wider mb-2">Date</label>
+                            <input type="date" {...formik.getFieldProps('date')} className="input-field" />
                         </div>
                     </div>
 
                     <div>
-                        <label className="block text-xs font-medium text-slate-400 mb-1">Category</label>
-                        <select {...formik.getFieldProps('categoryId')} className="w-full bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-white outline-none focus:border-teal-500 appearance-none">
-                            <option value="" className="text-slate-500">Select Category</option>
-                            {categories?.map(cat => (
-                                <option key={cat.id} value={cat.id} className="text-slate-900">{cat.label}</option>
-                            ))}
-                        </select>
+                        <label className="block text-xs font-bold text-indigo-300 uppercase tracking-wider mb-2">Category</label>
+                        <div className="relative">
+                            <select {...formik.getFieldProps('categoryId')} className="input-field appearance-none cursor-pointer">
+                                <option value="" className="bg-slate-900 text-slate-500">Select Category</option>
+                                {categories?.map(cat => (
+                                    <option key={cat.id} value={cat.id} className="bg-slate-900 text-white">{cat.label}</option>
+                                ))}
+                            </select>
+                            <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">▼</div>
+                        </div>
                     </div>
 
-                    <div className="flex gap-3 mt-6">
-                        <button type="button" onClick={onClose} className="flex-1 bg-white/5 hover:bg-white/10 text-slate-300 py-2.5 rounded-lg font-medium transition-colors">Cancel</button>
-                        <button type="submit" className="flex-1 bg-teal-600 hover:bg-teal-500 text-white py-2.5 rounded-lg font-bold transition-colors">Add Expense</button>
+                    <div className="flex gap-3 mt-8">
+                        <button type="button" onClick={onClose} className="btn-secondary w-full">Cancel</button>
+                        <button type="submit" className="btn-primary w-full">
+                            {isEdit ? 'Save Changes' : 'Add Expense'}
+                        </button>
                     </div>
                 </form>
             </div>

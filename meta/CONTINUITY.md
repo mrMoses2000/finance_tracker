@@ -9,11 +9,12 @@
 - [x] Auto-migration on startup.
 - [x] **Testing**: Integration tests passed (Jest/Supertest).
 - [x] **Data Restoration**: Restored user's specific Category Config and Expenses from snippet.
+- [x] **Validation**: Verified visual consistency (Dark Glass Theme) on all pages.
+- [x] **Localization**: Added RU/EN/DE support and Premium Dashboard Assets.
+- [x] **Indexing**: Generated index report in meta/INDEX_REPORT.md.
 
 ## 🚧 In Progress / Next Steps
-- [ ] **Testing**: Create Unit and Integration tests for Backend APIs.
-- [ ] **Validation**: Verify visual consistency on all pages.
-- [ ] **Indexing**: Generate index report.
+- [ ] **Deployment**: Prepare CI/CD pipeline (Future Agent).
 
 ## Critical Warnings
 - The `prisma.config.ts` was causing issues with Docker build, removed in favor of standard env vars.

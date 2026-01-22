@@ -1,75 +1,63 @@
 import React from 'react';
-import { motion } from 'framer-motion';
+import { useLanguage } from '../../context/LanguageContext';
 
 const Header = ({ mode, setMode, currency, setCurrency }) => {
+    const { t } = useLanguage();
+
     return (
-        <div className="relative pt-12 pb-24 px-4 shadow-xl overflow-hidden bg-slate-900 border-b border-white/5">
-            {/* Background Image with Overlay */}
-            <div className="absolute inset-0 z-0">
-                <img
-                    src="/header-bg.png"
-                    alt="Background"
-                    className="w-full h-full object-cover opacity-90"
-                />
-                <div className="absolute inset-0 bg-gradient-to-b from-teal-900/80 via-slate-900/40 to-slate-900/90 mix-blend-multiply"></div>
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-50/10 to-transparent"></div>
-            </div>
+        <div className="bg-slate-900/80 backdrop-blur-xl border-b border-white/5 pt-8 pb-20 px-4 shadow-2xl relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-indigo-500/50 to-transparent"></div>
 
-            <div className="relative max-w-5xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8 z-10">
-                <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.6, ease: "easeOut" }}
-                    className="text-center md:text-left"
-                >
-                    <h1 className="text-4xl md:text-5xl font-extrabold mb-3 tracking-tight text-white drop-shadow-sm">
-                        Личный Бюджет
+            <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6 relative z-10">
+                {/* Title Section */}
+                <div>
+                    <h1 className="text-3xl md:text-5xl font-bold mb-2 tracking-tight text-white drop-shadow-md">
+                        {t?.brand || "Finance Budget"}
                     </h1>
-                    <p className="text-teal-50/80 text-lg font-light tracking-wide">
-                        Финансовый компас и планирование
+                    <p className="opacity-70 text-indigo-200 text-sm md:text-base font-medium flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                        {t?.hero_desc || "Financial Compass & Planning"}
                     </p>
-                </motion.div>
+                </div>
 
-                <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.6, delay: 0.15, ease: "easeOut" }}
-                    className="flex flex-col sm:flex-row gap-4 bg-white/5 p-2 rounded-2xl backdrop-blur-xl border border-white/10 shadow-2xl ring-1 ring-white/5"
-                >
-                    <div className="flex bg-black/40 rounded-xl p-1.5 backdrop-blur-sm">
+                {/* Controls Section */}
+                <div className="flex gap-4 items-center bg-black/40 p-1.5 rounded-2xl backdrop-blur-md border border-white/10 shadow-lg">
+                    {/* Mode Toggle */}
+                    <div className="flex bg-white/5 rounded-xl p-1">
                         <button
                             onClick={() => setMode('standard')}
-                            className={`px-6 py-3 rounded-lg text-sm font-semibold transition-all duration-300 ${mode === 'standard' ? 'bg-white text-teal-950 shadow-lg transform scale-[1.02]' : 'text-teal-100/70 hover:text-white hover:bg-white/5'}`}
+                            className={`px-4 py-2 rounded-lg text-sm font-bold transition-all duration-300 ${mode === 'standard'
+                                    ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-900/50'
+                                    : 'text-slate-400 hover:text-white hover:bg-white/5'
+                                }`}
                         >
-                            Стандарт
+                            {t?.modes?.standard || "Standard"}
                         </button>
                         <button
                             onClick={() => setMode('february')}
-                            className={`px-6 py-3 rounded-lg text-sm font-semibold transition-all duration-300 ${mode === 'february' ? 'bg-white text-teal-950 shadow-lg transform scale-[1.02]' : 'text-teal-100/70 hover:text-white hover:bg-white/5'}`}
+                            className={`px-4 py-2 rounded-lg text-sm font-bold transition-all duration-300 ${mode === 'february'
+                                    ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-900/50'
+                                    : 'text-slate-400 hover:text-white hover:bg-white/5'
+                                }`}
                         >
-                            Февраль
+                            {t?.modes?.february || "February"}
                         </button>
                     </div>
 
-                    <div className="relative min-w-[140px]">
+                    {/* Currency Selector */}
+                    <div className="relative">
                         <select
                             value={currency}
                             onChange={(e) => setCurrency(e.target.value)}
-                            className="appearance-none bg-black/40 text-white text-sm font-bold pl-5 pr-12 py-3 rounded-xl border border-transparent focus:border-teal-400/50 focus:ring-2 focus:ring-teal-400/20 cursor-pointer outline-none transition-all hover:bg-black/50 w-full h-full backdrop-blur-sm"
+                            className="bg-transparent text-white text-sm font-bold pl-3 pr-8 py-2.5 rounded-xl border border-transparent hover:bg-white/5 focus:ring-0 cursor-pointer appearance-none transition-colors"
                         >
-                            <option value="USD">USD ($)</option>
-                            <option value="KZT">KZT (₸)</option>
-                            <option value="RUB">RUB (₽)</option>
+                            <option value="USD" className="bg-slate-900 text-white">USD $</option>
+                            <option value="KZT" className="bg-slate-900 text-white">KZT ₸</option>
+                            <option value="RUB" className="bg-slate-900 text-white">RUB ₽</option>
                         </select>
-                        <div className="absolute right-4 top-1/2 transform -translate-y-1/2 pointer-events-none text-teal-200/80">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9l6 6 6-6" /></svg>
-                        </div>
                     </div>
-                </motion.div>
+                </div>
             </div>
-
-            {/* Decorative bottom fade */}
-            <div className="absolute bottom-0 left-0 w-full h-24 bg-gradient-to-t from-slate-50 to-transparent opacity-10"></div>
         </div>
     );
 };

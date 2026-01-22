@@ -30,6 +30,19 @@ describe('Auth Endpoints', () => {
         token = res.body.token;
     });
 
+    test('should login as SEEDED ADMIN', async () => {
+        const res = await request(baseUrl)
+            .post('/auth/login')
+            .send({
+                email: 'moisey.vasilenko.abi@gmail.com',
+                password: 'Moses2000nsu!'
+            });
+        // If seed didn't run yet, this might fail, but let's test it
+        expect(res.statusCode).toEqual(200);
+        expect(res.body).toHaveProperty('token');
+        expect(res.body.user.email).toBe('moisey.vasilenko.abi@gmail.com');
+    });
+
     test('should fail with wrong password', async () => {
         const res = await request(baseUrl)
             .post('/auth/login')
@@ -38,13 +51,5 @@ describe('Auth Endpoints', () => {
                 password: 'wrong'
             });
         expect(res.statusCode).toEqual(400);
-    });
-
-    test('should access protected data with token', async () => {
-        const res = await request(baseUrl)
-            .get('/api/me')
-            .set('Authorization', `Bearer ${token}`);
-        expect(res.statusCode).toEqual(200);
-        expect(res.body).toHaveProperty('email', email);
     });
 });

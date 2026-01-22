@@ -1,63 +1,56 @@
 import React from 'react';
-import { motion } from 'framer-motion';
 
-const CategoryCard = ({ title, items, formatMoney, color, index }) => (
-    <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, margin: "-50px" }}
-        transition={{ duration: 0.5, delay: index * 0.1 }}
-        className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden print:break-inside-avoid hover:shadow-md transition-shadow duration-300"
-        style={{ borderLeft: `5px solid ${color}` }}
-    >
-        <div className="px-5 py-4 bg-slate-50/80 backdrop-blur-sm font-bold text-slate-700 flex justify-between items-center border-b border-slate-100">
-            <span className="text-base">{title}</span>
-            <span className="text-slate-400 text-xs font-semibold bg-white px-2 py-1 rounded-full border border-slate-200">{items.length} поз.</span>
-        </div>
-        <div className="divide-y divide-slate-100">
-            {items.map(item => (
-                <div key={item.id} className="px-5 py-3.5 flex justify-between items-center text-sm group hover:bg-slate-50/50 transition-colors">
-                    <div className="flex items-center gap-4">
-                        <div className="text-slate-400 group-hover:text-slate-600 transition-colors">{item.icon}</div>
-                        <div>
-                            <div className="text-slate-800 font-medium group-hover:text-teal-900 transition-colors">{item.name}</div>
-                            {item.day && <div className="text-xs text-slate-400 mt-0.5 flex items-center gap-1">
-                                <span className="w-1 h-1 rounded-full bg-slate-300"></span>
-                                Срок: {item.day}-е число
-                            </div>}
-                        </div>
-                    </div>
-                    <div className="font-mono font-bold text-slate-700 bg-slate-100/50 px-2 py-1 rounded">
-                        {formatMoney(item.amountUSD)}
-                    </div>
-                </div>
-            ))}
-            <div className="px-5 py-4 bg-slate-50/30 flex justify-between items-center font-bold text-slate-800 border-t border-slate-100">
-                <span className="text-sm uppercase tracking-wider text-slate-500">Итого</span>
-                <span className="text-lg text-teal-700">{formatMoney(items.reduce((acc, i) => acc + i.amountUSD, 0))}</span>
-            </div>
-        </div>
-    </motion.div>
-);
+const CategoryList = ({ categoryConfig, currentData, formatMoney, t }) => {
+    const grouped = {};
+    Object.keys(categoryConfig).forEach(key => {
+        const label = categoryConfig[key].label;
+        grouped[label] = {
+            key,
+            config: categoryConfig[key],
+            items: currentData.filter(i => i.category?.label === label)
+        };
+    });
 
-const CategoryList = ({ categoryConfig, currentData, formatMoney }) => {
     return (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 print:grid-cols-2 pb-12">
-            {Object.keys(categoryConfig).map((key, index) => {
-                const items = currentData.filter(i => i.category === key);
-                if (items.length === 0) return null;
+        <div className="glass-panel p-8 rounded-3xl relative overflow-hidden h-full flex flex-col">
+            <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-white/10 to-transparent"></div>
 
-                return (
-                    <CategoryCard
-                        key={key}
-                        index={index}
-                        title={categoryConfig[key].label}
-                        items={items}
-                        formatMoney={formatMoney}
-                        color={categoryConfig[key].color}
-                    />
-                );
-            })}
+            <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-3">
+                <span className="text-slate-400">Analysis by Category</span>
+            </h2>
+
+            <div className="flex-1 overflow-y-auto pr-2 space-y-4 max-h-[400px]">
+                {Object.entries(grouped).map(([label, group]) => {
+                    if (group.items.length === 0) return null;
+                    const total = group.items.reduce((acc, i) => acc + i.amountUSD, 0);
+
+                    return (
+                        <div
+                            key={label}
+                            className="bg-white/5 rounded-xl border border-white/5 overflow-hidden hover:bg-white/10 transition-colors"
+                            style={{ borderLeft: `4px solid ${group.config.color}` }}
+                        >
+                            {/* Header */}
+                            <div className="px-4 py-3 flex justify-between items-center bg-black/20">
+                                <span className="font-bold text-slate-200">{label}</span>
+                                <span className="text-slate-400 text-xs font-mono">
+                                    {formatMoney(total)}
+                                </span>
+                            </div>
+
+                            {/* Items */}
+                            <div className="px-4 py-2 space-y-1">
+                                {group.items.map(item => (
+                                    <div key={item.id} className="flex justify-between items-center text-xs text-slate-400 hover:text-slate-200">
+                                        <span>{item.description}</span>
+                                        <span>{formatMoney(item.amountUSD)}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
         </div>
     );
 };
