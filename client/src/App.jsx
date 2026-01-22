@@ -10,6 +10,8 @@ import BudgetPlan from './pages/BudgetPlan';
 import Debts from './pages/Debts';
 import Schedule from './pages/Schedule';
 import { LanguageProvider } from './context/LanguageContext';
+import { CurrencyProvider } from './context/CurrencyContext';
+import { ThemeProvider } from './context/ThemeContext';
 
 // Protected Route Wrapper
 const ProtectedRoute = ({ children }) => {
@@ -22,26 +24,30 @@ const ProtectedRoute = ({ children }) => {
 
 function App() {
   return (
-    <LanguageProvider>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/" element={<Landing />} />
+    <ThemeProvider>
+      <LanguageProvider>
+        <CurrencyProvider>
+          <BrowserRouter>
+            <Routes>
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+              <Route path="/" element={<Landing />} />
 
-          {/* Protected App Routes */}
-          <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
-            <Route path="/dashboard" element={<BudgetWeb />} />
-            <Route path="/transactions" element={<Transactions />} />
-            <Route path="/budget" element={<BudgetPlan />} />
-            <Route path="/debts" element={<Debts />} />
-            <Route path="/schedule" element={<Schedule />} />
-          </Route>
+              {/* Protected App Routes */}
+              <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
+                <Route path="/dashboard" element={<BudgetWeb />} />
+                <Route path="/transactions" element={<Transactions />} />
+                <Route path="/budget" element={<BudgetPlan />} />
+                <Route path="/debts" element={<Debts />} />
+                <Route path="/schedule" element={<Schedule />} />
+              </Route>
 
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </BrowserRouter>
-    </LanguageProvider>
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </BrowserRouter>
+        </CurrencyProvider>
+      </LanguageProvider>
+    </ThemeProvider>
   );
 }
 

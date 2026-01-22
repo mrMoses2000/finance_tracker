@@ -5,9 +5,13 @@ import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLanguage } from '../context/LanguageContext';
+import { useCurrency } from '../context/CurrencyContext';
+import { useBudgetMonth } from '../hooks/useBudgetMonth';
 
 const Transactions = () => {
-    const { t } = useLanguage();
+    const { t, lang } = useLanguage();
+    const { currency, formatMoney } = useCurrency();
+    const { month } = useBudgetMonth();
     const queryClient = useQueryClient();
     const token = localStorage.getItem('token');
     const [isModalOpen, setModalOpen] = useState(false);
@@ -15,7 +19,8 @@ const Transactions = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [typeFilter, setTypeFilter] = useState('all');
 
-    // Fetch Transactions
+    const format = (value) => formatMoney(value, lang);
+
     const { data: transactions, isLoading } = useQuery({
         queryKey: ['transactions'],
         queryFn: async () => {
@@ -25,7 +30,6 @@ const Transactions = () => {
         }
     });
 
-    // Fetch Categories
     const { data: categories } = useQuery({
         queryKey: ['categories'],
         queryFn: async () => {
@@ -34,7 +38,10 @@ const Transactions = () => {
         }
     });
 
-    // Delete Mutation
+    const invalidateDashboard = () => {
+        queryClient.invalidateQueries({ queryKey: ['budgetData', month] });
+    };
+
     const deleteMutation = useMutation({
         mutationFn: async (id) => {
             await fetch(`/api/expenses/${id}`, {
@@ -42,7 +49,10 @@ const Transactions = () => {
                 headers: { Authorization: `Bearer ${token}` }
             });
         },
-        onSuccess: () => queryClient.invalidateQueries(['transactions'])
+        onSuccess: () => {
+            queryClient.invalidateQueries(['transactions']);
+            invalidateDashboard();
+        }
     });
 
     const handleEdit = (item) => {
@@ -55,7 +65,6 @@ const Transactions = () => {
         setModalOpen(true);
     };
 
-    // Filtering
     const filteredTransactions = transactions?.filter(tx => {
         const matchesText = tx.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
             tx.category?.label?.toLowerCase().includes(searchTerm.toLowerCase());
@@ -63,13 +72,12 @@ const Transactions = () => {
         return matchesText && matchesType;
     });
 
-    // --- ANIMATION VARIANTS (From Context7 Recs) ---
     const listVariants = {
         hidden: { opacity: 0 },
         visible: {
             opacity: 1,
             transition: {
-                when: "beforeChildren",
+                when: 'beforeChildren',
                 staggerChildren: 0.05
             }
         }
@@ -82,27 +90,25 @@ const Transactions = () => {
 
     return (
         <div className="space-y-8 pb-20">
-            {/* Header */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold text-white mb-2">{t?.transactions?.title || t?.nav?.transactions || "Transactions"}</h1>
-                    <p className="text-indigo-200 opacity-70">{t?.transactions?.subtitle || "Manage your financial records."}</p>
+                    <h1 className="text-3xl font-bold text-white mb-2">{t?.transactions?.title || t?.nav?.transactions || 'Operations'}</h1>
+                    <p className="text-emerald-200 opacity-70">{t?.transactions?.subtitle || 'Manage your financial records.'}</p>
                 </div>
                 <button
                     onClick={handleAddNew}
                     className="btn-primary"
                 >
-                    <Plus size={18} /> {t?.transactions?.add || "Add Transaction"}
+                    <Plus size={18} /> {t?.transactions?.add || 'Add Operation'}
                 </button>
             </div>
 
-            {/* Search Bar */}
             <div className="glass-panel p-2 rounded-xl flex flex-col md:flex-row md:items-center gap-3">
                 <div className="flex items-center gap-3 flex-1">
                     <Search className="text-slate-400 ml-2" size={20} />
                     <input
                         type="text"
-                        placeholder={t?.transactions?.search || "Search by description or category..."}
+                        placeholder={t?.transactions?.search || 'Search by description or category...'}
                         className="bg-transparent border-none outline-none text-white w-full h-10 placeholder-slate-500"
                         value={searchTerm}
                         onChange={e => setSearchTerm(e.target.value)}
@@ -122,11 +128,11 @@ const Transactions = () => {
                 </div>
             </div>
 
-            {isLoading ? <div className="flex justify-center p-20"><Loader2 className="animate-spin text-indigo-500" size={40} /></div> : (
+            {isLoading ? <div className="flex justify-center p-20"><Loader2 className="animate-spin text-emerald-500" size={40} /></div> : (
                 <div className="glass-panel rounded-2xl overflow-hidden">
                     <table className="w-full text-left border-collapse">
                         <thead>
-                            <tr className="border-b border-white/5 text-indigo-200/50 text-xs uppercase tracking-wider">
+                            <tr className="border-b border-white/5 text-emerald-200/50 text-xs uppercase tracking-wider">
                                 <th className="p-6 font-semibold">{t?.transactions?.fields?.date || 'Date'}</th>
                                 <th className="p-6 font-semibold">{t?.transactions?.fields?.description || 'Description'}</th>
                                 <th className="p-6 font-semibold">{t?.transactions?.fields?.category || 'Category'}</th>
@@ -142,7 +148,7 @@ const Transactions = () => {
                         >
                             <AnimatePresence>
                                 <motion.div
-                                    className="contents" // Use contents to avoid breaking table structure with a div
+                                    className="contents"
                                     variants={listVariants}
                                     initial="hidden"
                                     animate="visible"
@@ -152,7 +158,7 @@ const Transactions = () => {
                                             key={tx.id}
                                             variants={itemVariants}
                                             exit={{ opacity: 0, scale: 0.95 }}
-                                            className="hover:bg-indigo-500/5 transition-colors group"
+                                            className="hover:bg-emerald-500/5 transition-colors group"
                                         >
                                             <td className="p-6 text-slate-400 text-sm font-mono">
                                                 <div className="flex items-center gap-2">
@@ -180,14 +186,14 @@ const Transactions = () => {
                                             </td>
                                             <td className="p-6 text-right font-mono text-lg font-bold">
                                                 <span className={tx.type === 'income' ? 'text-emerald-400' : 'text-rose-400'}>
-                                                    {tx.type === 'income' ? '+' : '-'}${tx.amountUSD}
+                                                    {tx.type === 'income' ? '+' : '-'}{format(tx.amountUSD)}
                                                 </span>
                                             </td>
                                             <td className="p-6 text-right">
                                                 <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                                     <button
                                                         onClick={() => handleEdit(tx)}
-                                                        className="p-2 rounded-lg hover:bg-white/10 text-slate-400 hover:text-indigo-400 transition-colors"
+                                                        className="p-2 rounded-lg hover:bg-white/10 text-slate-400 hover:text-emerald-400 transition-colors"
                                                     >
                                                         <Edit2 size={16} />
                                                     </button>
@@ -207,7 +213,7 @@ const Transactions = () => {
                     </table>
                     {filteredTransactions?.length === 0 && (
                         <div className="p-12 text-center text-slate-500 bg-white/5">
-                            {t?.transactions?.empty || 'No transactions found matching your search.'}
+                            {t?.transactions?.empty || 'No operations found matching your search.'}
                         </div>
                     )}
                 </div>
@@ -228,18 +234,20 @@ const TransactionModal = ({ categories, item, onClose }) => {
     const queryClient = useQueryClient();
     const token = localStorage.getItem('token');
     const { t } = useLanguage();
+    const { currency, convert, toUSD } = useCurrency();
+    const { month } = useBudgetMonth();
     const isEdit = !!item;
 
     const formik = useFormik({
         initialValues: {
-            amountUSD: item?.amountUSD || '',
+            amountLocal: item?.amountUSD ? convert(item.amountUSD) : '',
             description: item?.description || '',
             categoryId: item?.categoryId || '',
             date: item?.date ? new Date(item.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
             type: item?.type || 'expense'
         },
         validationSchema: Yup.object({
-            amountUSD: Yup.number().required('Required').positive('Must be positive'),
+            amountLocal: Yup.number().required('Required').positive('Must be positive'),
             description: Yup.string().required('Required'),
             categoryId: Yup.string().required('Required'),
             type: Yup.string().required('Required')
@@ -251,9 +259,16 @@ const TransactionModal = ({ categories, item, onClose }) => {
             await fetch(url, {
                 method,
                 headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-                body: JSON.stringify(values)
+                body: JSON.stringify({
+                    amountUSD: toUSD(values.amountLocal),
+                    description: values.description,
+                    categoryId: values.categoryId,
+                    date: values.date,
+                    type: values.type
+                })
             });
             queryClient.invalidateQueries(['transactions']);
+            queryClient.invalidateQueries({ queryKey: ['budgetData', month] });
             onClose();
         }
     });
@@ -266,17 +281,17 @@ const TransactionModal = ({ categories, item, onClose }) => {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-200">
             <div className="glass-panel w-full max-w-md rounded-2xl p-8 shadow-2xl relative">
                 <h2 className="text-2xl font-bold text-white mb-6">
-                    {isEdit ? (t?.transactions?.edit || 'Edit Transaction') : (t?.transactions?.add || 'Add Transaction')}
+                    {isEdit ? (t?.transactions?.edit || 'Edit Operation') : (t?.transactions?.add || 'Add Operation')}
                 </h2>
 
                 <form onSubmit={formik.handleSubmit} className="space-y-5">
                     <div>
-                        <label className="block text-xs font-bold text-indigo-300 uppercase tracking-wider mb-2">{t?.transactions?.fields?.description || 'Description'}</label>
-                        <input {...formik.getFieldProps('description')} className="input-field" placeholder={t?.transactions?.fields?.description_placeholder || "Lunch, Taxi, etc."} autoFocus />
+                        <label className="block text-xs font-bold text-emerald-300 uppercase tracking-wider mb-2">{t?.transactions?.fields?.description || 'Description'}</label>
+                        <input {...formik.getFieldProps('description')} className="input-field" placeholder={t?.transactions?.fields?.description_placeholder || 'Lunch, Taxi, etc.'} autoFocus />
                     </div>
 
                     <div>
-                        <label className="block text-xs font-bold text-indigo-300 uppercase tracking-wider mb-2">{t?.transactions?.fields?.type || 'Type'}</label>
+                        <label className="block text-xs font-bold text-emerald-300 uppercase tracking-wider mb-2">{t?.transactions?.fields?.type || 'Type'}</label>
                         <div className="relative">
                             <select {...formik.getFieldProps('type')} className="input-field appearance-none cursor-pointer">
                                 <option value="expense" className="bg-slate-900 text-white">{t?.transactions?.filters?.expense || 'Expense'}</option>
@@ -288,17 +303,19 @@ const TransactionModal = ({ categories, item, onClose }) => {
 
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-xs font-bold text-indigo-300 uppercase tracking-wider mb-2">{t?.transactions?.fields?.amount || 'Amount ($)'}</label>
-                            <input type="number" {...formik.getFieldProps('amountUSD')} className="input-field" placeholder="0.00" />
+                            <label className="block text-xs font-bold text-emerald-300 uppercase tracking-wider mb-2">
+                                {t?.transactions?.fields?.amount || 'Amount'} ({currency})
+                            </label>
+                            <input type="number" {...formik.getFieldProps('amountLocal')} className="input-field" placeholder="0.00" />
                         </div>
                         <div>
-                            <label className="block text-xs font-bold text-indigo-300 uppercase tracking-wider mb-2">{t?.transactions?.fields?.date || 'Date'}</label>
+                            <label className="block text-xs font-bold text-emerald-300 uppercase tracking-wider mb-2">{t?.transactions?.fields?.date || 'Date'}</label>
                             <input type="date" {...formik.getFieldProps('date')} className="input-field" />
                         </div>
                     </div>
 
                     <div>
-                        <label className="block text-xs font-bold text-indigo-300 uppercase tracking-wider mb-2">{t?.transactions?.fields?.category || 'Category'}</label>
+                        <label className="block text-xs font-bold text-emerald-300 uppercase tracking-wider mb-2">{t?.transactions?.fields?.category || 'Category'}</label>
                         <div className="relative">
                             <select {...formik.getFieldProps('categoryId')} className="input-field appearance-none cursor-pointer">
                                 <option value="" className="bg-slate-900 text-slate-500">{t?.transactions?.fields?.category_placeholder || 'Select Category'}</option>
@@ -313,7 +330,7 @@ const TransactionModal = ({ categories, item, onClose }) => {
                     <div className="flex gap-3 mt-8">
                         <button type="button" onClick={onClose} className="btn-secondary w-full">{t?.transactions?.actions?.cancel || 'Cancel'}</button>
                         <button type="submit" className="btn-primary w-full">
-                            {isEdit ? (t?.transactions?.actions?.save || 'Save Changes') : (t?.transactions?.actions?.add || 'Add Transaction')}
+                            {isEdit ? (t?.transactions?.actions?.save || 'Save Changes') : (t?.transactions?.actions?.add || 'Add Operation')}
                         </button>
                     </div>
                 </form>

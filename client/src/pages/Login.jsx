@@ -41,12 +41,12 @@ const Login = () => {
     });
 
     return (
-        <div className="min-h-screen w-full flex items-center justify-center bg-slate-950 px-4 relative overflow-hidden">
+        <div className="min-h-screen w-full flex items-center justify-center app-shell px-4 relative overflow-hidden">
             {/* Background */}
             <div className="absolute inset-0">
                 <img src="/header-bg.png" className="w-full h-full object-cover opacity-30" alt="" />
                 <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm"></div>
-                <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-indigo-500/10 via-slate-950/50 to-purple-500/10 pointer-events-none" />
+                <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-emerald-500/10 via-slate-950/50 to-amber-500/10 pointer-events-none" />
             </div>
 
             <motion.div
@@ -71,7 +71,7 @@ const Login = () => {
                         <input
                             type="email"
                             {...formik.getFieldProps('email')}
-                            className="w-full bg-slate-950/50 border border-white/10 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all placeholder-slate-600"
+                            className="w-full bg-slate-950/50 border border-white/10 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all placeholder-slate-600"
                             placeholder={t?.auth?.placeholder_email}
                         />
                         {formik.touched.email && formik.errors.email ? (
@@ -84,7 +84,7 @@ const Login = () => {
                         <input
                             type="password"
                             {...formik.getFieldProps('password')}
-                            className="w-full bg-slate-950/50 border border-white/10 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all placeholder-slate-600"
+                            className="w-full bg-slate-950/50 border border-white/10 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all placeholder-slate-600"
                             placeholder={t?.auth?.placeholder_password}
                         />
                     </div>
@@ -92,7 +92,7 @@ const Login = () => {
                     <button
                         type="submit"
                         disabled={formik.isSubmitting}
-                        className="w-full bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-bold py-3.5 rounded-lg shadow-lg shadow-indigo-900/20 transition-all transform active:scale-[0.98] flex items-center justify-center border border-white/10"
+                        className="w-full bg-gradient-to-r from-emerald-600 to-amber-500 hover:from-emerald-500 hover:to-amber-400 text-white font-bold py-3.5 rounded-lg shadow-lg shadow-emerald-900/20 transition-all transform active:scale-[0.98] flex items-center justify-center border border-white/10"
                     >
                         {formik.isSubmitting ? <Loader2 className="animate-spin" /> : t?.auth?.login_btn}
                     </button>
@@ -100,7 +100,7 @@ const Login = () => {
 
                 <div className="mt-6 text-center text-sm text-slate-400">
                     {t?.auth?.no_account}{' '}
-                    <Link to="/register" className="text-indigo-400 hover:text-indigo-300 font-medium transition-colors">
+                    <Link to="/register" className="text-emerald-300 hover:text-emerald-200 font-medium transition-colors">
                         {t?.auth?.register_link}
                     </Link>
                 </div>

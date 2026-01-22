@@ -131,7 +131,7 @@ const SEED_DEBTS = [
     },
     {
         key: 'client',
-        name: 'Заем клиенту',
+        name: 'Выданный займ',
         type: 'loan',
         principal: 800,
         balance: 600,

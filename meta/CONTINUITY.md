@@ -19,6 +19,11 @@
 - [x] **Ops**: Updated run.sh with auto-install checks and Ubuntu remote access prep.
 - [x] **Ops Fix**: Added Docker service start + sudo fallback for fresh Ubuntu hosts.
 - [x] **Ops Fix**: Added public IP detection and remote URL output in run.sh.
+- [x] **UX**: Два дашборда (Факт/План) с предупреждением о лимитах и отклонением от плана.
+- [x] **UI**: FullCalendar для календарей (драг‑дроп, список по клику, иконки категорий).
+- [x] **Finance**: Единая валюта по всему UI (отображение и ввод с конвертацией).
+- [x] **Theme**: Переключатель светлой/темной темы + новая палитра (emerald/amber).
+- [x] **Polish**: Исправлены цвета диаграммы/легенды и переименованы «Транзакции» → «Операции».
 
 ## 🚧 In Progress / Next Steps (For Codex Agent)
 - [ ] **Migrations**: Run `prisma db push` / migrations to apply new models (BudgetMonth, BudgetItem, Debt, ScheduleItem).

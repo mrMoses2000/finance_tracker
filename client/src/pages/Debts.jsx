@@ -1,16 +1,20 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Loader2, Plus, Trash2, Edit2, Landmark } from 'lucide-react';
+import { Loader2, Plus, Trash2, Edit2, Landmark, Info } from 'lucide-react';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import { useLanguage } from '../context/LanguageContext';
+import { useCurrency } from '../context/CurrencyContext';
 
 const Debts = () => {
-    const { t } = useLanguage();
+    const { t, lang } = useLanguage();
+    const { currency, formatMoney } = useCurrency();
     const queryClient = useQueryClient();
     const token = localStorage.getItem('token');
     const [isModalOpen, setModalOpen] = useState(false);
     const [editingItem, setEditingItem] = useState(null);
+
+    const format = (value) => formatMoney(value, lang);
 
     const { data: debts, isLoading } = useQuery({
         queryKey: ['debts'],
@@ -57,39 +61,47 @@ const Debts = () => {
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
                     <h1 className="text-3xl font-bold text-white mb-2">{t?.debts?.title || 'Debts & Loans'}</h1>
-                    <p className="text-indigo-200 opacity-70">{t?.debts?.subtitle || 'Track obligations and incoming repayments.'}</p>
+                    <p className="text-emerald-200 opacity-70">{t?.debts?.subtitle || 'Track obligations and incoming repayments.'}</p>
                 </div>
                 <button onClick={handleAddNew} className="btn-primary">
                     <Plus size={18} /> {t?.debts?.add || 'Add Obligation'}
                 </button>
             </div>
 
+            <div className="glass-panel p-4 rounded-2xl text-sm text-slate-300 flex items-start gap-3">
+                <Info size={18} className="text-amber-300 mt-1" />
+                <div>
+                    <div className="font-semibold text-white">{t?.debts?.loan_help_title || 'What is a loan to a client?'}</div>
+                    <div className="text-slate-400">{t?.debts?.loan_help || 'This is money you issued and expect to receive back. It appears on the "Receivable" side.'}</div>
+                </div>
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <SummaryCard
                     title={t?.debts?.summary?.owed || 'Total Owed'}
-                    value={totalOwed}
+                    value={format(totalOwed)}
                     tone="rose"
                 />
                 <SummaryCard
                     title={t?.debts?.summary?.receivable || 'Receivable'}
-                    value={totalReceivable}
+                    value={format(totalReceivable)}
                     tone="emerald"
                 />
                 <SummaryCard
                     title={t?.debts?.summary?.active || 'Active Items'}
                     value={activeCount}
-                    tone="indigo"
+                    tone="amber"
                     isCount
                 />
             </div>
 
             {isLoading ? (
-                <div className="flex justify-center p-20"><Loader2 className="animate-spin text-indigo-500" size={40} /></div>
+                <div className="flex justify-center p-20"><Loader2 className="animate-spin text-emerald-500" size={40} /></div>
             ) : (
                 <div className="glass-panel rounded-2xl overflow-hidden">
                     <table className="w-full text-left border-collapse">
                         <thead>
-                            <tr className="border-b border-white/5 text-indigo-200/50 text-xs uppercase tracking-wider">
+                            <tr className="border-b border-white/5 text-emerald-200/50 text-xs uppercase tracking-wider">
                                 <th className="p-6 font-semibold">{t?.debts?.table?.name || 'Name'}</th>
                                 <th className="p-6 font-semibold">{t?.debts?.table?.type || 'Type'}</th>
                                 <th className="p-6 font-semibold">{t?.debts?.table?.balance || 'Balance'}</th>
@@ -99,14 +111,14 @@ const Debts = () => {
                         </thead>
                         <tbody className="divide-y divide-white/5">
                             {debts?.map((debt) => (
-                                <tr key={debt.id} className="hover:bg-indigo-500/5 transition-colors group">
+                                <tr key={debt.id} className="hover:bg-emerald-500/5 transition-colors group">
                                     <td className="p-6 text-white font-medium">{debt.name}</td>
                                     <td className="p-6">
                                         <span className={`px-3 py-1 rounded-full text-xs font-bold border ${debt.type === 'loan' ? 'text-emerald-300 border-emerald-500/30 bg-emerald-500/10' : 'text-rose-300 border-rose-500/30 bg-rose-500/10'}`}>
                                             {debt.type === 'loan' ? (t?.debts?.types?.loan || 'Loan') : (t?.debts?.types?.debt || 'Debt')}
                                         </span>
                                     </td>
-                                    <td className="p-6 text-white font-mono font-bold">${debt.balance}</td>
+                                    <td className="p-6 text-white font-mono font-bold">{format(debt.balance)}</td>
                                     <td className="p-6 text-slate-400 text-sm">
                                         {debt.nextPaymentDate ? new Date(debt.nextPaymentDate).toLocaleDateString() : (t?.debts?.table?.none || '—')}
                                     </td>
@@ -114,7 +126,7 @@ const Debts = () => {
                                         <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                             <button
                                                 onClick={() => handleEdit(debt)}
-                                                className="p-2 rounded-lg hover:bg-white/10 text-slate-400 hover:text-indigo-400 transition-colors"
+                                                className="p-2 rounded-lg hover:bg-white/10 text-slate-400 hover:text-emerald-400 transition-colors"
                                             >
                                                 <Edit2 size={16} />
                                             </button>
@@ -154,8 +166,8 @@ const SummaryCard = ({ title, value, tone, isCount }) => (
         <div className="flex items-center justify-between">
             <div>
                 <div className="text-xs text-slate-400 uppercase tracking-widest font-bold">{title}</div>
-                <div className={`text-2xl font-extrabold mt-2 ${tone === 'rose' ? 'text-rose-400' : tone === 'emerald' ? 'text-emerald-400' : 'text-indigo-300'}`}>
-                    {isCount ? value : `$${value}`}
+                <div className={`text-2xl font-extrabold mt-2 ${tone === 'rose' ? 'text-rose-400' : tone === 'emerald' ? 'text-emerald-400' : tone === 'amber' ? 'text-amber-300' : 'text-slate-300'}`}>
+                    {isCount ? value : value}
                 </div>
             </div>
             <div className="p-3 rounded-xl bg-white/5 border border-white/10 text-slate-400">
@@ -169,24 +181,25 @@ const DebtModal = ({ categories, item, onClose }) => {
     const queryClient = useQueryClient();
     const token = localStorage.getItem('token');
     const { t } = useLanguage();
+    const { currency, convert, toUSD } = useCurrency();
     const isEdit = !!item;
 
     const formik = useFormik({
         initialValues: {
             name: item?.name || '',
             type: item?.type || 'debt',
-            principal: item?.principal || '',
-            balance: item?.balance || '',
+            principalLocal: item?.principal ? convert(item.principal) : '',
+            balanceLocal: item?.balance ? convert(item.balance) : '',
             interestRate: item?.interestRate || '',
             startDate: item?.startDate ? new Date(item.startDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
             termMonths: item?.termMonths || '',
             nextPaymentDate: item?.nextPaymentDate ? new Date(item.nextPaymentDate).toISOString().split('T')[0] : '',
-            monthlyPaymentUSD: '',
-            categoryId: ''
+            monthlyPaymentLocal: item?.monthlyPaymentUSD ? convert(item.monthlyPaymentUSD) : '',
+            categoryId: item?.categoryId || ''
         },
         validationSchema: Yup.object({
             name: Yup.string().required('Required'),
-            principal: Yup.number().required('Required').positive('Must be positive')
+            principalLocal: Yup.number().required('Required').positive('Must be positive')
         }),
         onSubmit: async (values) => {
             const url = isEdit ? `/api/debts/${item.id}` : '/api/debts';
@@ -195,7 +208,18 @@ const DebtModal = ({ categories, item, onClose }) => {
             await fetch(url, {
                 method,
                 headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-                body: JSON.stringify(values)
+                body: JSON.stringify({
+                    name: values.name,
+                    type: values.type,
+                    principal: toUSD(values.principalLocal),
+                    balance: values.balanceLocal !== '' ? toUSD(values.balanceLocal) : undefined,
+                    interestRate: values.interestRate,
+                    startDate: values.startDate,
+                    termMonths: values.termMonths,
+                    nextPaymentDate: values.nextPaymentDate,
+                    monthlyPaymentUSD: values.monthlyPaymentLocal !== '' ? toUSD(values.monthlyPaymentLocal) : undefined,
+                    categoryId: values.categoryId
+                })
             });
             queryClient.invalidateQueries(['debts']);
             onClose();
@@ -212,11 +236,11 @@ const DebtModal = ({ categories, item, onClose }) => {
                 <form onSubmit={formik.handleSubmit} className="space-y-5">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-xs font-bold text-indigo-300 uppercase tracking-wider mb-2">{t?.debts?.fields?.name || 'Name'}</label>
+                            <label className="block text-xs font-bold text-emerald-300 uppercase tracking-wider mb-2">{t?.debts?.fields?.name || 'Name'}</label>
                             <input {...formik.getFieldProps('name')} className="input-field" placeholder={t?.debts?.fields?.name_placeholder || 'Kaspi Loan'} />
                         </div>
                         <div>
-                            <label className="block text-xs font-bold text-indigo-300 uppercase tracking-wider mb-2">{t?.debts?.fields?.type || 'Type'}</label>
+                            <label className="block text-xs font-bold text-emerald-300 uppercase tracking-wider mb-2">{t?.debts?.fields?.type || 'Type'}</label>
                             <div className="relative">
                                 <select {...formik.getFieldProps('type')} className="input-field appearance-none cursor-pointer">
                                     <option value="debt" className="bg-slate-900 text-white">{t?.debts?.types?.debt || 'Debt'}</option>
@@ -229,41 +253,41 @@ const DebtModal = ({ categories, item, onClose }) => {
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
-                            <label className="block text-xs font-bold text-indigo-300 uppercase tracking-wider mb-2">{t?.debts?.fields?.principal || 'Principal'}</label>
-                            <input type="number" {...formik.getFieldProps('principal')} className="input-field" placeholder="0.00" />
+                            <label className="block text-xs font-bold text-emerald-300 uppercase tracking-wider mb-2">{t?.debts?.fields?.principal || 'Principal'} ({currency})</label>
+                            <input type="number" {...formik.getFieldProps('principalLocal')} className="input-field" placeholder="0.00" />
                         </div>
                         <div>
-                            <label className="block text-xs font-bold text-indigo-300 uppercase tracking-wider mb-2">{t?.debts?.fields?.balance || 'Balance'}</label>
-                            <input type="number" {...formik.getFieldProps('balance')} className="input-field" placeholder="0.00" />
+                            <label className="block text-xs font-bold text-emerald-300 uppercase tracking-wider mb-2">{t?.debts?.fields?.balance || 'Balance'} ({currency})</label>
+                            <input type="number" {...formik.getFieldProps('balanceLocal')} className="input-field" placeholder="0.00" />
                         </div>
                         <div>
-                            <label className="block text-xs font-bold text-indigo-300 uppercase tracking-wider mb-2">{t?.debts?.fields?.rate || 'Interest %'}</label>
+                            <label className="block text-xs font-bold text-emerald-300 uppercase tracking-wider mb-2">{t?.debts?.fields?.rate || 'Interest %'}</label>
                             <input type="number" {...formik.getFieldProps('interestRate')} className="input-field" placeholder="0" />
                         </div>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
-                            <label className="block text-xs font-bold text-indigo-300 uppercase tracking-wider mb-2">{t?.debts?.fields?.start || 'Start Date'}</label>
+                            <label className="block text-xs font-bold text-emerald-300 uppercase tracking-wider mb-2">{t?.debts?.fields?.start || 'Start Date'}</label>
                             <input type="date" {...formik.getFieldProps('startDate')} className="input-field" />
                         </div>
                         <div>
-                            <label className="block text-xs font-bold text-indigo-300 uppercase tracking-wider mb-2">{t?.debts?.fields?.term || 'Term (months)'}</label>
+                            <label className="block text-xs font-bold text-emerald-300 uppercase tracking-wider mb-2">{t?.debts?.fields?.term || 'Term (months)'}</label>
                             <input type="number" {...formik.getFieldProps('termMonths')} className="input-field" placeholder="12" />
                         </div>
                         <div>
-                            <label className="block text-xs font-bold text-indigo-300 uppercase tracking-wider mb-2">{t?.debts?.fields?.next || 'Next Payment Date'}</label>
+                            <label className="block text-xs font-bold text-emerald-300 uppercase tracking-wider mb-2">{t?.debts?.fields?.next || 'Next Payment Date'}</label>
                             <input type="date" {...formik.getFieldProps('nextPaymentDate')} className="input-field" />
                         </div>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-xs font-bold text-indigo-300 uppercase tracking-wider mb-2">{t?.debts?.fields?.payment || 'Monthly Payment'}</label>
-                            <input type="number" {...formik.getFieldProps('monthlyPaymentUSD')} className="input-field" placeholder="0.00" />
+                            <label className="block text-xs font-bold text-emerald-300 uppercase tracking-wider mb-2">{t?.debts?.fields?.payment || 'Monthly Payment'} ({currency})</label>
+                            <input type="number" {...formik.getFieldProps('monthlyPaymentLocal')} className="input-field" placeholder="0.00" />
                         </div>
                         <div>
-                            <label className="block text-xs font-bold text-indigo-300 uppercase tracking-wider mb-2">{t?.debts?.fields?.category || 'Category'}</label>
+                            <label className="block text-xs font-bold text-emerald-300 uppercase tracking-wider mb-2">{t?.debts?.fields?.category || 'Category'}</label>
                             <div className="relative">
                                 <select {...formik.getFieldProps('categoryId')} className="input-field appearance-none cursor-pointer">
                                     <option value="" className="bg-slate-900 text-slate-500">{t?.debts?.fields?.category_placeholder || 'Select Category'}</option>

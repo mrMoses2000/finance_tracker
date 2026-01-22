@@ -1,5 +1,5 @@
 import React from 'react';
-import { DonutChart, Legend } from "@tremor/react";
+import { DonutChart } from "@tremor/react";
 import { PieChart as PieIcon } from 'lucide-react';
 
 const CustomTooltip = ({ payload, active, formatMoney }) => {
@@ -23,7 +23,7 @@ const CustomTooltip = ({ payload, active, formatMoney }) => {
     );
 };
 
-const ExpenseChart = ({ totalExpenses, chartData, formatMoney, t }) => {
+const ExpenseChart = ({ totalExpenses, chartData, formatMoney, t, title }) => {
     const formattedData = chartData.map(item => ({
         name: item.label,
         amount: item.value,
@@ -42,10 +42,10 @@ const ExpenseChart = ({ totalExpenses, chartData, formatMoney, t }) => {
             </div>
 
             <h2 className="text-xl font-bold text-white mb-8 flex items-center gap-3 relative z-10">
-                <div className="p-2 bg-indigo-500/10 rounded-lg text-indigo-400 border border-indigo-500/20">
+                <div className="p-2 bg-emerald-500/10 rounded-lg text-emerald-400 border border-emerald-500/20">
                     <PieIcon size={22} />
                 </div>
-                {t?.chart?.title || "Expense Structure"}
+                {title || t?.chart?.title || "Expense Structure"}
             </h2>
 
             <div className="flex flex-col items-center justify-center gap-8 relative z-10">
@@ -56,16 +56,19 @@ const ExpenseChart = ({ totalExpenses, chartData, formatMoney, t }) => {
                             category="amount"
                             index="name"
                             valueFormatter={valueFormatter}
-                            colors={["slate", "violet", "indigo", "rose", "cyan", "amber", "emerald"]}
+                            colors={formattedData.map((item) => item.color)}
                             className="w-48 h-48"
                             showLabel={true}
                             customTooltip={(props) => <CustomTooltip {...props} formatMoney={formatMoney} />}
                         />
-                        <Legend
-                            categories={formattedData.map(item => item.name)}
-                            colors={["slate", "violet", "indigo", "rose", "cyan", "amber", "emerald"]}
-                            className="max-w-full"
-                        />
+                        <div className="flex flex-wrap justify-center gap-3 text-xs text-slate-400">
+                            {formattedData.map((item) => (
+                                <div key={item.name} className="flex items-center gap-2">
+                                    <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: item.color }}></span>
+                                    <span className="text-slate-300">{item.name}</span>
+                                </div>
+                            ))}
+                        </div>
                     </>
                 ) : (
                     <div className="flex items-center justify-center h-40 w-full text-slate-500 font-medium bg-white/5 border border-white/5 rounded-xl">

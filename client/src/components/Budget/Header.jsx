@@ -27,7 +27,7 @@ const Header = ({ month, setMonth, currency, setCurrency }) => {
 
     return (
         <div className="bg-slate-900/80 backdrop-blur-xl border-b border-white/5 pt-8 pb-20 px-4 shadow-2xl relative overflow-hidden">
-            <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-indigo-500/50 to-transparent"></div>
+            <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-emerald-400/50 to-transparent"></div>
 
             <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6 relative z-10">
                 {/* Title Section */}
@@ -35,7 +35,7 @@ const Header = ({ month, setMonth, currency, setCurrency }) => {
                     <h1 className="text-3xl md:text-5xl font-bold mb-2 tracking-tight text-white drop-shadow-md">
                         {t?.brand || "Finance Budget"}
                     </h1>
-                    <p className="opacity-70 text-indigo-200 text-sm md:text-base font-medium flex items-center gap-2">
+                    <p className="opacity-70 text-emerald-200 text-sm md:text-base font-medium flex items-center gap-2">
                         <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
                         {t?.hero_desc || "Financial Compass & Planning"}
                     </p>

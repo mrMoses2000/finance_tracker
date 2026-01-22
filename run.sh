@@ -229,6 +229,8 @@ if $COMPOSE_CMD up -d --build; then
         PUBLIC_IP=$(get_public_ip)
         if [ -n "$PUBLIC_IP" ]; then
             echo -e "Remote:    ${YELLOW}http://${PUBLIC_IP}:3000${NC}"
+            echo -e "${YELLOW}[INFO] Для облачных серверов откройте порты 3000/4000 (TCP) в Security Group/Firewall.${NC}"
+            echo -e "${YELLOW}[INFO] ICMP ping может быть закрыт — это нормально.${NC}"
         else
             echo -e "${YELLOW}[INFO] Не удалось определить публичный IP. Используйте IP/домен сервера + :3000${NC}"
         fi

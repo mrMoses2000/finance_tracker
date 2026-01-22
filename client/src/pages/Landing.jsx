@@ -9,20 +9,20 @@ const LandingPage = () => {
     const { t, lang, switchLang } = useLanguage();
 
     return (
-        <div className="min-h-screen bg-slate-950 text-white font-sans selection:bg-indigo-500/30 overflow-x-hidden">
+        <div className="min-h-screen app-shell text-white overflow-x-hidden">
             {/* Background */}
             <div className="fixed inset-0 z-0 pointer-events-none">
-                <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-indigo-900/20 blur-[120px] rounded-full"></div>
-                <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] bg-violet-900/20 blur-[120px] rounded-full"></div>
+                <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-emerald-900/20 blur-[120px] rounded-full"></div>
+                <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] bg-amber-900/20 blur-[120px] rounded-full"></div>
             </div>
 
             {/* Navbar */}
             <nav className="relative z-20 flex justify-between items-center px-6 py-6 md:px-12 max-w-7xl mx-auto">
                 <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-violet-600 rounded-lg flex items-center justify-center shadow-lg shadow-indigo-500/20">
+                    <div className="w-8 h-8 bg-gradient-to-br from-emerald-400 to-amber-400 rounded-lg flex items-center justify-center shadow-lg shadow-emerald-500/20">
                         <span className="font-bold text-white text-sm">BF</span>
                     </div>
-                    <span className="font-bold text-xl tracking-tight">Budget<span className="text-indigo-400">Flow</span></span>
+                    <span className="font-bold text-xl tracking-tight">Budget<span className="text-amber-300">Flow</span></span>
                 </div>
 
                 <div className="flex items-center gap-4">
@@ -33,7 +33,7 @@ const LandingPage = () => {
                             <button
                                 key={l}
                                 onClick={() => switchLang(l)}
-                                className={`px-2 py-1 text-xs font-bold uppercase rounded-full transition-all ${lang === l ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'}`}
+                                className={`px-2 py-1 text-xs font-bold uppercase rounded-full transition-all ${lang === l ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'}`}
                             >
                                 {l}
                             </button>
@@ -41,7 +41,7 @@ const LandingPage = () => {
                     </div>
 
                     <button onClick={() => navigate('/login')} className="text-slate-300 hover:text-white font-medium transition-colors hidden sm:block">{t?.login || 'Login'}</button>
-                    <button onClick={() => navigate('/register')} className="bg-white text-indigo-950 hover:bg-slate-200 px-5 py-2 rounded-full font-bold transition-all shadow-lg shadow-white/10 text-sm sm:text-base">{t?.get_started || 'Get Started'}</button>
+                    <button onClick={() => navigate('/register')} className="bg-white text-emerald-950 hover:bg-slate-200 px-5 py-2 rounded-full font-bold transition-all shadow-lg shadow-white/10 text-sm sm:text-base">{t?.get_started || 'Get Started'}</button>
                 </div>
             </nav>
 
@@ -52,9 +52,9 @@ const LandingPage = () => {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.8 }}
                 >
-                    <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight mb-6 bg-clip-text text-transparent bg-gradient-to-r from-white via-indigo-100 to-slate-400 drop-shadow-lg">
+                    <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight mb-6 bg-clip-text text-transparent bg-gradient-to-r from-white via-emerald-100 to-slate-400 drop-shadow-lg">
                         {t?.hero_title} <br />
-                        <span className="text-indigo-400">{t?.hero_subtitle}</span>
+                        <span className="text-emerald-300">{t?.hero_subtitle}</span>
                     </h1>
                     <p className="text-xl md:text-2xl text-slate-400 mb-10 max-w-2xl mx-auto leading-relaxed">
                         {t?.hero_desc}
@@ -64,7 +64,7 @@ const LandingPage = () => {
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                         onClick={() => navigate('/register')}
-                        className="bg-indigo-600 hover:bg-indigo-500 text-white text-lg font-bold px-8 py-4 rounded-full shadow-2xl shadow-indigo-600/30 flex items-center gap-3 mx-auto border-t border-white/20"
+                        className="bg-emerald-600 hover:bg-emerald-500 text-white text-lg font-bold px-8 py-4 rounded-full shadow-2xl shadow-emerald-600/30 flex items-center gap-3 mx-auto border-t border-white/20"
                     >
                         {t?.cta} <ArrowRight size={20} />
                     </motion.button>
@@ -77,7 +77,7 @@ const LandingPage = () => {
                     transition={{ delay: 0.3, duration: 0.8 }}
                     className="mt-20 relative mx-auto max-w-5xl"
                 >
-                    <div className="absolute inset-0 bg-indigo-500/20 blur-3xl -z-10 rounded-full"></div>
+                    <div className="absolute inset-0 bg-emerald-500/20 blur-3xl -z-10 rounded-full"></div>
                     <div className="bg-slate-900/50 backdrop-blur-xl border border-white/10 rounded-2xl p-2 shadow-2xl overflow-hidden ring-1 ring-white/10">
                         <img
                             src="/dashboard-preview-obsidian.png"
@@ -97,17 +97,17 @@ const LandingPage = () => {
             <section className="relative z-10 py-24 bg-slate-900/50 backdrop-blur-md border-t border-white/5">
                 <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-3 gap-12">
                     <FeatureCard
-                        icon={<TrendingUp className="text-indigo-400" size={32} />}
+                        icon={<TrendingUp className="text-emerald-400" size={32} />}
                         title={t?.features?.analytics}
                         desc={t?.features?.analytics_desc}
                     />
                     <FeatureCard
-                        icon={<Shield className="text-indigo-400" size={32} />}
+                        icon={<Shield className="text-emerald-400" size={32} />}
                         title={t?.features?.security}
                         desc={t?.features?.security_desc}
                     />
                     <FeatureCard
-                        icon={<Smartphone className="text-violet-400" size={32} />}
+                        icon={<Smartphone className="text-amber-400" size={32} />}
                         title={t?.features?.multi_device}
                         desc={t?.features?.multi_device_desc}
                     />

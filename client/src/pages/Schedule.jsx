@@ -1,17 +1,30 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Loader2, Plus, Trash2, Edit2, CalendarClock, CheckCircle2, Undo2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Loader2, Plus, Edit2, Trash2, CheckCircle2, Undo2, CalendarClock, ChevronLeft, ChevronRight, Move } from 'lucide-react';
+import FullCalendar from '@fullcalendar/react';
+import dayGridPlugin from '@fullcalendar/daygrid';
+import interactionPlugin from '@fullcalendar/interaction';
+import { AnimatePresence, motion } from 'framer-motion';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import { useLanguage } from '../context/LanguageContext';
 import { useBudgetMonth } from '../hooks/useBudgetMonth';
+import { useCurrency } from '../context/CurrencyContext';
+import { getCategoryIcon } from '../data/categoryIcons';
+
+const hexWithAlpha = (hex, alpha = '26') => {
+    if (!hex || !hex.startsWith('#') || hex.length !== 7) return hex || '#94a3b8';
+    return `${hex}${alpha}`;
+};
 
 const Schedule = () => {
     const { t, lang } = useLanguage();
+    const { currency, formatMoney } = useCurrency();
     const queryClient = useQueryClient();
     const token = localStorage.getItem('token');
     const { month, setMonth } = useBudgetMonth();
     const [statusFilter, setStatusFilter] = useState('all');
+    const [selectedDate, setSelectedDate] = useState(() => new Date().toISOString().split('T')[0]);
     const [isModalOpen, setModalOpen] = useState(false);
     const [editingItem, setEditingItem] = useState(null);
 
@@ -52,6 +65,10 @@ const Schedule = () => {
         }
     });
 
+    const invalidateDashboard = () => {
+        queryClient.invalidateQueries({ queryKey: ['budgetData', month] });
+    };
+
     const updateMutation = useMutation({
         mutationFn: async ({ id, payload }) => {
             const res = await fetch(`/api/schedules/${id}`, {
@@ -61,7 +78,10 @@ const Schedule = () => {
             });
             return res.json();
         },
-        onSuccess: () => queryClient.invalidateQueries(['schedule', month, statusFilter])
+        onSuccess: () => {
+            queryClient.invalidateQueries(['schedule', month, statusFilter]);
+            invalidateDashboard();
+        }
     });
 
     const deleteMutation = useMutation({
@@ -71,7 +91,10 @@ const Schedule = () => {
                 headers: { Authorization: `Bearer ${token}` }
             });
         },
-        onSuccess: () => queryClient.invalidateQueries(['schedule', month, statusFilter])
+        onSuccess: () => {
+            queryClient.invalidateQueries(['schedule', month, statusFilter]);
+            invalidateDashboard();
+        }
     });
 
     const handleAddNew = () => {
@@ -84,12 +107,65 @@ const Schedule = () => {
         setModalOpen(true);
     };
 
+    const categoryMap = useMemo(() => new Map((categories || []).map((cat) => [cat.id, cat])), [categories]);
+
+    const events = useMemo(() => {
+        return (schedule || []).map((item) => {
+            const category = item.category || categoryMap.get(item.categoryId);
+            const color = category?.color || '#94a3b8';
+            return {
+                id: String(item.id),
+                title: item.title,
+                start: item.dueDate,
+                allDay: true,
+                backgroundColor: hexWithAlpha(color, '1f'),
+                borderColor: hexWithAlpha(color, '66'),
+                textColor: '#e2e8f0',
+                classNames: item.status === 'paid' ? ['fc-event-paid'] : ['fc-event-pending'],
+                extendedProps: { ...item, category, color }
+            };
+        });
+    }, [schedule, categoryMap]);
+
+    const selectedItems = useMemo(() => {
+        if (!selectedDate) return [];
+        return (schedule || [])
+            .filter((item) => new Date(item.dueDate).toISOString().split('T')[0] === selectedDate)
+            .sort((a, b) => b.amountUSD - a.amountUSD);
+    }, [schedule, selectedDate]);
+
+    const renderEventContent = (eventInfo) => {
+        const { amountUSD, type, category, color } = eventInfo.event.extendedProps || {};
+        const Icon = getCategoryIcon(category?.label, type);
+        return (
+            <div className="flex items-center gap-2 truncate text-xs">
+                <span
+                    className="w-6 h-6 rounded-lg flex items-center justify-center"
+                    style={{ backgroundColor: hexWithAlpha(color, '2e'), color: color }}
+                >
+                    <Icon size={12} />
+                </span>
+                <div className="flex flex-col truncate">
+                    <span className="font-semibold truncate text-slate-100">{eventInfo.event.title}</span>
+                    <span className={`text-[10px] ${type === 'income' ? 'text-emerald-300' : 'text-rose-300'}`}>
+                        {formatMoney(amountUSD, lang)}
+                    </span>
+                </div>
+            </div>
+        );
+    };
+
+    const locale = lang === 'ru' ? 'ru-RU' : lang === 'de' ? 'de-DE' : 'en-US';
+    const selectedLabel = selectedDate
+        ? new Date(`${selectedDate}T00:00:00Z`).toLocaleDateString(locale, { day: 'numeric', month: 'long', year: 'numeric' })
+        : selectedDate;
+
     return (
         <div className="space-y-8 pb-20">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
                     <h1 className="text-3xl font-bold text-white mb-2">{t?.schedule?.title || 'Payment Schedule'}</h1>
-                    <p className="text-indigo-200 opacity-70">{t?.schedule?.subtitle || 'Upcoming obligations and recurring payments.'}</p>
+                    <p className="text-emerald-200 opacity-70">{t?.schedule?.subtitle || 'Upcoming obligations and recurring payments.'}</p>
                 </div>
                 <button onClick={handleAddNew} className="btn-primary">
                     <Plus size={18} /> {t?.schedule?.add || 'Add Schedule Item'}
@@ -137,72 +213,121 @@ const Schedule = () => {
                         <option value="paid" className="bg-slate-900 text-white">{t?.schedule?.filters?.paid || 'Paid'}</option>
                     </select>
                 </div>
+                <div className="flex items-center gap-2 text-xs text-slate-400 bg-white/5 rounded-xl px-3 py-2">
+                    <Move size={14} />
+                    {t?.schedule?.drag_hint || 'Drag to reschedule payments'}
+                </div>
             </div>
 
             {isLoading ? (
-                <div className="flex justify-center p-20"><Loader2 className="animate-spin text-indigo-500" size={40} /></div>
+                <div className="flex justify-center p-20"><Loader2 className="animate-spin text-emerald-500" size={40} /></div>
             ) : (
-                <div className="glass-panel rounded-2xl overflow-hidden">
-                    <table className="w-full text-left border-collapse">
-                        <thead>
-                            <tr className="border-b border-white/5 text-indigo-200/50 text-xs uppercase tracking-wider">
-                                <th className="p-6 font-semibold">{t?.schedule?.table?.date || 'Date'}</th>
-                                <th className="p-6 font-semibold">{t?.schedule?.table?.title || 'Title'}</th>
-                                <th className="p-6 font-semibold">{t?.schedule?.table?.type || 'Type'}</th>
-                                <th className="p-6 font-semibold">{t?.schedule?.table?.amount || 'Amount'}</th>
-                                <th className="p-6 font-semibold">{t?.schedule?.table?.status || 'Status'}</th>
-                                <th className="p-6 font-semibold text-right">{t?.schedule?.table?.actions || 'Actions'}</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-white/5">
-                            {schedule?.map((item) => (
-                                <tr key={item.id} className="hover:bg-indigo-500/5 transition-colors group">
-                                    <td className="p-6 text-slate-400 text-sm font-mono">
-                                        {new Date(item.dueDate).toLocaleDateString()}
-                                    </td>
-                                    <td className="p-6 text-white font-medium">{item.title}</td>
-                                    <td className="p-6">
-                                        <span className={`px-3 py-1 rounded-full text-xs font-bold border ${item.type === 'income' ? 'text-emerald-300 border-emerald-500/30 bg-emerald-500/10' : 'text-rose-300 border-rose-500/30 bg-rose-500/10'}`}>
-                                            {item.type === 'income' ? (t?.transactions?.filters?.income || 'Income') : (t?.transactions?.filters?.expense || 'Expense')}
-                                        </span>
-                                    </td>
-                                    <td className="p-6 text-white font-mono font-bold">${item.amountUSD}</td>
-                                    <td className="p-6">
-                                        <span className={`px-3 py-1 rounded-full text-xs font-bold border ${item.status === 'paid' ? 'text-emerald-300 border-emerald-500/30 bg-emerald-500/10' : 'text-slate-300 border-white/10 bg-white/5'}`}>
-                                            {item.status === 'paid' ? (t?.schedule?.filters?.paid || 'Paid') : (t?.schedule?.filters?.pending || 'Pending')}
-                                        </span>
-                                    </td>
-                                    <td className="p-6 text-right">
-                                        <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <button
-                                                onClick={() => updateMutation.mutate({ id: item.id, payload: { status: item.status === 'paid' ? 'pending' : 'paid' } })}
-                                                className="p-2 rounded-lg hover:bg-white/10 text-slate-400 hover:text-emerald-400 transition-colors"
-                                            >
-                                                {item.status === 'paid' ? <Undo2 size={16} /> : <CheckCircle2 size={16} />}
-                                            </button>
-                                            <button
-                                                onClick={() => handleEdit(item)}
-                                                className="p-2 rounded-lg hover:bg-white/10 text-slate-400 hover:text-indigo-400 transition-colors"
-                                            >
-                                                <Edit2 size={16} />
-                                            </button>
-                                            <button
-                                                onClick={() => deleteMutation.mutate(item.id)}
-                                                className="p-2 rounded-lg hover:bg-rose-500/10 text-slate-400 hover:text-rose-400 transition-colors"
-                                            >
-                                                <Trash2 size={16} />
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                    {schedule?.length === 0 && (
-                        <div className="p-12 text-center text-slate-500 bg-white/5">
-                            {t?.schedule?.empty || 'No scheduled items for this period.'}
+                <div className="grid grid-cols-1 xl:grid-cols-[1.7fr_1fr] gap-6">
+                    <div className="glass-panel rounded-2xl overflow-hidden p-4">
+                        <FullCalendar
+                            plugins={[dayGridPlugin, interactionPlugin]}
+                            initialView="dayGridMonth"
+                            height="auto"
+                            headerToolbar={{ left: 'prev,next today', center: 'title', right: '' }}
+                            dayMaxEventRows={3}
+                            events={events}
+                            eventContent={renderEventContent}
+                            eventClick={(info) => {
+                                setSelectedDate(info.event.startStr.split('T')[0]);
+                            }}
+                            dateClick={(info) => setSelectedDate(info.dateStr)}
+                            editable={true}
+                            eventStartEditable={true}
+                            eventDurationEditable={false}
+                            eventDrop={(info) => {
+                                const id = info.event.id;
+                                updateMutation.mutate({ id, payload: { dueDate: info.event.startStr } });
+                            }}
+                        />
+                    </div>
+
+                    <div className="glass-panel rounded-2xl p-4">
+                        <div className="text-xs uppercase tracking-[0.2em] text-slate-400 font-bold mb-4">
+                            {t?.schedule?.list_title || 'Payments for'} {selectedLabel}
                         </div>
-                    )}
+                        <AnimatePresence mode="wait">
+                            {selectedItems.length === 0 ? (
+                                <motion.div
+                                    key="empty"
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -10 }}
+                                    className="text-slate-500 text-sm"
+                                >
+                                    {t?.schedule?.empty || 'No scheduled items for this period.'}
+                                </motion.div>
+                            ) : (
+                                <motion.div
+                                    key="list"
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -10 }}
+                                    className="space-y-3"
+                                >
+                                    {selectedItems.map((item) => {
+                                        const category = item.category || categoryMap.get(item.categoryId);
+                                        const Icon = getCategoryIcon(category?.label, item.type);
+                                        return (
+                                            <div
+                                                key={item.id}
+                                                className="bg-white/5 border border-white/5 rounded-xl p-3 space-y-3"
+                                            >
+                                                <div className="flex items-center justify-between gap-3">
+                                                    <div className="flex items-center gap-3">
+                                                        <span
+                                                            className="w-9 h-9 rounded-xl flex items-center justify-center"
+                                                            style={{ backgroundColor: hexWithAlpha(category?.color || '#94a3b8', '2e'), color: category?.color || '#94a3b8' }}
+                                                        >
+                                                            <Icon size={16} />
+                                                        </span>
+                                                        <div>
+                                                            <div className="text-sm font-semibold text-slate-100">{item.title}</div>
+                                                            <div className="text-xs text-slate-400">{category?.label || t?.calendar?.uncategorized || 'Uncategorized'}</div>
+                                                        </div>
+                                                    </div>
+                                                    <div className={`text-sm font-bold ${item.type === 'income' ? 'text-emerald-300' : 'text-rose-300'}`}>
+                                                        {formatMoney(item.amountUSD, lang)}
+                                                    </div>
+                                                </div>
+
+                                                <div className="flex items-center justify-between gap-2 text-xs">
+                                                    <span className={`px-3 py-1 rounded-full font-bold border ${item.status === 'paid' ? 'text-emerald-300 border-emerald-500/30 bg-emerald-500/10' : 'text-slate-300 border-white/10 bg-white/5'}`}>
+                                                        {item.status === 'paid' ? (t?.schedule?.filters?.paid || 'Paid') : (t?.schedule?.filters?.pending || 'Pending')}
+                                                    </span>
+
+                                                    <div className="flex items-center gap-2">
+                                                        <button
+                                                            onClick={() => updateMutation.mutate({ id: item.id, payload: { status: item.status === 'paid' ? 'pending' : 'paid' } })}
+                                                            className="p-2 rounded-lg hover:bg-white/10 text-slate-400 hover:text-emerald-400 transition-colors"
+                                                        >
+                                                            {item.status === 'paid' ? <Undo2 size={16} /> : <CheckCircle2 size={16} />}
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleEdit(item)}
+                                                            className="p-2 rounded-lg hover:bg-white/10 text-slate-400 hover:text-emerald-400 transition-colors"
+                                                        >
+                                                            <Edit2 size={16} />
+                                                        </button>
+                                                        <button
+                                                            onClick={() => deleteMutation.mutate(item.id)}
+                                                            className="p-2 rounded-lg hover:bg-rose-500/10 text-slate-400 hover:text-rose-400 transition-colors"
+                                                        >
+                                                            <Trash2 size={16} />
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+                    </div>
                 </div>
             )}
 
@@ -220,13 +345,14 @@ const Schedule = () => {
 const ScheduleModal = ({ categories, item, onClose }) => {
     const queryClient = useQueryClient();
     const token = localStorage.getItem('token');
-    const { t } = useLanguage();
+    const { t, lang } = useLanguage();
+    const { currency, convert, toUSD } = useCurrency();
     const isEdit = !!item;
 
     const formik = useFormik({
         initialValues: {
             title: item?.title || '',
-            amountUSD: item?.amountUSD || '',
+            amountLocal: item?.amountUSD ? convert(item.amountUSD) : '',
             type: item?.type || 'expense',
             dueDate: item?.dueDate ? new Date(item.dueDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
             recurrence: item?.recurrence || 'once',
@@ -235,7 +361,7 @@ const ScheduleModal = ({ categories, item, onClose }) => {
         },
         validationSchema: Yup.object({
             title: Yup.string().required('Required'),
-            amountUSD: Yup.number().required('Required').positive('Must be positive')
+            amountLocal: Yup.number().required('Required').positive('Must be positive')
         }),
         onSubmit: async (values) => {
             const url = isEdit ? `/api/schedules/${item.id}` : '/api/schedules';
@@ -244,9 +370,18 @@ const ScheduleModal = ({ categories, item, onClose }) => {
             await fetch(url, {
                 method,
                 headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-                body: JSON.stringify(values)
+                body: JSON.stringify({
+                    title: values.title,
+                    amountUSD: toUSD(values.amountLocal),
+                    type: values.type,
+                    dueDate: values.dueDate,
+                    recurrence: values.recurrence,
+                    status: values.status,
+                    categoryId: values.categoryId
+                })
             });
             queryClient.invalidateQueries(['schedule']);
+            queryClient.invalidateQueries({ queryKey: ['budgetData'] });
             onClose();
         }
     });
@@ -260,24 +395,26 @@ const ScheduleModal = ({ categories, item, onClose }) => {
 
                 <form onSubmit={formik.handleSubmit} className="space-y-5">
                     <div>
-                        <label className="block text-xs font-bold text-indigo-300 uppercase tracking-wider mb-2">{t?.schedule?.fields?.title || 'Title'}</label>
+                        <label className="block text-xs font-bold text-emerald-300 uppercase tracking-wider mb-2">{t?.schedule?.fields?.title || 'Title'}</label>
                         <input {...formik.getFieldProps('title')} className="input-field" placeholder={t?.schedule?.fields?.title_placeholder || 'Rent payment'} />
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-xs font-bold text-indigo-300 uppercase tracking-wider mb-2">{t?.schedule?.fields?.amount || 'Amount ($)'}</label>
-                            <input type="number" {...formik.getFieldProps('amountUSD')} className="input-field" placeholder="0.00" />
+                            <label className="block text-xs font-bold text-emerald-300 uppercase tracking-wider mb-2">
+                                {t?.schedule?.fields?.amount || 'Amount'} ({currency})
+                            </label>
+                            <input type="number" {...formik.getFieldProps('amountLocal')} className="input-field" placeholder="0.00" />
                         </div>
                         <div>
-                            <label className="block text-xs font-bold text-indigo-300 uppercase tracking-wider mb-2">{t?.schedule?.fields?.due || 'Due Date'}</label>
+                            <label className="block text-xs font-bold text-emerald-300 uppercase tracking-wider mb-2">{t?.schedule?.fields?.due || 'Due Date'}</label>
                             <input type="date" {...formik.getFieldProps('dueDate')} className="input-field" />
                         </div>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
-                            <label className="block text-xs font-bold text-indigo-300 uppercase tracking-wider mb-2">{t?.schedule?.fields?.type || 'Type'}</label>
+                            <label className="block text-xs font-bold text-emerald-300 uppercase tracking-wider mb-2">{t?.schedule?.fields?.type || 'Type'}</label>
                             <div className="relative">
                                 <select {...formik.getFieldProps('type')} className="input-field appearance-none cursor-pointer">
                                     <option value="expense" className="bg-slate-900 text-white">{t?.transactions?.filters?.expense || 'Expense'}</option>
@@ -287,7 +424,7 @@ const ScheduleModal = ({ categories, item, onClose }) => {
                             </div>
                         </div>
                         <div>
-                            <label className="block text-xs font-bold text-indigo-300 uppercase tracking-wider mb-2">{t?.schedule?.fields?.recurrence || 'Recurrence'}</label>
+                            <label className="block text-xs font-bold text-emerald-300 uppercase tracking-wider mb-2">{t?.schedule?.fields?.recurrence || 'Recurrence'}</label>
                             <div className="relative">
                                 <select {...formik.getFieldProps('recurrence')} className="input-field appearance-none cursor-pointer">
                                     <option value="once" className="bg-slate-900 text-white">{t?.schedule?.recurrence?.once || 'Once'}</option>
@@ -297,7 +434,7 @@ const ScheduleModal = ({ categories, item, onClose }) => {
                             </div>
                         </div>
                         <div>
-                            <label className="block text-xs font-bold text-indigo-300 uppercase tracking-wider mb-2">{t?.schedule?.fields?.status || 'Status'}</label>
+                            <label className="block text-xs font-bold text-emerald-300 uppercase tracking-wider mb-2">{t?.schedule?.fields?.status || 'Status'}</label>
                             <div className="relative">
                                 <select {...formik.getFieldProps('status')} className="input-field appearance-none cursor-pointer">
                                     <option value="pending" className="bg-slate-900 text-white">{t?.schedule?.filters?.pending || 'Pending'}</option>
@@ -309,7 +446,7 @@ const ScheduleModal = ({ categories, item, onClose }) => {
                     </div>
 
                     <div>
-                        <label className="block text-xs font-bold text-indigo-300 uppercase tracking-wider mb-2">{t?.schedule?.fields?.category || 'Category'}</label>
+                        <label className="block text-xs font-bold text-emerald-300 uppercase tracking-wider mb-2">{t?.schedule?.fields?.category || 'Category'}</label>
                         <div className="relative">
                             <select {...formik.getFieldProps('categoryId')} className="input-field appearance-none cursor-pointer">
                                 <option value="" className="bg-slate-900 text-slate-500">{t?.schedule?.fields?.category_placeholder || 'Select Category'}</option>

@@ -23,11 +23,13 @@ const translations = {
         },
         nav: {
             dashboard: 'Dashboard',
-            transactions: 'Transactions',
+            transactions: 'Operations',
             budget: 'Budget Plan',
             debts: 'Debts & Loans',
             schedule: 'Schedule',
-            logout: 'Logout'
+            logout: 'Logout',
+            theme_light: 'Light Mode',
+            theme_dark: 'Dark Mode'
         },
         modes: {
             standard: 'Standard',
@@ -38,22 +40,43 @@ const translations = {
             next: 'Next month',
             picker: 'Pick month'
         },
+        dashboard: {
+            tabs: {
+                actual: 'Actual',
+                plan: 'Plan'
+            },
+            plan_hint: 'Edit limits in the Budget tab to shape this view.',
+            budget_usage: 'Budget Usage',
+            budget_usage_detail: 'Used {percent}% of plan',
+            budget_warning: 'You are close to exceeding the limit in:',
+            variance: 'Variance'
+        },
         kpi: {
-            expenses: 'Actual Expenses',
-            income: 'Planned Income',
-            deficit: 'Remaining Balance'
+            actual_expenses: 'Actual Expenses',
+            actual_income: 'Actual Income',
+            planned_expenses: 'Planned Expenses',
+            planned_income: 'Planned Income',
+            balance: 'Balance',
+            planned_balance: 'Planned Balance'
         },
         chart: {
             title: 'Expense Structure (Tremor)',
+            title_actual: 'Actual Expense Structure',
+            title_plan: 'Planned Expense Structure',
             no_data: 'No data'
         },
         category: {
             title: 'Category Breakdown',
+            planned_title: 'Planned Allocation',
             planned: 'Planned',
             actual: 'Actual'
         },
         calendar: {
             title: 'Payment Calendar',
+            title_plan: 'Planned Payment Calendar',
+            list_title: 'Details for',
+            empty: 'No items for this day.',
+            uncategorized: 'Uncategorized',
             planned: 'Planned',
             paid: 'Paid'
         },
@@ -86,14 +109,19 @@ const translations = {
             save_changes: 'Save Changes',
             income_title: 'Planned Income',
             income_subtitle: 'Set the monthly target for income.',
-            default_limit: 'Default'
+            default_limit: 'Default',
+            summary_title: 'Plan Summary',
+            summary_subtitle: 'Total planned expenses',
+            balance: 'Balance',
+            balance_warning: 'Planned expenses exceed income.',
+            limits_title: 'Monthly Limits'
         },
         transactions: {
-            title: 'Transactions',
-            subtitle: 'Manage your financial records.',
-            add: 'Add Transaction',
+            title: 'Operations',
+            subtitle: 'Track expenses and income regardless of payment method.',
+            add: 'Add Operation',
             search: 'Search by description or category...',
-            empty: 'No transactions found matching your search.',
+            empty: 'No operations found matching your search.',
             filters: {
                 all: 'All',
                 expense: 'Expenses',
@@ -103,7 +131,7 @@ const translations = {
                 description: 'Description',
                 description_placeholder: 'Lunch, Taxi, etc.',
                 type: 'Type',
-                amount: 'Amount ($)',
+                amount: 'Amount',
                 date: 'Date',
                 category: 'Category',
                 category_placeholder: 'Select Category'
@@ -111,7 +139,7 @@ const translations = {
             actions: {
                 cancel: 'Cancel',
                 save: 'Save Changes',
-                add: 'Add Transaction',
+                add: 'Add Operation',
                 label: 'Actions'
             }
         },
@@ -121,6 +149,8 @@ const translations = {
             add: 'Add Obligation',
             edit: 'Edit Obligation',
             empty: 'No obligations yet.',
+            loan_help_title: 'What is a loan to a client?',
+            loan_help: 'This is money you issued and expect to receive back. It appears on the receivable side.',
             summary: {
                 owed: 'Total Owed',
                 receivable: 'Receivable',
@@ -136,7 +166,7 @@ const translations = {
             },
             types: {
                 debt: 'Debt',
-                loan: 'Loan'
+                loan: 'Issued Loan'
             },
             fields: {
                 name: 'Name',
@@ -164,6 +194,8 @@ const translations = {
             add: 'Add Schedule Item',
             edit: 'Edit Schedule',
             empty: 'No scheduled items for this period.',
+            drag_hint: 'Drag to reschedule payments',
+            list_title: 'Payments for',
             filters: {
                 all: 'All',
                 pending: 'Pending',
@@ -180,7 +212,7 @@ const translations = {
             fields: {
                 title: 'Title',
                 title_placeholder: 'Rent payment',
-                amount: 'Amount ($)',
+                amount: 'Amount',
                 due: 'Due Date',
                 type: 'Type',
                 recurrence: 'Recurrence',
@@ -219,11 +251,13 @@ const translations = {
         },
         nav: {
             dashboard: 'Дашборд',
-            transactions: 'Транзакции',
+            transactions: 'Операции',
             budget: 'Бюджет',
             debts: 'Долги и Кредиты',
             schedule: 'График',
-            logout: 'Выйти'
+            logout: 'Выйти',
+            theme_light: 'Светлая тема',
+            theme_dark: 'Темная тема'
         },
         modes: {
             standard: 'Стандарт',
@@ -234,22 +268,43 @@ const translations = {
             next: 'След. месяц',
             picker: 'Выбрать месяц'
         },
+        dashboard: {
+            tabs: {
+                actual: 'Факт',
+                plan: 'План'
+            },
+            plan_hint: 'Редактируйте лимиты на вкладке «Бюджет».',
+            budget_usage: 'Использование бюджета',
+            budget_usage_detail: 'Использовано {percent}% плана',
+            budget_warning: 'Вы близки к лимиту по:',
+            variance: 'Отклонение от плана'
+        },
         kpi: {
-            expenses: 'Факт Расходов',
-            income: 'План Дохода',
-            deficit: 'Остаток'
+            actual_expenses: 'Фактические расходы',
+            actual_income: 'Фактические доходы',
+            planned_expenses: 'План расходов',
+            planned_income: 'План доходов',
+            balance: 'Остаток',
+            planned_balance: 'Плановый остаток'
         },
         chart: {
             title: 'Структура Расходов (Tremor)',
+            title_actual: 'Структура фактических расходов',
+            title_plan: 'Структура плановых расходов',
             no_data: 'Нет данных'
         },
         category: {
             title: 'Категории',
+            planned_title: 'План по категориям',
             planned: 'План',
             actual: 'Факт'
         },
         calendar: {
             title: 'Календарь Платежей',
+            title_plan: 'Плановый календарь',
+            list_title: 'Список на',
+            empty: 'Нет записей на эту дату.',
+            uncategorized: 'Без категории',
             planned: 'План',
             paid: 'Оплачено'
         },
@@ -282,14 +337,19 @@ const translations = {
             save_changes: 'Сохранить',
             income_title: 'План Дохода',
             income_subtitle: 'Установите цель дохода на месяц.',
-            default_limit: 'База'
+            default_limit: 'База',
+            summary_title: 'Сводка плана',
+            summary_subtitle: 'Итого запланированные расходы',
+            balance: 'Остаток',
+            balance_warning: 'План превышает доход.',
+            limits_title: 'Месячные лимиты'
         },
         transactions: {
-            title: 'Транзакции',
-            subtitle: 'Управляйте доходами и расходами.',
-            add: 'Добавить транзакцию',
+            title: 'Операции',
+            subtitle: 'Учет расходов и доходов (карта, наличные, переводы).',
+            add: 'Добавить операцию',
             search: 'Поиск по описанию или категории...',
-            empty: 'Нет транзакций по этому запросу.',
+            empty: 'Нет операций по этому запросу.',
             filters: {
                 all: 'Все',
                 expense: 'Расходы',
@@ -299,7 +359,7 @@ const translations = {
                 description: 'Описание',
                 description_placeholder: 'Обед, такси...',
                 type: 'Тип',
-                amount: 'Сумма ($)',
+                amount: 'Сумма',
                 date: 'Дата',
                 category: 'Категория',
                 category_placeholder: 'Выберите категорию'
@@ -307,7 +367,7 @@ const translations = {
             actions: {
                 cancel: 'Отмена',
                 save: 'Сохранить',
-                add: 'Добавить',
+                add: 'Добавить операцию',
                 label: 'Действия'
             }
         },
@@ -317,6 +377,8 @@ const translations = {
             add: 'Добавить обязательство',
             edit: 'Редактировать обязательство',
             empty: 'Пока нет обязательств.',
+            loan_help_title: 'Что такое выданный займ?',
+            loan_help: 'Это деньги, которые вы дали и ожидаете вернуть. Они попадают в блок «К получению».',
             summary: {
                 owed: 'Всего Долгов',
                 receivable: 'К Получению',
@@ -332,7 +394,7 @@ const translations = {
             },
             types: {
                 debt: 'Долг',
-                loan: 'Заем'
+                loan: 'Выданный займ'
             },
             fields: {
                 name: 'Название',
@@ -360,6 +422,8 @@ const translations = {
             add: 'Добавить платеж',
             edit: 'Редактировать платеж',
             empty: 'Нет платежей на этот период.',
+            drag_hint: 'Перетаскивайте, чтобы изменить дату',
+            list_title: 'Платежи на',
             filters: {
                 all: 'Все',
                 pending: 'Ожидается',
@@ -376,7 +440,7 @@ const translations = {
             fields: {
                 title: 'Название',
                 title_placeholder: 'Аренда',
-                amount: 'Сумма ($)',
+                amount: 'Сумма',
                 due: 'Дата',
                 type: 'Тип',
                 recurrence: 'Повтор',
@@ -415,11 +479,13 @@ const translations = {
         },
         nav: {
             dashboard: 'Übersicht',
-            transactions: 'Transaktionen',
+            transactions: 'Operationen',
             budget: 'Budget',
             debts: 'Schulden & Kredite',
             schedule: 'Zeitplan',
-            logout: 'Abmelden'
+            logout: 'Abmelden',
+            theme_light: 'Heller Modus',
+            theme_dark: 'Dunkler Modus'
         },
         modes: {
             standard: 'Standard',
@@ -430,22 +496,43 @@ const translations = {
             next: 'Nächster Monat',
             picker: 'Monat wählen'
         },
+        dashboard: {
+            tabs: {
+                actual: 'Ist',
+                plan: 'Plan'
+            },
+            plan_hint: 'Limits im Budget-Tab anpassen.',
+            budget_usage: 'Budgetnutzung',
+            budget_usage_detail: '{percent}% des Plans verbraucht',
+            budget_warning: 'Nahe am Limit in:',
+            variance: 'Abweichung'
+        },
         kpi: {
-            expenses: 'Ausgaben (Ist)',
-            income: 'Geplantes Einkommen',
-            deficit: 'Restbetrag'
+            actual_expenses: 'Ausgaben (Ist)',
+            actual_income: 'Einnahmen (Ist)',
+            planned_expenses: 'Geplante Ausgaben',
+            planned_income: 'Geplantes Einkommen',
+            balance: 'Saldo',
+            planned_balance: 'Geplanter Saldo'
         },
         chart: {
             title: 'Ausgabenstruktur (Tremor)',
+            title_actual: 'Ist-Ausgabenstruktur',
+            title_plan: 'Plan-Ausgabenstruktur',
             no_data: 'Keine Daten'
         },
         category: {
             title: 'Kategorieübersicht',
+            planned_title: 'Geplante Verteilung',
             planned: 'Plan',
             actual: 'Ist'
         },
         calendar: {
             title: 'Zahlungskalender',
+            title_plan: 'Plan-Zahlungskalender',
+            list_title: 'Details für',
+            empty: 'Keine Einträge für diesen Tag.',
+            uncategorized: 'Ohne Kategorie',
             planned: 'Geplant',
             paid: 'Bezahlt'
         },
@@ -478,14 +565,19 @@ const translations = {
             save_changes: 'Änderungen speichern',
             income_title: 'Geplantes Einkommen',
             income_subtitle: 'Monatliches Einkommensziel festlegen.',
-            default_limit: 'Standard'
+            default_limit: 'Standard',
+            summary_title: 'Planübersicht',
+            summary_subtitle: 'Geplante Gesamtausgaben',
+            balance: 'Saldo',
+            balance_warning: 'Geplante Ausgaben übersteigen das Einkommen.',
+            limits_title: 'Monatliche Limits'
         },
         transactions: {
-            title: 'Transaktionen',
-            subtitle: 'Verwalten Sie Einnahmen und Ausgaben.',
-            add: 'Transaktion hinzufügen',
+            title: 'Operationen',
+            subtitle: 'Ausgaben und Einnahmen unabhängig von der Zahlungsmethode.',
+            add: 'Operation hinzufügen',
             search: 'Suche nach Beschreibung oder Kategorie...',
-            empty: 'Keine passenden Transaktionen gefunden.',
+            empty: 'Keine passenden Operationen gefunden.',
             filters: {
                 all: 'Alle',
                 expense: 'Ausgaben',
@@ -495,7 +587,7 @@ const translations = {
                 description: 'Beschreibung',
                 description_placeholder: 'Mittagessen, Taxi...',
                 type: 'Typ',
-                amount: 'Betrag ($)',
+                amount: 'Betrag',
                 date: 'Datum',
                 category: 'Kategorie',
                 category_placeholder: 'Kategorie wählen'
@@ -503,7 +595,7 @@ const translations = {
             actions: {
                 cancel: 'Abbrechen',
                 save: 'Speichern',
-                add: 'Hinzufügen',
+                add: 'Operation hinzufügen',
                 label: 'Aktionen'
             }
         },
@@ -513,6 +605,8 @@ const translations = {
             add: 'Verpflichtung hinzufügen',
             edit: 'Verpflichtung bearbeiten',
             empty: 'Noch keine Verpflichtungen.',
+            loan_help_title: 'Was ist ein ausgegebener Kredit?',
+            loan_help: 'Geld, das Sie verliehen haben und zurückerwarten. Es erscheint unter Forderungen.',
             summary: {
                 owed: 'Gesamt Schulden',
                 receivable: 'Forderungen',
@@ -528,7 +622,7 @@ const translations = {
             },
             types: {
                 debt: 'Schuld',
-                loan: 'Darlehen'
+                loan: 'Ausgegebener Kredit'
             },
             fields: {
                 name: 'Name',
@@ -556,6 +650,8 @@ const translations = {
             add: 'Eintrag hinzufügen',
             edit: 'Eintrag bearbeiten',
             empty: 'Keine Einträge für diesen Zeitraum.',
+            drag_hint: 'Ziehen, um das Datum zu ändern',
+            list_title: 'Zahlungen für',
             filters: {
                 all: 'Alle',
                 pending: 'Offen',
@@ -572,7 +668,7 @@ const translations = {
             fields: {
                 title: 'Titel',
                 title_placeholder: 'Miete',
-                amount: 'Betrag ($)',
+                amount: 'Betrag',
                 due: 'Fällig am',
                 type: 'Typ',
                 recurrence: 'Wiederholung',
