@@ -126,7 +126,16 @@ get_public_ip() {
 
     if check_cmd curl; then
         local ip=""
-        ip="$(curl -fsS --max-time 2 http://169.254.169.254/latest/meta-data/public-ipv4 2>/dev/null || true)"
+        local token=""
+        token="$(curl -fsS --max-time 2 -X PUT http://169.254.169.254/latest/api/token \
+            -H "X-aws-ec2-metadata-token-ttl-seconds: 60" 2>/dev/null || true)"
+        if [ -n "$token" ]; then
+            ip="$(curl -fsS --max-time 2 -H "X-aws-ec2-metadata-token: $token" \
+                http://169.254.169.254/latest/meta-data/public-ipv4 2>/dev/null || true)"
+        fi
+        if [ -z "$ip" ]; then
+            ip="$(curl -fsS --max-time 2 http://169.254.169.254/latest/meta-data/public-ipv4 2>/dev/null || true)"
+        fi
         if [ -z "$ip" ]; then
             ip="$(curl -fsS --max-time 2 https://checkip.amazonaws.com 2>/dev/null | tr -d '\n' || true)"
         fi

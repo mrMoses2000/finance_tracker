@@ -13,9 +13,13 @@
 | 2026-01-23 | Codex | **Ops Script Fix** | Added Docker service start + sudo fallback for first-run on Ubuntu. |
 | 2026-01-23 | Codex | **Ops Script Fix** | Added public IP detection and remote URL output in run.sh. |
 | 2026-01-23 | Codex | **UX/Theme Overhaul** | Added actual/plan dashboards, FullCalendar drag‑drop calendar, currency conversion, theme toggle, and updated labels. |
+| 2026-01-23 | Codex | **Build Fix** | Pinned FullCalendar to v5 and corrected CSS imports to restore Vite build. |
+| 2026-01-23 | Codex | **Ops Script Fix** | Added IMDSv2-aware public IP detection for AWS in run.sh. |
 - **[2026-01-23] Final Polish (Antigravity)**: Fixed critical Login syntax error, restored correct API endpoint, corrected Landing Page dashboard image, and completed full localization (RU/EN/DE) for Auth screens.
 - **[2026-01-23] Architecture Expansion (Codex)**: Implemented monthly budget flows, schedule/debt tracking UI/API, and n8n notification workflow JSON.
 - **[2026-01-23] Ops Script (Codex)**: Updated run.sh with auto-install and safe remote-access prep for Ubuntu.
 - **[2026-01-23] Ops Script Fix (Codex)**: Start Docker service automatically and use sudo if group permissions not active.
 - **[2026-01-23] Ops Script Fix (Codex)**: Print remote access URL when running on Linux.
 - **[2026-01-23] UX/Theme Overhaul (Codex)**: Added actual/plan dashboard tabs, FullCalendar calendar UX, currency conversion, theme toggle, and renamed Transactions to Operations.
+- **[2026-01-23] Build Fix (Codex)**: Pinned FullCalendar to v5 and fixed CSS imports for a clean build.
+- **[2026-01-23] Ops Script Fix (Codex)**: Updated run.sh to detect AWS public IP via IMDSv2.
