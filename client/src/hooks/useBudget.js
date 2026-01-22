@@ -1,10 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
 
-const fetchBudget = async () => {
+const fetchBudget = async (month) => {
     const token = localStorage.getItem('token');
     if (!token) throw new Error('No token found');
 
-    const res = await fetch('/api/data', {
+    const res = await fetch(`/api/overview?month=${month}`, {
         headers: {
             'Authorization': `Bearer ${token}`
         }
@@ -18,24 +18,20 @@ const fetchBudget = async () => {
         throw new Error('Failed to fetch data');
     }
 
-    const json = await res.json();
-
-    // Transform backend data to match Component expectations.
-    // The backend returns { expenses: [...] } with 'amountUSD', 'description', etc.
-    // BudgetWeb.jsx expects { standard: [...], february: [...] }
-
-    return {
-        standard: json.expenses || [],
-        february: [] // Placeholder for now
-    };
+    return await res.json();
 };
 
-export const useBudget = () => {
+export const useBudget = (month) => {
     return useQuery({
-        queryKey: ['budgetData'],
-        queryFn: fetchBudget,
+        queryKey: ['budgetData', month],
+        queryFn: () => fetchBudget(month),
         retry: false,
-        // Provide initial data to prevent undefined errors before fetch completes
-        initialData: { standard: [], february: [] }
+        initialData: {
+            month,
+            transactions: [],
+            categories: [],
+            budget: { id: null, month, incomePlanned: 0, items: [] },
+            schedule: []
+        }
     });
 };

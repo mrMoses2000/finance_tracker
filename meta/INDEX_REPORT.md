@@ -1,9 +1,11 @@
 # Project Index Report
-Generated on Fri Jan 23 00:45:13 +05 2026
+Generated on Fri 23 Jan 2026 02:32:16 +05
 
 ## File Structure
 ```
 .
+./artifact_image_1.png
+./artifact_image_0.png
 ./USAGE.md
 ./meta
 ./meta/INDEX_REPORT.md
@@ -11,6 +13,8 @@ Generated on Fri Jan 23 00:45:13 +05 2026
 ./meta/Info.md
 ./meta/CONTINUITY.md
 ./meta/COMMIT_MESSAGE.md
+./meta/n8n
+./meta/n8n/budgetflow-upcoming-payments.json
 ./meta/AGENT_LOG.md
 ./meta/AGENTS.md
 ./server
@@ -35,7 +39,10 @@ Generated on Fri Jan 23 00:45:13 +05 2026
 ./client/index.html
 ./client/tailwind.config.js
 ./client/dist
+./client/dist/futuristic-dashboard.jpg
+./client/dist/dashboard-preview.png
 ./client/dist/index.html
+./client/dist/dashboard-preview-obsidian.png
 ./client/dist/vite.svg
 ./client/dist/header-bg.png
 ./client/dist/assets
@@ -43,7 +50,9 @@ Generated on Fri Jan 23 00:45:13 +05 2026
 ./client/vite.config.js
 ./client/README.md
 ./client/public
+./client/public/futuristic-dashboard.jpg
 ./client/public/dashboard-preview.png
+./client/public/dashboard-preview-obsidian.png
 ./client/public/vite.svg
 ./client/public/header-bg.png
 ./client/package-lock.json

@@ -17,6 +17,9 @@ model User {
   
   categories    Category[]
   expenses      Expense[]
+  budgetMonths  BudgetMonth[]
+  scheduleItems ScheduleItem[]
+  debts         Debt[]
 }
 
 model Category {
@@ -28,6 +31,8 @@ model Category {
   userId    String
   user      User      @relation(fields: [userId], references: [id])
   expenses  Expense[]
+  budgetItems BudgetItem[]
+  scheduleItems ScheduleItem[]
 
   @@unique([userId, label])
 }
@@ -38,8 +43,66 @@ model Expense {
   currency    String   @default("USD")
   description String
   date        DateTime @default(now())
+  type        String   @default("expense") // "expense" | "income"
   categoryId  String
   category    Category @relation(fields: [categoryId], references: [id])
   userId      String
   user        User     @relation(fields: [userId], references: [id])
+}
+
+model BudgetMonth {
+  id            String     @id @default(uuid())
+  month         DateTime
+  incomePlanned Float      @default(0)
+  userId        String
+  user          User       @relation(fields: [userId], references: [id])
+  items         BudgetItem[]
+  createdAt     DateTime   @default(now())
+
+  @@unique([userId, month])
+}
+
+model BudgetItem {
+  id            String      @id @default(uuid())
+  budgetMonthId String
+  budgetMonth   BudgetMonth @relation(fields: [budgetMonthId], references: [id])
+  categoryId    String
+  category      Category    @relation(fields: [categoryId], references: [id])
+  plannedAmount Float       @default(0)
+
+  @@unique([budgetMonthId, categoryId])
+}
+
+model Debt {
+  id              String         @id @default(uuid())
+  userId          String
+  user            User           @relation(fields: [userId], references: [id])
+  name            String
+  type            String         @default("debt") // "debt" | "loan"
+  principal       Float
+  balance         Float
+  interestRate    Float          @default(0)
+  startDate       DateTime
+  termMonths      Int?
+  nextPaymentDate DateTime?
+  status          String         @default("active")
+  payments        ScheduleItem[]
+  createdAt       DateTime       @default(now())
+}
+
+model ScheduleItem {
+  id         String    @id @default(uuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id])
+  title      String
+  amountUSD  Float
+  type       String    @default("expense") // "expense" | "income"
+  dueDate    DateTime
+  recurrence String    @default("once") // "once" | "monthly"
+  status     String    @default("pending") // "pending" | "paid" | "skipped"
+  categoryId String?
+  category   Category? @relation(fields: [categoryId], references: [id])
+  debtId     String?
+  debt       Debt?     @relation(fields: [debtId], references: [id])
+  createdAt  DateTime  @default(now())
 }

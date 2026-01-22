@@ -1,14 +1,28 @@
 import React from 'react';
 
-const CategoryList = ({ categoryConfig, currentData, formatMoney, t }) => {
-    const grouped = {};
-    Object.keys(categoryConfig).forEach(key => {
-        const label = categoryConfig[key].label;
-        grouped[label] = {
-            key,
-            config: categoryConfig[key],
-            items: currentData.filter(i => i.category?.label === label)
-        };
+const CategoryList = ({ categories, budgetItems, transactions, formatMoney, t }) => {
+    const plannedMap = new Map();
+    const actualMap = new Map();
+
+    budgetItems.forEach((item) => {
+        if (!item.categoryId) return;
+        plannedMap.set(item.categoryId, item.plannedAmount || 0);
+    });
+
+    transactions.forEach((item) => {
+        const categoryId = item.categoryId || item.category?.id;
+        if (!categoryId) return;
+        actualMap.set(categoryId, (actualMap.get(categoryId) || 0) + item.amountUSD);
+    });
+
+    const expenseCategories = categories.filter((cat) => cat.type !== 'income');
+
+    const grouped = expenseCategories.map((category) => {
+        const planned = plannedMap.get(category.id) ?? category.limit ?? 0;
+        const actual = actualMap.get(category.id) ?? 0;
+        const progress = planned > 0 ? Math.min(actual / planned, 1) : actual > 0 ? 1 : 0;
+        const items = transactions.filter((item) => (item.categoryId || item.category?.id) === category.id);
+        return { category, planned, actual, progress, items };
     });
 
     return (
@@ -16,26 +30,42 @@ const CategoryList = ({ categoryConfig, currentData, formatMoney, t }) => {
             <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-white/10 to-transparent"></div>
 
             <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-3">
-                <span className="text-slate-400">Analysis by Category</span>
+                <span className="text-slate-400">{t?.category?.title || 'Analysis by Category'}</span>
             </h2>
 
             <div className="flex-1 overflow-y-auto pr-2 space-y-4 max-h-[400px]">
-                {Object.entries(grouped).map(([label, group]) => {
-                    if (group.items.length === 0) return null;
-                    const total = group.items.reduce((acc, i) => acc + i.amountUSD, 0);
+                {grouped.map((group) => {
+                    if (group.items.length === 0 && group.planned === 0) return null;
+                    const total = group.actual;
 
                     return (
                         <div
-                            key={label}
+                            key={group.category.id}
                             className="bg-white/5 rounded-xl border border-white/5 overflow-hidden hover:bg-white/10 transition-colors"
-                            style={{ borderLeft: `4px solid ${group.config.color}` }}
+                            style={{ borderLeft: `4px solid ${group.category.color}` }}
                         >
                             {/* Header */}
                             <div className="px-4 py-3 flex justify-between items-center bg-black/20">
-                                <span className="font-bold text-slate-200">{label}</span>
-                                <span className="text-slate-400 text-xs font-mono">
-                                    {formatMoney(total)}
-                                </span>
+                                <div>
+                                    <span className="font-bold text-slate-200">{group.category.label}</span>
+                                    <div className="text-xs text-slate-500 mt-1">
+                                        {t?.category?.planned || 'Planned'}: {formatMoney(group.planned)} · {t?.category?.actual || 'Actual'}: {formatMoney(total)}
+                                    </div>
+                                </div>
+                                <span className="text-slate-400 text-xs font-mono">{formatMoney(total)}</span>
+                            </div>
+
+                            {/* Progress */}
+                            <div className="px-4 pt-3">
+                                <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
+                                    <div
+                                        className="h-full rounded-full"
+                                        style={{
+                                            width: `${group.progress * 100}%`,
+                                            background: group.actual > group.planned ? '#f43f5e' : group.category.color
+                                        }}
+                                    ></div>
+                                </div>
                             </div>
 
                             {/* Items */}

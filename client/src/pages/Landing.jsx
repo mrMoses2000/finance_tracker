@@ -80,7 +80,7 @@ const LandingPage = () => {
                     <div className="absolute inset-0 bg-indigo-500/20 blur-3xl -z-10 rounded-full"></div>
                     <div className="bg-slate-900/50 backdrop-blur-xl border border-white/10 rounded-2xl p-2 shadow-2xl overflow-hidden ring-1 ring-white/10">
                         <img
-                            src="/futuristic-dashboard.jpg"
+                            src="/dashboard-preview-obsidian.png"
                             alt="Dashboard Preview"
                             className="w-full h-auto rounded-xl shadow-2xl border border-white/5"
                         />
@@ -97,7 +97,7 @@ const LandingPage = () => {
             <section className="relative z-10 py-24 bg-slate-900/50 backdrop-blur-md border-t border-white/5">
                 <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-3 gap-12">
                     <FeatureCard
-                        icon={<TrendingUp className="text-emerald-400" size={32} />}
+                        icon={<TrendingUp className="text-indigo-400" size={32} />}
                         title={t?.features?.analytics}
                         desc={t?.features?.analytics_desc}
                     />
@@ -112,13 +112,13 @@ const LandingPage = () => {
                         desc={t?.features?.multi_device_desc}
                     />
                 </div>
-            </section>
+            </section >
 
             {/* Footer */}
-            <footer className="py-12 text-center text-slate-600 text-sm">
+            < footer className="py-12 text-center text-slate-600 text-sm" >
                 <p>{t?.footer}</p>
-            </footer>
-        </div>
+            </footer >
+        </div >
     );
 };
 

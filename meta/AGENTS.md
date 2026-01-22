@@ -15,11 +15,21 @@
 - The `USAGE.md` file dictates the documentation structure. Do not deviate.
 
 ## Current Agent Stamp
-- **Agent**: Antigravity (Google DeepMind)
-- **Date**: 2026-01-22
-- **Status**: Delivering Feature Complete "SaaS" version with Data Restoration.
+- **Agent**: Codex (OpenAI)
+- **Date**: 2026-01-23
+- **Status**: **UPDATED**. Month-based budgeting, schedules, debts/loans, and n8n workflow added.
+
+## Handover Note for Codex
+Welcome! The project is in a very stable state.
+- **Design**: We moved away from "Teal/Light" to a "Deep Blue/Indigo/Gold" Obsidian theme. Please respecting this aesthetic.
+- **Tech**: React + Vite + Tailwind + Framer Motion (Client). Node/Express + Prisma (Server).
+- **Localization**: Crucial. All new text must use `LanguageContext`.
+- **Testing**: `npm test` in `server/` checks the API. Please keep it passing.
+- **New**: Month selector replaces Standard/February mode, budgets are monthly, and schedule/debt pages exist.
+- **n8n**: Workflow template saved at `meta/n8n/budgetflow-upcoming-payments.json`.
+- **Next Goal**: Verify migrations + tests, and polish schedule/debt UX flows.
 
 ## Protocols
 - **Commits**: Use semantic commit messages.
-- **Testing**: Ensure `npm run test` (to be created) passes.
+- **Testing**: Ensure `npm run test` passes.
 - **Docker**: verify `docker-compose up --build` works.

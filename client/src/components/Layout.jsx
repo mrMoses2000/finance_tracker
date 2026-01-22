@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Wallet, CreditCard, LogOut } from 'lucide-react';
+import { LayoutDashboard, Wallet, CreditCard, LogOut, Landmark, CalendarClock } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 
 const Layout = () => {
@@ -33,6 +33,8 @@ const Layout = () => {
                     <NavItem to="/dashboard" icon={<LayoutDashboard size={22} />} label={t?.nav?.dashboard || "Dashboard"} />
                     <NavItem to="/transactions" icon={<CreditCard size={22} />} label={t?.nav?.transactions || "Transactions"} />
                     <NavItem to="/budget" icon={<Wallet size={22} />} label={t?.nav?.budget || "Budget Plan"} />
+                    <NavItem to="/debts" icon={<Landmark size={22} />} label={t?.nav?.debts || "Debts & Loans"} />
+                    <NavItem to="/schedule" icon={<CalendarClock size={22} />} label={t?.nav?.schedule || "Schedule"} />
                 </nav>
 
                 <div className="p-4 border-t border-white/5">
@@ -66,11 +68,15 @@ const NavItem = ({ to, icon, label }) => (
             }`
         }
     >
-        <div className="relative">
-            {icon}
-            {isActive && <div className="absolute -right-3 top-1/2 -translate-y-1/2 w-1 h-8 bg-indigo-500 rounded-l-full shadow-[0_0_10px_rgba(99,102,241,0.5)]" />}
-        </div>
-        <span className="hidden lg:block ml-3 font-medium">{label}</span>
+        {({ isActive }) => (
+            <>
+                <div className="relative">
+                    {icon}
+                    {isActive && <div className="absolute -right-3 top-1/2 -translate-y-1/2 w-1 h-8 bg-indigo-500 rounded-l-full shadow-[0_0_10px_rgba(99,102,241,0.5)]" />}
+                </div>
+                <span className="hidden lg:block ml-3 font-medium">{label}</span>
+            </>
+        )}
     </NavLink>
 );
 

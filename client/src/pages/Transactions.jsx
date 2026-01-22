@@ -13,6 +13,7 @@ const Transactions = () => {
     const [isModalOpen, setModalOpen] = useState(false);
     const [editingItem, setEditingItem] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
+    const [typeFilter, setTypeFilter] = useState('all');
 
     // Fetch Transactions
     const { data: transactions, isLoading } = useQuery({
@@ -55,10 +56,12 @@ const Transactions = () => {
     };
 
     // Filtering
-    const filteredTransactions = transactions?.filter(tx =>
-        tx.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        tx.category?.label.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const filteredTransactions = transactions?.filter(tx => {
+        const matchesText = tx.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            tx.category?.label?.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesType = typeFilter === 'all' || tx.type === typeFilter;
+        return matchesText && matchesType;
+    });
 
     // --- ANIMATION VARIANTS (From Context7 Recs) ---
     const listVariants = {
@@ -82,27 +85,41 @@ const Transactions = () => {
             {/* Header */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold text-white mb-2">{t?.nav?.transactions || "Transactions"}</h1>
-                    <p className="text-indigo-200 opacity-70">Manage your financial records.</p>
+                    <h1 className="text-3xl font-bold text-white mb-2">{t?.transactions?.title || t?.nav?.transactions || "Transactions"}</h1>
+                    <p className="text-indigo-200 opacity-70">{t?.transactions?.subtitle || "Manage your financial records."}</p>
                 </div>
                 <button
                     onClick={handleAddNew}
                     className="btn-primary"
                 >
-                    <Plus size={18} /> Add Expense
+                    <Plus size={18} /> {t?.transactions?.add || "Add Transaction"}
                 </button>
             </div>
 
             {/* Search Bar */}
-            <div className="glass-panel p-2 rounded-xl flex items-center gap-3">
-                <Search className="text-slate-400 ml-2" size={20} />
-                <input
-                    type="text"
-                    placeholder="Search by description or category..."
-                    className="bg-transparent border-none outline-none text-white w-full h-10 placeholder-slate-500"
-                    value={searchTerm}
-                    onChange={e => setSearchTerm(e.target.value)}
-                />
+            <div className="glass-panel p-2 rounded-xl flex flex-col md:flex-row md:items-center gap-3">
+                <div className="flex items-center gap-3 flex-1">
+                    <Search className="text-slate-400 ml-2" size={20} />
+                    <input
+                        type="text"
+                        placeholder={t?.transactions?.search || "Search by description or category..."}
+                        className="bg-transparent border-none outline-none text-white w-full h-10 placeholder-slate-500"
+                        value={searchTerm}
+                        onChange={e => setSearchTerm(e.target.value)}
+                    />
+                </div>
+                <div className="flex items-center gap-2 px-3 text-sm text-slate-400">
+                    <Filter size={16} />
+                    <select
+                        value={typeFilter}
+                        onChange={(e) => setTypeFilter(e.target.value)}
+                        className="bg-transparent text-slate-200 text-sm font-semibold outline-none"
+                    >
+                        <option value="all" className="bg-slate-900 text-white">{t?.transactions?.filters?.all || 'All'}</option>
+                        <option value="expense" className="bg-slate-900 text-white">{t?.transactions?.filters?.expense || 'Expenses'}</option>
+                        <option value="income" className="bg-slate-900 text-white">{t?.transactions?.filters?.income || 'Income'}</option>
+                    </select>
+                </div>
             </div>
 
             {isLoading ? <div className="flex justify-center p-20"><Loader2 className="animate-spin text-indigo-500" size={40} /></div> : (
@@ -110,11 +127,12 @@ const Transactions = () => {
                     <table className="w-full text-left border-collapse">
                         <thead>
                             <tr className="border-b border-white/5 text-indigo-200/50 text-xs uppercase tracking-wider">
-                                <th className="p-6 font-semibold">Date</th>
-                                <th className="p-6 font-semibold">Description</th>
-                                <th className="p-6 font-semibold">Category</th>
-                                <th className="p-6 font-semibold text-right">Amount</th>
-                                <th className="p-6 font-semibold text-right">Actions</th>
+                                <th className="p-6 font-semibold">{t?.transactions?.fields?.date || 'Date'}</th>
+                                <th className="p-6 font-semibold">{t?.transactions?.fields?.description || 'Description'}</th>
+                                <th className="p-6 font-semibold">{t?.transactions?.fields?.category || 'Category'}</th>
+                                <th className="p-6 font-semibold">{t?.transactions?.fields?.type || 'Type'}</th>
+                                <th className="p-6 font-semibold text-right">{t?.transactions?.fields?.amount || 'Amount'}</th>
+                                <th className="p-6 font-semibold text-right">{t?.transactions?.actions?.label || 'Actions'}</th>
                             </tr>
                         </thead>
                         <tbody
@@ -155,7 +173,16 @@ const Transactions = () => {
                                                     {tx.category?.label}
                                                 </span>
                                             </td>
-                                            <td className="p-6 text-right font-mono text-lg font-bold text-white">${tx.amountUSD}</td>
+                                            <td className="p-6">
+                                                <span className={`px-3 py-1 rounded-full text-xs font-bold border ${tx.type === 'income' ? 'text-emerald-300 border-emerald-500/30 bg-emerald-500/10' : 'text-rose-300 border-rose-500/30 bg-rose-500/10'}`}>
+                                                    {tx.type === 'income' ? (t?.transactions?.filters?.income || 'Income') : (t?.transactions?.filters?.expense || 'Expense')}
+                                                </span>
+                                            </td>
+                                            <td className="p-6 text-right font-mono text-lg font-bold">
+                                                <span className={tx.type === 'income' ? 'text-emerald-400' : 'text-rose-400'}>
+                                                    {tx.type === 'income' ? '+' : '-'}${tx.amountUSD}
+                                                </span>
+                                            </td>
                                             <td className="p-6 text-right">
                                                 <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                                     <button
@@ -180,7 +207,7 @@ const Transactions = () => {
                     </table>
                     {filteredTransactions?.length === 0 && (
                         <div className="p-12 text-center text-slate-500 bg-white/5">
-                            No transactions found matching your search.
+                            {t?.transactions?.empty || 'No transactions found matching your search.'}
                         </div>
                     )}
                 </div>
@@ -200,6 +227,7 @@ const Transactions = () => {
 const TransactionModal = ({ categories, item, onClose }) => {
     const queryClient = useQueryClient();
     const token = localStorage.getItem('token');
+    const { t } = useLanguage();
     const isEdit = !!item;
 
     const formik = useFormik({
@@ -207,12 +235,14 @@ const TransactionModal = ({ categories, item, onClose }) => {
             amountUSD: item?.amountUSD || '',
             description: item?.description || '',
             categoryId: item?.categoryId || '',
-            date: item?.date ? new Date(item.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]
+            date: item?.date ? new Date(item.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+            type: item?.type || 'expense'
         },
         validationSchema: Yup.object({
             amountUSD: Yup.number().required('Required').positive('Must be positive'),
             description: Yup.string().required('Required'),
-            categoryId: Yup.string().required('Required')
+            categoryId: Yup.string().required('Required'),
+            type: Yup.string().required('Required')
         }),
         onSubmit: async (values) => {
             const url = isEdit ? `/api/expenses/${item.id}` : '/api/expenses';
@@ -228,36 +258,51 @@ const TransactionModal = ({ categories, item, onClose }) => {
         }
     });
 
+    const filteredCategories = categories?.filter((cat) =>
+        formik.values.type === 'income' ? cat.type === 'income' : cat.type !== 'income'
+    );
+
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-200">
             <div className="glass-panel w-full max-w-md rounded-2xl p-8 shadow-2xl relative">
                 <h2 className="text-2xl font-bold text-white mb-6">
-                    {isEdit ? 'Edit Expense' : 'Add New Expense'}
+                    {isEdit ? (t?.transactions?.edit || 'Edit Transaction') : (t?.transactions?.add || 'Add Transaction')}
                 </h2>
 
                 <form onSubmit={formik.handleSubmit} className="space-y-5">
                     <div>
-                        <label className="block text-xs font-bold text-indigo-300 uppercase tracking-wider mb-2">Description</label>
-                        <input {...formik.getFieldProps('description')} className="input-field" placeholder="Lunch, Taxi, etc." autoFocus />
+                        <label className="block text-xs font-bold text-indigo-300 uppercase tracking-wider mb-2">{t?.transactions?.fields?.description || 'Description'}</label>
+                        <input {...formik.getFieldProps('description')} className="input-field" placeholder={t?.transactions?.fields?.description_placeholder || "Lunch, Taxi, etc."} autoFocus />
+                    </div>
+
+                    <div>
+                        <label className="block text-xs font-bold text-indigo-300 uppercase tracking-wider mb-2">{t?.transactions?.fields?.type || 'Type'}</label>
+                        <div className="relative">
+                            <select {...formik.getFieldProps('type')} className="input-field appearance-none cursor-pointer">
+                                <option value="expense" className="bg-slate-900 text-white">{t?.transactions?.filters?.expense || 'Expense'}</option>
+                                <option value="income" className="bg-slate-900 text-white">{t?.transactions?.filters?.income || 'Income'}</option>
+                            </select>
+                            <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">▼</div>
+                        </div>
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-xs font-bold text-indigo-300 uppercase tracking-wider mb-2">Amount ($)</label>
+                            <label className="block text-xs font-bold text-indigo-300 uppercase tracking-wider mb-2">{t?.transactions?.fields?.amount || 'Amount ($)'}</label>
                             <input type="number" {...formik.getFieldProps('amountUSD')} className="input-field" placeholder="0.00" />
                         </div>
                         <div>
-                            <label className="block text-xs font-bold text-indigo-300 uppercase tracking-wider mb-2">Date</label>
+                            <label className="block text-xs font-bold text-indigo-300 uppercase tracking-wider mb-2">{t?.transactions?.fields?.date || 'Date'}</label>
                             <input type="date" {...formik.getFieldProps('date')} className="input-field" />
                         </div>
                     </div>
 
                     <div>
-                        <label className="block text-xs font-bold text-indigo-300 uppercase tracking-wider mb-2">Category</label>
+                        <label className="block text-xs font-bold text-indigo-300 uppercase tracking-wider mb-2">{t?.transactions?.fields?.category || 'Category'}</label>
                         <div className="relative">
                             <select {...formik.getFieldProps('categoryId')} className="input-field appearance-none cursor-pointer">
-                                <option value="" className="bg-slate-900 text-slate-500">Select Category</option>
-                                {categories?.map(cat => (
+                                <option value="" className="bg-slate-900 text-slate-500">{t?.transactions?.fields?.category_placeholder || 'Select Category'}</option>
+                                {filteredCategories?.map(cat => (
                                     <option key={cat.id} value={cat.id} className="bg-slate-900 text-white">{cat.label}</option>
                                 ))}
                             </select>
@@ -266,9 +311,9 @@ const TransactionModal = ({ categories, item, onClose }) => {
                     </div>
 
                     <div className="flex gap-3 mt-8">
-                        <button type="button" onClick={onClose} className="btn-secondary w-full">Cancel</button>
+                        <button type="button" onClick={onClose} className="btn-secondary w-full">{t?.transactions?.actions?.cancel || 'Cancel'}</button>
                         <button type="submit" className="btn-primary w-full">
-                            {isEdit ? 'Save Changes' : 'Add Expense'}
+                            {isEdit ? (t?.transactions?.actions?.save || 'Save Changes') : (t?.transactions?.actions?.add || 'Add Transaction')}
                         </button>
                     </div>
                 </form>

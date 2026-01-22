@@ -4,9 +4,11 @@ import * as Yup from 'yup';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Loader2 } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
 
 const Register = () => {
     const navigate = useNavigate();
+    const { t } = useLanguage();
     const [error, setError] = React.useState('');
 
     const formik = useFormik({
@@ -42,17 +44,18 @@ const Register = () => {
             {/* Background */}
             <div className="absolute inset-0">
                 <img src="/header-bg.png" className="w-full h-full object-cover opacity-30" alt="" />
-                <div className="absolute inset-0 bg-slate-950/70 backdrop-blur-sm"></div>
+                <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm"></div>
+                <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-indigo-500/10 via-slate-950/50 to-purple-500/10 pointer-events-none" />
             </div>
 
             <motion.div
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="relative z-10 w-full max-w-md bg-white/5 backdrop-blur-xl border border-white/10 p-8 rounded-2xl shadow-2xl"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="relative z-10 w-full max-w-md bg-slate-900/60 backdrop-blur-xl border border-white/10 p-8 rounded-2xl shadow-2xl ring-1 ring-white/5"
             >
                 <div className="text-center mb-8">
-                    <h1 className="text-3xl font-bold text-white mb-2">Create Account</h1>
-                    <p className="text-slate-400">Join the professional financial platform</p>
+                    <h1 className="text-3xl font-bold text-white mb-2">{t?.auth?.create_account}</h1>
+                    <p className="text-slate-400">{t?.auth?.join_platform}</p>
                 </div>
 
                 {error && (
@@ -63,48 +66,58 @@ const Register = () => {
 
                 <form onSubmit={formik.handleSubmit} className="space-y-6">
                     <div>
-                        <label className="block text-sm font-medium text-slate-300 mb-2">Full Name</label>
+                        <label className="block text-sm font-medium text-slate-300 mb-2">{t?.auth?.name}</label>
                         <input
                             type="text"
                             {...formik.getFieldProps('name')}
-                            className="w-full bg-black/20 border border-white/10 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition-all placeholder-slate-500"
-                            placeholder="Elon Musk"
+                            className="w-full bg-slate-950/50 border border-white/10 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all placeholder-slate-600"
+                            placeholder={t?.auth?.placeholder_name}
                         />
+                        {formik.touched.name && formik.errors.name ? (
+                            <div className="text-rose-400 text-xs mt-1">{formik.errors.name}</div>
+                        ) : null}
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-slate-300 mb-2">Email</label>
+                        <label className="block text-sm font-medium text-slate-300 mb-2">{t?.auth?.email}</label>
                         <input
                             type="email"
                             {...formik.getFieldProps('email')}
-                            className="w-full bg-black/20 border border-white/10 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition-all placeholder-slate-500"
-                            placeholder="you@example.com"
+                            className="w-full bg-slate-950/50 border border-white/10 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all placeholder-slate-600"
+                            placeholder={t?.auth?.placeholder_email}
                         />
+                        {formik.touched.email && formik.errors.email ? (
+                            <div className="text-rose-400 text-xs mt-1">{formik.errors.email}</div>
+                        ) : null}
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-slate-300 mb-2">Password</label>
+                        <label className="block text-sm font-medium text-slate-300 mb-2">{t?.auth?.password}</label>
                         <input
                             type="password"
                             {...formik.getFieldProps('password')}
-                            className="w-full bg-black/20 border border-white/10 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition-all placeholder-slate-500"
-                            placeholder="••••••••"
+                            className="w-full bg-slate-950/50 border border-white/10 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all placeholder-slate-600"
+                            placeholder={t?.auth?.placeholder_password}
                         />
+                        {/* Validation error for password */}
+                        {formik.touched.password && formik.errors.password ? (
+                            <div className="text-rose-400 text-xs mt-1">{formik.errors.password}</div>
+                        ) : null}
                     </div>
 
                     <button
                         type="submit"
                         disabled={formik.isSubmitting}
-                        className="w-full bg-gradient-to-r from-teal-500 to-emerald-600 hover:from-teal-400 hover:to-emerald-500 text-white font-bold py-3.5 rounded-lg shadow-lg shadow-teal-900/20 transition-all transform active:scale-[0.98] flex items-center justify-center"
+                        className="w-full bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-bold py-3.5 rounded-lg shadow-lg shadow-indigo-900/20 transition-all transform active:scale-[0.98] flex items-center justify-center border border-white/10"
                     >
-                        {formik.isSubmitting ? <Loader2 className="animate-spin" /> : 'Create Account'}
+                        {formik.isSubmitting ? <Loader2 className="animate-spin" /> : t?.auth?.register_btn}
                     </button>
                 </form>
 
                 <div className="mt-6 text-center text-sm text-slate-400">
-                    Already have an account?{' '}
-                    <Link to="/login" className="text-teal-400 hover:text-teal-300 font-medium">
-                        Login
+                    {t?.auth?.has_account}{' '}
+                    <Link to="/login" className="text-indigo-400 hover:text-indigo-300 font-medium transition-colors">
+                        {t?.auth?.login_link}
                     </Link>
                 </div>
             </motion.div>

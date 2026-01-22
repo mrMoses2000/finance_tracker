@@ -7,6 +7,8 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Transactions from './pages/Transactions';
 import BudgetPlan from './pages/BudgetPlan';
+import Debts from './pages/Debts';
+import Schedule from './pages/Schedule';
 import { LanguageProvider } from './context/LanguageContext';
 
 // Protected Route Wrapper
@@ -32,6 +34,8 @@ function App() {
             <Route path="/dashboard" element={<BudgetWeb />} />
             <Route path="/transactions" element={<Transactions />} />
             <Route path="/budget" element={<BudgetPlan />} />
+            <Route path="/debts" element={<Debts />} />
+            <Route path="/schedule" element={<Schedule />} />
           </Route>
 
           <Route path="*" element={<Navigate to="/" replace />} />

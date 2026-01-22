@@ -16,4 +16,6 @@
 - Multi-user support with secure Auth.
 - Dashboard with real-time KPI and Charts.
 - Transaction management (CRUD).
-- Budget Planning (Monthly limits).
+- Budget Planning (Monthly limits + planned income).
+- Debts & Loans tracking with payment schedule.
+- Upcoming payment notifications (n8n workflow ready).

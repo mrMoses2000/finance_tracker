@@ -1,8 +1,29 @@
 import React from 'react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
 
-const Header = ({ mode, setMode, currency, setCurrency }) => {
-    const { t } = useLanguage();
+const Header = ({ month, setMonth, currency, setCurrency }) => {
+    const { t, lang } = useLanguage();
+
+    const toMonthLabel = (value) => {
+        if (!value) return '';
+        const date = new Date(`${value}-01T00:00:00Z`);
+        return date.toLocaleDateString(
+            lang === 'ru' ? 'ru-RU' : lang === 'de' ? 'de-DE' : 'en-US',
+            { month: 'long', year: 'numeric' }
+        );
+    };
+
+    const shiftMonth = (delta) => {
+        if (!month) return;
+        const [yearStr, monthStr] = month.split('-');
+        const year = parseInt(yearStr, 10);
+        const monthIndex = parseInt(monthStr, 10) - 1;
+        const next = new Date(Date.UTC(year, monthIndex + delta, 1));
+        const nextYear = next.getUTCFullYear();
+        const nextMonth = String(next.getUTCMonth() + 1).padStart(2, '0');
+        setMonth(`${nextYear}-${nextMonth}`);
+    };
 
     return (
         <div className="bg-slate-900/80 backdrop-blur-xl border-b border-white/5 pt-8 pb-20 px-4 shadow-2xl relative overflow-hidden">
@@ -22,25 +43,33 @@ const Header = ({ mode, setMode, currency, setCurrency }) => {
 
                 {/* Controls Section */}
                 <div className="flex gap-4 items-center bg-black/40 p-1.5 rounded-2xl backdrop-blur-md border border-white/10 shadow-lg">
-                    {/* Mode Toggle */}
-                    <div className="flex bg-white/5 rounded-xl p-1">
+                    {/* Month Selector */}
+                    <div className="flex items-center gap-1 bg-white/5 rounded-xl p-1">
                         <button
-                            onClick={() => setMode('standard')}
-                            className={`px-4 py-2 rounded-lg text-sm font-bold transition-all duration-300 ${mode === 'standard'
-                                    ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-900/50'
-                                    : 'text-slate-400 hover:text-white hover:bg-white/5'
-                                }`}
+                            onClick={() => shiftMonth(-1)}
+                            className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition-colors"
+                            aria-label={t?.month?.prev || "Previous month"}
                         >
-                            {t?.modes?.standard || "Standard"}
+                            <ChevronLeft size={18} />
                         </button>
+                        <div className="relative px-2">
+                            <input
+                                type="month"
+                                value={month}
+                                onChange={(e) => setMonth(e.target.value)}
+                                className="absolute inset-0 opacity-0 cursor-pointer"
+                                aria-label={t?.month?.picker || "Pick month"}
+                            />
+                            <div className="px-4 py-2 rounded-lg text-sm font-bold text-white min-w-[160px] text-center">
+                                {toMonthLabel(month)}
+                            </div>
+                        </div>
                         <button
-                            onClick={() => setMode('february')}
-                            className={`px-4 py-2 rounded-lg text-sm font-bold transition-all duration-300 ${mode === 'february'
-                                    ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-900/50'
-                                    : 'text-slate-400 hover:text-white hover:bg-white/5'
-                                }`}
+                            onClick={() => shiftMonth(1)}
+                            className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition-colors"
+                            aria-label={t?.month?.next || "Next month"}
                         >
-                            {t?.modes?.february || "February"}
+                            <ChevronRight size={18} />
                         </button>
                     </div>
 
