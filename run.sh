@@ -119,6 +119,26 @@ configure_remote_access() {
     fi
 }
 
+get_public_ip() {
+    if [ "$OS_TYPE" != "Linux" ]; then
+        return
+    fi
+
+    if check_cmd curl; then
+        local ip=""
+        ip="$(curl -fsS --max-time 2 http://169.254.169.254/latest/meta-data/public-ipv4 2>/dev/null || true)"
+        if [ -z "$ip" ]; then
+            ip="$(curl -fsS --max-time 2 https://checkip.amazonaws.com 2>/dev/null | tr -d '\n' || true)"
+        fi
+        if [ -z "$ip" ]; then
+            ip="$(curl -fsS --max-time 2 https://ifconfig.me 2>/dev/null | tr -d '\n' || true)"
+        fi
+        if [ -n "$ip" ]; then
+            echo "$ip"
+        fi
+    fi
+}
+
 start_docker_service() {
     if [ "$OS_TYPE" != "Linux" ]; then
         return 1
@@ -204,6 +224,15 @@ if $COMPOSE_CMD up -d --build; then
     echo -e "Frontend:  ${YELLOW}http://localhost:3000${NC}"
     echo -e "Backend:   ${YELLOW}http://localhost:4000${NC}"
     echo -e "Database:  ${YELLOW}Port 5432${NC}"
+
+    if [ "$OS_TYPE" == "Linux" ]; then
+        PUBLIC_IP=$(get_public_ip)
+        if [ -n "$PUBLIC_IP" ]; then
+            echo -e "Remote:    ${YELLOW}http://${PUBLIC_IP}:3000${NC}"
+        else
+            echo -e "${YELLOW}[INFO] Не удалось определить публичный IP. Используйте IP/домен сервера + :3000${NC}"
+        fi
+    fi
     
     echo -e "\n${YELLOW}[INFO] Чтобы остановить приложение, выполните: $COMPOSE_CMD down${NC}"
 else
