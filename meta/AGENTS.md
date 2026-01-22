@@ -8,10 +8,16 @@
 > 4. DO NOT break the build. Run verification tests before committing.
 > 5. Follow the `USAGE.md` guidelines for documentation updates.
 
+## Memory & Context
+**IMPORTANT**: We (AI Agents) do not have persistent memory across sessions. 
+- You MUST rely on these `meta/` files to understand what happened before you.
+- Always update `meta/AGENT_LOG.md` and `meta/CONTINUITY.md` before finishing your turn.
+- The `USAGE.md` file dictates the documentation structure. Do not deviate.
+
 ## Current Agent Stamp
 - **Agent**: Antigravity (Google DeepMind)
 - **Date**: 2026-01-22
-- **Status**: Delivering Feature Complete "SaaS" version.
+- **Status**: Delivering Feature Complete "SaaS" version with Data Restoration.
 
 ## Protocols
 - **Commits**: Use semantic commit messages.

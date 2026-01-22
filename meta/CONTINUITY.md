@@ -7,6 +7,8 @@
 - [x] Auth System (Login/Register).
 - [x] Business Logic (Transactions, Budgeting).
 - [x] Auto-migration on startup.
+- [x] **Testing**: Integration tests passed (Jest/Supertest).
+- [x] **Data Restoration**: Restored user's specific Category Config and Expenses from snippet.
 
 ## 🚧 In Progress / Next Steps
 - [ ] **Testing**: Create Unit and Integration tests for Backend APIs.
