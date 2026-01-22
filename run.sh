@@ -119,6 +119,25 @@ configure_remote_access() {
     fi
 }
 
+start_docker_service() {
+    if [ "$OS_TYPE" != "Linux" ]; then
+        return 1
+    fi
+
+    if check_cmd systemctl; then
+        $SUDO systemctl start docker || true
+        $SUDO systemctl enable docker || true
+        return 0
+    fi
+
+    if check_cmd service; then
+        $SUDO service docker start || true
+        return 0
+    fi
+
+    return 1
+}
+
 # 3. Проверка Docker/Git
 echo -e "\n${YELLOW}[Step 1] Проверка окружения...${NC}"
 if ! check_cmd git; then
@@ -133,26 +152,40 @@ if ! check_cmd docker; then
     fi
 fi
 
-if ! docker compose version &> /dev/null; then
-    if check_cmd docker-compose; then
-        COMPOSE_CMD="docker-compose"
-    else
-        if [ "$OS_TYPE" == "Linux" ]; then
-            install_docker_linux
-        else
-            install_cmd docker-compose
-        fi
-        COMPOSE_CMD="docker compose"
-    fi
-else
-    COMPOSE_CMD="docker compose"
-fi
-
 # Проверка, запущен ли Docker Daemon
 if ! docker info > /dev/null 2>&1; then
-    echo -e "${RED}[ERROR] Docker установлен, но не запущен.${NC}"
-    echo "Пожалуйста, запустите Docker Desktop или службу Docker."
-    exit 1
+    if [ "$OS_TYPE" == "Linux" ]; then
+        start_docker_service
+    fi
+fi
+
+DOCKER_CMD="docker"
+if ! docker info > /dev/null 2>&1; then
+    if $SUDO docker info > /dev/null 2>&1; then
+        DOCKER_CMD="$SUDO docker"
+        echo -e "${YELLOW}[INFO] Использую Docker через sudo (права группы еще не применились).${NC}"
+    else
+        echo -e "${RED}[ERROR] Docker установлен, но не запущен.${NC}"
+        echo "Пожалуйста, запустите Docker Desktop или службу Docker."
+        exit 1
+    fi
+fi
+
+if $DOCKER_CMD compose version &> /dev/null; then
+    COMPOSE_CMD="$DOCKER_CMD compose"
+elif check_cmd docker-compose; then
+    if [ "$DOCKER_CMD" == "docker" ]; then
+        COMPOSE_CMD="docker-compose"
+    else
+        COMPOSE_CMD="$SUDO docker-compose"
+    fi
+else
+    if [ "$OS_TYPE" == "Linux" ]; then
+        install_docker_linux
+    else
+        install_cmd docker-compose
+    fi
+    COMPOSE_CMD="$DOCKER_CMD compose"
 fi
 
 # Ubuntu remote setup
