@@ -16,6 +16,7 @@
 - [x] **Refactor**: Fixed Auth API endpoint (`/auth/login`) and cleaned up `Login.jsx`.
 - [x] **Assets**: Fixed "Futuristic Dashboard" image on Landing page and restored TrendingUp icon color.
 - [x] **Indexing**: Generated index report in meta/INDEX_REPORT.md.
+- [x] **Ops**: Updated run.sh with auto-install checks and Ubuntu remote access prep.
 
 ## 🚧 In Progress / Next Steps (For Codex Agent)
 - [ ] **Migrations**: Run `prisma db push` / migrations to apply new models (BudgetMonth, BudgetItem, Debt, ScheduleItem).
