@@ -649,6 +649,9 @@ configure_remote_access
 echo -e "\n${YELLOW}[Step 2] Сборка и запуск контейнеров...${NC}"
 echo "Это обеспечит изолированную работу приложения (как демон)."
 
+# Создаём директории для сертификатов (даже если HTTPS выключен, docker-compose требует их)
+mkdir -p "$ROOT_DIR/certs/config" "$ROOT_DIR/certs/selfsigned"
+
 # Останавливаем старые контейнеры если есть
 $COMPOSE_CMD down 2>/dev/null
 
