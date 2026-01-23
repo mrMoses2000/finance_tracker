@@ -129,15 +129,52 @@ prompt_https_mode() {
 }
 
 ensure_certbot() {
-    if ! command -v certbot >/dev/null 2>&1; then
-        if [ "$OS_TYPE" == "Linux" ]; then
-            echo -e "${YELLOW}[INFO] Устанавливаю certbot...${NC}"
-            install_cmd certbot
+    if command -v certbot >/dev/null 2>&1; then
+        # Check if existing certbot supports --profile (certbot 2.x+)
+        if certbot --help 2>/dev/null | grep -q -- '--profile'; then
+            echo -e "${GREEN}[OK] certbot (с поддержкой --profile) найден.${NC}"
+            return 0
         else
-            echo -e "${RED}[ERROR] certbot не найден и авто-установка доступна только на Linux.${NC}"
-            exit 1
+            echo -e "${YELLOW}[WARN] certbot найден, но не поддерживает --profile (версия < 2.0).${NC}"
         fi
     fi
+
+    if [ "$OS_TYPE" != "Linux" ]; then
+        echo -e "${RED}[ERROR] certbot не найден и авто-установка доступна только на Linux.${NC}"
+        exit 1
+    fi
+
+    echo -e "${YELLOW}[INFO] Устанавливаю certbot через snap (для поддержки IP-сертификатов)...${NC}"
+
+    # Remove old apt certbot if present
+    if dpkg -l certbot >/dev/null 2>&1; then
+        echo -e "${YELLOW}[INFO] Удаляю устаревший certbot из apt...${NC}"
+        $SUDO apt-get remove -y certbot python3-certbot 2>/dev/null || true
+    fi
+
+    # Install via snap for latest version with --profile support
+    if ! command -v snap >/dev/null 2>&1; then
+        echo -e "${YELLOW}[INFO] Устанавливаю snapd...${NC}"
+        $SUDO apt-get update -y
+        $SUDO apt-get install -y snapd
+    fi
+
+    $SUDO snap install core 2>/dev/null || true
+    $SUDO snap refresh core 2>/dev/null || true
+    $SUDO snap install --classic certbot
+
+    # Create symlink if not exists
+    if [ ! -f /usr/bin/certbot ]; then
+        $SUDO ln -sf /snap/bin/certbot /usr/bin/certbot
+    fi
+
+    if ! certbot --help 2>/dev/null | grep -q -- '--profile'; then
+        echo -e "${RED}[ERROR] certbot установлен, но всё ещё не поддерживает --profile.${NC}"
+        echo -e "${YELLOW}[INFO] Попробуйте: sudo snap refresh certbot${NC}"
+        exit 1
+    fi
+
+    echo -e "${GREEN}[OK] certbot установлен через snap с поддержкой --profile.${NC}"
 }
 
 certbot_supports_profile() {
@@ -183,6 +220,8 @@ ensure_certificates() {
         cert_args=(-d "$primary" -d "$www_domain")
     fi
 
+    # IP mode: Let's Encrypt now supports IP certificates with --profile shortlived
+    # (announced Jan 15, 2026). Requires certbot 2.x+
     if [ "$HTTPS_MODE" == "ip" ]; then
         if [ -z "$IP_ADDRESS" ]; then
             local detected_ip
@@ -204,18 +243,22 @@ ensure_certificates() {
         SERVER_NAMES="$IP_ADDRESS"
         cert_name="$IP_ADDRESS"
         cert_args=(-d "$IP_ADDRESS")
+
+        # IP certs require --profile shortlived (6-day validity)
         if [ -z "$CERTBOT_PROFILE" ]; then
             CERTBOT_PROFILE="shortlived"
         fi
     fi
 
+    # Domain mode: use Let's Encrypt
     SSL_CERT="/etc/letsencrypt/live/${cert_name}/fullchain.pem"
     SSL_KEY="/etc/letsencrypt/live/${cert_name}/privkey.pem"
 
     local check_days
     if [ -n "$CERT_CHECK_DAYS" ]; then
         check_days="$CERT_CHECK_DAYS"
-    elif [ "$HTTPS_MODE" == "ip" ]; then
+    elif [ "$CERTBOT_PROFILE" == "shortlived" ]; then
+        # Shortlived certs are 6 days, renew when 2 days left
         check_days="2"
     else
         check_days="30"
@@ -231,12 +274,8 @@ ensure_certificates() {
 
     local profile_args=()
     if [ -n "$CERTBOT_PROFILE" ]; then
-        if certbot_supports_profile; then
-            profile_args=(--profile "$CERTBOT_PROFILE")
-        elif [ "$HTTPS_MODE" == "ip" ]; then
-            echo -e "${RED}[ERROR] certbot не поддерживает --profile. Обновите certbot для IP-сертификатов.${NC}"
-            exit 1
-        fi
+        profile_args=(--profile "$CERTBOT_PROFILE")
+        echo -e "${YELLOW}[INFO] Использую профиль: ${CERTBOT_PROFILE}${NC}"
     fi
 
     local email_args=()
@@ -255,7 +294,8 @@ ensure_certificates() {
         echo -e "${YELLOW}[WARN] CERTBOT_EMAIL не задан. Использую регистрацию без email.${NC}"
     fi
 
-    echo -e "${YELLOW}[INFO] Получаю сертификат Let's Encrypt (${HTTPS_MODE})...${NC}"
+    local target_display="${DOMAIN:-$IP_ADDRESS}"
+    echo -e "${YELLOW}[INFO] Получаю сертификат Let's Encrypt для ${target_display}...${NC}"
     $SUDO certbot certonly \
         --standalone \
         --non-interactive \
