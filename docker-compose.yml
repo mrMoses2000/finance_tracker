@@ -44,6 +44,7 @@ services:
       - server
     volumes:
       - ./certs/config:/etc/letsencrypt:ro
+      - ./certs/selfsigned:/etc/letsencrypt/selfsigned:ro
 
 volumes:
   postgres_data:

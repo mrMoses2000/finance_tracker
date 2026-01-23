@@ -130,51 +130,47 @@ prompt_https_mode() {
 
 ensure_certbot() {
     if command -v certbot >/dev/null 2>&1; then
-        # Check if existing certbot supports --preferred-profile (certbot 2.x+)
-        if certbot --help 2>/dev/null | grep -q -- 'preferred-profile'; then
+        # Check if existing certbot supports --preferred-profile
+        if certbot --help all 2>/dev/null | grep -q 'preferred-profile'; then
             echo -e "${GREEN}[OK] certbot (с поддержкой --preferred-profile) найден.${NC}"
             return 0
-        else
-            echo -e "${YELLOW}[WARN] certbot найден, но не поддерживает --preferred-profile (версия < 2.0).${NC}"
         fi
     fi
 
     if [ "$OS_TYPE" != "Linux" ]; then
-        echo -e "${RED}[ERROR] certbot не найден и авто-установка доступна только на Linux.${NC}"
-        exit 1
+        return 1
     fi
 
-    echo -e "${YELLOW}[INFO] Устанавливаю certbot через snap (для поддержки IP-сертификатов)...${NC}"
+    echo -e "${YELLOW}[INFO] Устанавливаю certbot через snap...${NC}"
 
     # Remove old apt certbot if present
     if dpkg -l certbot >/dev/null 2>&1; then
-        echo -e "${YELLOW}[INFO] Удаляю устаревший certbot из apt...${NC}"
         $SUDO apt-get remove -y certbot python3-certbot 2>/dev/null || true
     fi
 
-    # Install via snap for latest version with --preferred-profile support
+    # Install via snap
     if ! command -v snap >/dev/null 2>&1; then
-        echo -e "${YELLOW}[INFO] Устанавливаю snapd...${NC}"
         $SUDO apt-get update -y
         $SUDO apt-get install -y snapd
     fi
 
     $SUDO snap install core 2>/dev/null || true
     $SUDO snap refresh core 2>/dev/null || true
-    $SUDO snap install --classic certbot
+    $SUDO snap install --classic certbot 2>/dev/null || true
 
     # Create symlink if not exists
-    if [ ! -f /usr/bin/certbot ]; then
+    if [ ! -f /usr/bin/certbot ] && [ -f /snap/bin/certbot ]; then
         $SUDO ln -sf /snap/bin/certbot /usr/bin/certbot
     fi
 
-    if ! certbot --help 2>/dev/null | grep -q -- 'preferred-profile'; then
-        echo -e "${RED}[ERROR] certbot установлен, но всё ещё не поддерживает --preferred-profile.${NC}"
-        echo -e "${YELLOW}[INFO] Попробуйте: sudo snap refresh certbot${NC}"
-        exit 1
+    # Check again
+    if certbot --help all 2>/dev/null | grep -q 'preferred-profile'; then
+        echo -e "${GREEN}[OK] certbot с поддержкой --preferred-profile.${NC}"
+        return 0
     fi
 
-    echo -e "${GREEN}[OK] certbot установлен через snap с поддержкой --preferred-profile.${NC}"
+    echo -e "${YELLOW}[WARN] certbot не поддерживает IP-сертификаты. Будет использован self-signed.${NC}"
+    return 1
 }
 
 certbot_supports_profile() {
@@ -220,8 +216,8 @@ ensure_certificates() {
         cert_args=(-d "$primary" -d "$www_domain")
     fi
 
-    # IP mode: Let's Encrypt now supports IP certificates with --profile shortlived
-    # (announced Jan 15, 2026). Requires certbot 2.x+
+    # IP mode: Let's Encrypt supports IP certs with --preferred-profile shortlived
+    # If certbot doesn't support it, fall back to self-signed
     if [ "$HTTPS_MODE" == "ip" ]; then
         if [ -z "$IP_ADDRESS" ]; then
             local detected_ip
@@ -242,12 +238,51 @@ ensure_certificates() {
         fi
         SERVER_NAMES="$IP_ADDRESS"
         cert_name="$IP_ADDRESS"
-        cert_args=(-d "$IP_ADDRESS")
 
-        # IP certs require --profile shortlived (6-day validity)
-        if [ -z "$CERTBOT_PROFILE" ]; then
-            CERTBOT_PROFILE="shortlived"
+        # Check if certbot supports IP certs
+        if ! certbot_supports_profile; then
+            # Fallback to self-signed certificate
+            echo -e "${YELLOW}[INFO] Certbot не поддерживает IP-сертификаты.${NC}"
+            echo -e "${YELLOW}[INFO] Создаю self-signed сертификат...${NC}"
+            
+            local selfsigned_dir="$CERTS_DIR/selfsigned"
+            mkdir -p "$selfsigned_dir"
+            
+            local selfsigned_cert="$selfsigned_dir/fullchain.pem"
+            local selfsigned_key="$selfsigned_dir/privkey.pem"
+            
+            # Check if existing self-signed cert is valid
+            if [ -f "$selfsigned_cert" ] && \
+                openssl x509 -checkend "$((30 * 24 * 3600))" -noout -in "$selfsigned_cert" >/dev/null 2>&1; then
+                echo -e "${GREEN}[OK] Существующий self-signed сертификат действителен.${NC}"
+            else
+                # Generate new self-signed certificate
+                openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+                    -keyout "$selfsigned_key" \
+                    -out "$selfsigned_cert" \
+                    -subj "/CN=${IP_ADDRESS}" \
+                    -addext "subjectAltName=IP:${IP_ADDRESS}" 2>/dev/null
+                
+                if [ -f "$selfsigned_cert" ]; then
+                    echo -e "${GREEN}[OK] Self-signed сертификат создан.${NC}"
+                else
+                    echo -e "${RED}[ERROR] Не удалось создать self-signed сертификат.${NC}"
+                    HTTPS_MODE="off"
+                    ENABLE_HTTPS=0
+                    return 0
+                fi
+            fi
+            
+            SSL_CERT="/etc/letsencrypt/selfsigned/fullchain.pem"
+            SSL_KEY="/etc/letsencrypt/selfsigned/privkey.pem"
+            ENABLE_HTTPS=1
+            echo -e "${YELLOW}[WARN] Браузер покажет предупреждение — это нормально для self-signed.${NC}"
+            return 0
         fi
+
+        # certbot supports IP certs
+        cert_args=(-d "$IP_ADDRESS")
+        CERTBOT_PROFILE="shortlived"
     fi
 
     # Domain mode: use Let's Encrypt
