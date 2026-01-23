@@ -32,6 +32,7 @@ const ExpenseChart = ({ totalExpenses, chartData, formatMoney, t, title }) => {
     }));
 
     const valueFormatter = (number) => formatMoney(number);
+    const totalValue = formattedData.reduce((acc, item) => acc + (item.amount || 0), 0);
 
     return (
         <div className="glass-panel p-8 rounded-3xl relative overflow-hidden h-full">
@@ -51,16 +52,28 @@ const ExpenseChart = ({ totalExpenses, chartData, formatMoney, t, title }) => {
             <div className="flex flex-col items-center justify-center gap-8 relative z-10">
                 {formattedData.length > 0 ? (
                     <>
-                        <DonutChart
-                            data={formattedData}
-                            category="amount"
-                            index="name"
-                            valueFormatter={valueFormatter}
-                            colors={formattedData.map((item) => item.color)}
-                            className="w-48 h-48"
-                            showLabel={true}
-                            customTooltip={(props) => <CustomTooltip {...props} formatMoney={formatMoney} />}
-                        />
+                        <div className="relative w-48 h-48 flex items-center justify-center">
+                            <DonutChart
+                                data={formattedData}
+                                category="amount"
+                                index="name"
+                                valueFormatter={valueFormatter}
+                                colors={formattedData.map((item) => item.color)}
+                                className="w-48 h-48"
+                                showLabel={true}
+                                customTooltip={(props) => <CustomTooltip {...props} formatMoney={formatMoney} />}
+                            />
+                            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                <div className="text-center">
+                                    <div className="text-[10px] uppercase tracking-[0.3em] text-slate-400">
+                                        {t?.chart?.total_label || 'Total'}
+                                    </div>
+                                    <div className="text-lg font-bold text-white">
+                                        {formatMoney(totalValue)}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                         <div className="flex flex-wrap justify-center gap-3 text-xs text-slate-400">
                             {formattedData.map((item) => (
                                 <div key={item.name} className="flex items-center gap-2">

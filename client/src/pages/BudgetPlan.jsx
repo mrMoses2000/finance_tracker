@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Loader2, Save, ChevronLeft, ChevronRight, AlertTriangle } from 'lucide-react';
+import { Loader2, Save, ChevronLeft, ChevronRight, AlertTriangle, Trash2 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import { useBudgetMonth } from '../hooks/useBudgetMonth';
 import { useCurrency } from '../context/CurrencyContext';
 import ExpenseChart from '../components/Budget/ExpenseChart';
+import CategoryManager from '../components/Categories/CategoryManager';
 
 const BudgetPlan = () => {
     const queryClient = useQueryClient();
@@ -62,6 +63,23 @@ const BudgetPlan = () => {
                 body: JSON.stringify({ month, categoryId, plannedAmount })
             });
             return res.json();
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries(['budget', month]);
+            queryClient.invalidateQueries({ queryKey: ['budgetData', month] });
+        }
+    });
+
+    const deleteItemMutation = useMutation({
+        mutationFn: async ({ categoryId }) => {
+            await fetch('/api/budgets/item', {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`
+                },
+                body: JSON.stringify({ month, categoryId })
+            });
         },
         onSuccess: () => {
             queryClient.invalidateQueries(['budget', month]);
@@ -228,7 +246,9 @@ const BudgetPlan = () => {
                                 key={cat.id}
                                 category={cat}
                                 plannedAmount={budgetItemsByCategory.get(cat.id)?.plannedAmount ?? cat.limit ?? 0}
+                                hasItem={budgetItemsByCategory.has(cat.id)}
                                 onSave={itemMutation.mutate}
+                                onDelete={deleteItemMutation.mutate}
                                 t={t}
                                 convert={convert}
                                 toUSD={toUSD}
@@ -238,11 +258,17 @@ const BudgetPlan = () => {
                     </div>
                 </div>
             </div>
+
+            <CategoryManager
+                categories={categories || []}
+                title={t?.category_manager?.title || 'Manage Categories'}
+                subtitle={t?.category_manager?.subtitle || 'Add, edit, or remove categories for planning and operations.'}
+            />
         </div>
     );
 };
 
-const CategoryLimitCard = ({ category, plannedAmount, onSave, t, convert, toUSD, currency }) => {
+const CategoryLimitCard = ({ category, plannedAmount, hasItem, onSave, onDelete, t, convert, toUSD, currency }) => {
     const [limit, setLimit] = useState(convert(plannedAmount));
     const [isDirty, setIsDirty] = useState(false);
 
@@ -278,12 +304,32 @@ const CategoryLimitCard = ({ category, plannedAmount, onSave, t, convert, toUSD,
             </div>
 
             {isDirty && (
+                <div className="mt-4 flex flex-col gap-2">
+                    <button
+                        onClick={handleSave}
+                        className="w-full flex items-center justify-center gap-2 bg-emerald-600/20 text-emerald-200 hover:bg-emerald-600/30 py-2 rounded-lg text-sm font-bold transition-all border border-emerald-500/20"
+                    >
+                        <Save size={16} />
+                        {t?.budget_plan?.save_changes}
+                    </button>
+                    {hasItem && (
+                        <button
+                            onClick={() => onDelete({ categoryId: category.id })}
+                            className="w-full flex items-center justify-center gap-2 bg-rose-500/10 text-rose-200 hover:bg-rose-500/20 py-2 rounded-lg text-sm font-bold transition-all border border-rose-500/30"
+                        >
+                            <Trash2 size={16} />
+                            {t?.budget_plan?.remove || 'Remove'}
+                        </button>
+                    )}
+                </div>
+            )}
+            {!isDirty && hasItem && (
                 <button
-                    onClick={handleSave}
-                    className="mt-4 w-full flex items-center justify-center gap-2 bg-emerald-600/20 text-emerald-200 hover:bg-emerald-600/30 py-2 rounded-lg text-sm font-bold transition-all border border-emerald-500/20"
+                    onClick={() => onDelete({ categoryId: category.id })}
+                    className="mt-4 w-full flex items-center justify-center gap-2 bg-rose-500/10 text-rose-200 hover:bg-rose-500/20 py-2 rounded-lg text-sm font-bold transition-all border border-rose-500/30"
                 >
-                    <Save size={16} />
-                    {t?.budget_plan?.save_changes}
+                    <Trash2 size={16} />
+                    {t?.budget_plan?.remove || 'Remove'}
                 </button>
             )}
         </div>

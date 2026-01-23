@@ -81,6 +81,7 @@ const Header = ({ month, setMonth, currency, setCurrency }) => {
                             className="bg-transparent text-white text-sm font-bold pl-3 pr-8 py-2.5 rounded-xl border border-transparent hover:bg-white/5 focus:ring-0 cursor-pointer appearance-none transition-colors"
                         >
                             <option value="USD" className="bg-slate-900 text-white">USD $</option>
+                            <option value="EUR" className="bg-slate-900 text-white">EUR €</option>
                             <option value="KZT" className="bg-slate-900 text-white">KZT ₸</option>
                             <option value="RUB" className="bg-slate-900 text-white">RUB ₽</option>
                         </select>

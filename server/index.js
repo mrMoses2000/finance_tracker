@@ -68,6 +68,15 @@ const CATEGORY_CONFIG = {
     salary: { label: 'Зарплата', color: '#10b981', limit: 0, type: 'income' },
     freelance: { label: 'Фриланс', color: '#22c55e', limit: 0, type: 'income' },
 };
+const CATEGORY_COLORS = Object.values(CATEGORY_CONFIG).map((item) => item.color);
+
+const pickCategoryColor = (existingColors = []) => {
+    const available = CATEGORY_COLORS.filter((color) => !existingColors.includes(color));
+    if (available.length > 0) {
+        return available[Math.floor(Math.random() * available.length)];
+    }
+    return CATEGORY_COLORS[Math.floor(Math.random() * CATEGORY_COLORS.length)] || '#10b981';
+};
 
 const BASE_TRANSACTIONS = [
     { name: 'Зарплата', day: 1, amountUSD: 1500, categoryKey: 'salary', type: 'income', recurring: true },
@@ -517,6 +526,41 @@ app.get('/api/categories', authenticateToken, async (req, res) => {
     }
 });
 
+// Create Category
+app.post('/api/categories', authenticateToken, async (req, res) => {
+    try {
+        const label = (req.body.label || '').trim();
+        const type = req.body.type === 'income' ? 'income' : 'expense';
+        const limit = parseFloat(req.body.limit || 0);
+
+        if (!label) {
+            return res.status(400).json({ error: 'Label is required' });
+        }
+
+        const existing = await prisma.category.findMany({
+            where: { userId: req.user.id }
+        });
+        const color = req.body.color || pickCategoryColor(existing.map((cat) => cat.color));
+
+        const category = await prisma.category.create({
+            data: {
+                userId: req.user.id,
+                label,
+                color,
+                limit: Number.isNaN(limit) ? 0 : limit,
+                type
+            }
+        });
+
+        res.json(category);
+    } catch (e) {
+        if (e.code === 'P2002') {
+            return res.status(409).json({ error: 'Category already exists' });
+        }
+        res.status(500).json({ error: e.message });
+    }
+});
+
 // Get Monthly Budget
 app.get('/api/budgets', authenticateToken, async (req, res) => {
     try {
@@ -610,6 +654,41 @@ app.put('/api/budgets/item', authenticateToken, async (req, res) => {
     }
 });
 
+// Delete Monthly Budget Item
+app.delete('/api/budgets/item', authenticateToken, async (req, res) => {
+    try {
+        const { month, categoryId } = req.body || {};
+        if (!month || !categoryId) {
+            return res.status(400).json({ error: 'Month and categoryId are required' });
+        }
+
+        const monthStart = toMonthStart(month);
+        const budgetMonth = await prisma.budgetMonth.findUnique({
+            where: { userId_month: { userId: req.user.id, month: monthStart } }
+        });
+
+        if (!budgetMonth) {
+            return res.json({ success: true });
+        }
+
+        await prisma.budgetItem.delete({
+            where: {
+                budgetMonthId_categoryId: {
+                    budgetMonthId: budgetMonth.id,
+                    categoryId
+                }
+            }
+        });
+
+        res.json({ success: true });
+    } catch (e) {
+        if (e.code === 'P2025') {
+            return res.json({ success: true });
+        }
+        res.status(500).json({ error: e.message });
+    }
+});
+
 // Update Category Limit/Color
 app.put('/api/categories/:id', authenticateToken, async (req, res) => {
     try {
@@ -629,6 +708,37 @@ app.put('/api/categories/:id', authenticateToken, async (req, res) => {
         res.json(updated);
     } catch (e) {
         console.error(e);
+        res.status(500).json({ error: e.message });
+    }
+});
+
+// Delete Category
+app.delete('/api/categories/:id', authenticateToken, async (req, res) => {
+    try {
+        const { id } = req.params;
+        const category = await prisma.category.findFirst({
+            where: { id, userId: req.user.id }
+        });
+        if (!category) return res.sendStatus(404);
+
+        const [expensesCount, scheduleCount, budgetCount] = await Promise.all([
+            prisma.expense.count({ where: { userId: req.user.id, categoryId: id } }),
+            prisma.scheduleItem.count({ where: { userId: req.user.id, categoryId: id } }),
+            prisma.budgetItem.count({
+                where: {
+                    categoryId: id,
+                    budgetMonth: { userId: req.user.id }
+                }
+            })
+        ]);
+
+        if (expensesCount > 0 || scheduleCount > 0 || budgetCount > 0) {
+            return res.status(409).json({ error: 'Category is in use' });
+        }
+
+        await prisma.category.delete({ where: { id } });
+        res.json({ success: true });
+    } catch (e) {
         res.status(500).json({ error: e.message });
     }
 });

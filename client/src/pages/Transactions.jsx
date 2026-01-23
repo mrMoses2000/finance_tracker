@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Loader2, Trash2, Plus, Calendar, Edit2, Search, Filter } from 'lucide-react';
+import { Loader2, Trash2, Plus, Calendar, Edit2, Search, Filter, Layers } from 'lucide-react';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLanguage } from '../context/LanguageContext';
 import { useCurrency } from '../context/CurrencyContext';
 import { useBudgetMonth } from '../hooks/useBudgetMonth';
+import CategoryManager from '../components/Categories/CategoryManager';
 
 const Transactions = () => {
     const { t, lang } = useLanguage();
@@ -18,6 +19,7 @@ const Transactions = () => {
     const [editingItem, setEditingItem] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [typeFilter, setTypeFilter] = useState('all');
+    const [isCategoryModalOpen, setCategoryModalOpen] = useState(false);
 
     const format = (value) => formatMoney(value, lang);
 
@@ -95,12 +97,20 @@ const Transactions = () => {
                     <h1 className="text-3xl font-bold text-white mb-2">{t?.transactions?.title || t?.nav?.transactions || 'Operations'}</h1>
                     <p className="text-emerald-200 opacity-70">{t?.transactions?.subtitle || 'Manage your financial records.'}</p>
                 </div>
-                <button
-                    onClick={handleAddNew}
-                    className="btn-primary"
-                >
-                    <Plus size={18} /> {t?.transactions?.add || 'Add Operation'}
-                </button>
+                <div className="flex flex-wrap items-center gap-3">
+                    <button
+                        onClick={() => setCategoryModalOpen(true)}
+                        className="btn-secondary"
+                    >
+                        <Layers size={18} /> {t?.category_manager?.title_short || 'Categories'}
+                    </button>
+                    <button
+                        onClick={handleAddNew}
+                        className="btn-primary"
+                    >
+                        <Plus size={18} /> {t?.transactions?.add || 'Add Operation'}
+                    </button>
+                </div>
             </div>
 
             <div className="glass-panel p-2 rounded-xl flex flex-col md:flex-row md:items-center gap-3">
@@ -224,6 +234,16 @@ const Transactions = () => {
                     categories={categories}
                     item={editingItem}
                     onClose={() => setModalOpen(false)}
+                />
+            )}
+
+            {isCategoryModalOpen && (
+                <CategoryManager
+                    categories={categories || []}
+                    mode="modal"
+                    onClose={() => setCategoryModalOpen(false)}
+                    title={t?.category_manager?.title || 'Manage Categories'}
+                    subtitle={t?.category_manager?.subtitle || 'Add, edit, or remove categories for planning and operations.'}
                 />
             )}
         </div>

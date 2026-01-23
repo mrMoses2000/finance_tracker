@@ -63,13 +63,32 @@ const translations = {
             title: 'Expense Structure (Tremor)',
             title_actual: 'Actual Expense Structure',
             title_plan: 'Planned Expense Structure',
-            no_data: 'No data'
+            no_data: 'No data',
+            total_label: 'Total'
         },
         category: {
             title: 'Category Breakdown',
             planned_title: 'Planned Allocation',
             planned: 'Planned',
             actual: 'Actual'
+        },
+        category_manager: {
+            title: 'Manage Categories',
+            title_short: 'Categories',
+            subtitle: 'Add, edit, or remove categories for planning and operations.',
+            name: 'Category name',
+            name_placeholder: 'Food, Rent, Salary',
+            type: 'Type',
+            limit: 'Default limit',
+            color: 'Color',
+            add: 'Add Category',
+            save: 'Save',
+            cancel: 'Cancel',
+            close: 'Close',
+            empty: 'No categories yet.',
+            error_required: 'Name is required',
+            error_duplicate: 'Category already exists',
+            error_in_use: 'Category is in use'
         },
         calendar: {
             title: 'Payment Calendar',
@@ -114,7 +133,8 @@ const translations = {
             summary_subtitle: 'Total planned expenses',
             balance: 'Balance',
             balance_warning: 'Planned expenses exceed income.',
-            limits_title: 'Monthly Limits'
+            limits_title: 'Monthly Limits',
+            remove: 'Remove'
         },
         transactions: {
             title: 'Operations',
@@ -291,13 +311,32 @@ const translations = {
             title: 'Структура Расходов (Tremor)',
             title_actual: 'Структура фактических расходов',
             title_plan: 'Структура плановых расходов',
-            no_data: 'Нет данных'
+            no_data: 'Нет данных',
+            total_label: 'Итого'
         },
         category: {
             title: 'Категории',
             planned_title: 'План по категориям',
             planned: 'План',
             actual: 'Факт'
+        },
+        category_manager: {
+            title: 'Управление категориями',
+            title_short: 'Категории',
+            subtitle: 'Добавляйте, редактируйте и удаляйте категории для бюджета и операций.',
+            name: 'Название категории',
+            name_placeholder: 'Еда, Аренда, Зарплата',
+            type: 'Тип',
+            limit: 'Базовый лимит',
+            color: 'Цвет',
+            add: 'Добавить категорию',
+            save: 'Сохранить',
+            cancel: 'Отмена',
+            close: 'Закрыть',
+            empty: 'Категорий пока нет.',
+            error_required: 'Название обязательно',
+            error_duplicate: 'Категория уже существует',
+            error_in_use: 'Категория используется'
         },
         calendar: {
             title: 'Календарь Платежей',
@@ -342,7 +381,8 @@ const translations = {
             summary_subtitle: 'Итого запланированные расходы',
             balance: 'Остаток',
             balance_warning: 'План превышает доход.',
-            limits_title: 'Месячные лимиты'
+            limits_title: 'Месячные лимиты',
+            remove: 'Удалить'
         },
         transactions: {
             title: 'Операции',
@@ -519,13 +559,32 @@ const translations = {
             title: 'Ausgabenstruktur (Tremor)',
             title_actual: 'Ist-Ausgabenstruktur',
             title_plan: 'Plan-Ausgabenstruktur',
-            no_data: 'Keine Daten'
+            no_data: 'Keine Daten',
+            total_label: 'Gesamt'
         },
         category: {
             title: 'Kategorieübersicht',
             planned_title: 'Geplante Verteilung',
             planned: 'Plan',
             actual: 'Ist'
+        },
+        category_manager: {
+            title: 'Kategorien verwalten',
+            title_short: 'Kategorien',
+            subtitle: 'Kategorien für Planung und Operationen hinzufügen, bearbeiten oder löschen.',
+            name: 'Kategoriename',
+            name_placeholder: 'Essen, Miete, Gehalt',
+            type: 'Typ',
+            limit: 'Standardlimit',
+            color: 'Farbe',
+            add: 'Kategorie hinzufügen',
+            save: 'Speichern',
+            cancel: 'Abbrechen',
+            close: 'Schließen',
+            empty: 'Noch keine Kategorien.',
+            error_required: 'Name ist erforderlich',
+            error_duplicate: 'Kategorie existiert bereits',
+            error_in_use: 'Kategorie wird verwendet'
         },
         calendar: {
             title: 'Zahlungskalender',
@@ -570,7 +629,8 @@ const translations = {
             summary_subtitle: 'Geplante Gesamtausgaben',
             balance: 'Saldo',
             balance_warning: 'Geplante Ausgaben übersteigen das Einkommen.',
-            limits_title: 'Monatliche Limits'
+            limits_title: 'Monatliche Limits',
+            remove: 'Entfernen'
         },
         transactions: {
             title: 'Operationen',

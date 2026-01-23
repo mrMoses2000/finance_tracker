@@ -1,12 +1,12 @@
-@import url('https://fonts.googleapis.com/css2?family=Fraunces:wght@400;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-    --font-sans: 'Space Grotesk', 'Segoe UI', system-ui, -apple-system, sans-serif;
-    --font-display: 'Fraunces', 'Times New Roman', serif;
+    --font-sans: 'Sora', 'Segoe UI', system-ui, -apple-system, sans-serif;
+    --font-display: 'Sora', 'Segoe UI', system-ui, -apple-system, sans-serif;
 
     --app-bg: #0b0f1a;
     --app-panel: rgba(12, 18, 30, 0.72);
@@ -39,7 +39,7 @@
     }
 
     h1, h2, h3, h4 {
-        font-family: var(--font-display);
+        font-family: var(--font-sans);
     }
 }
 
@@ -62,6 +62,90 @@
 
 .app-muted {
     color: var(--app-muted);
+}
+
+:root[data-theme='light'] .text-white {
+    color: #0f172a;
+}
+
+:root[data-theme='light'] .text-slate-100 {
+    color: #0f172a;
+}
+
+:root[data-theme='light'] .text-slate-200 {
+    color: #1f2937;
+}
+
+:root[data-theme='light'] .text-slate-300 {
+    color: #374151;
+}
+
+:root[data-theme='light'] .text-slate-400 {
+    color: #4b5563;
+}
+
+:root[data-theme='light'] .text-slate-500 {
+    color: #6b7280;
+}
+
+:root[data-theme='light'] .text-emerald-200 {
+    color: #047857;
+}
+
+:root[data-theme='light'] .text-emerald-300 {
+    color: #065f46;
+}
+
+:root[data-theme='light'] .text-emerald-400 {
+    color: #047857;
+}
+
+:root[data-theme='light'] .text-emerald-200\/50 {
+    color: rgba(4, 120, 87, 0.6);
+}
+
+:root[data-theme='light'] .text-white\/80 {
+    color: rgba(15, 23, 42, 0.8);
+}
+
+:root[data-theme='light'] .text-amber-300 {
+    color: #b45309;
+}
+
+:root[data-theme='light'] .text-rose-300 {
+    color: #be123c;
+}
+
+:root[data-theme='light'] .text-rose-400 {
+    color: #be123c;
+}
+
+:root[data-theme='light'] .bg-slate-900\/80 {
+    background-color: rgba(255, 255, 255, 0.9);
+}
+
+:root[data-theme='light'] .bg-slate-900\/60 {
+    background-color: rgba(255, 255, 255, 0.86);
+}
+
+:root[data-theme='light'] .bg-slate-900\/50 {
+    background-color: rgba(255, 255, 255, 0.82);
+}
+
+:root[data-theme='light'] .bg-black\/60 {
+    background-color: rgba(255, 255, 255, 0.78);
+}
+
+:root[data-theme='light'] .bg-black\/50 {
+    background-color: rgba(255, 255, 255, 0.75);
+}
+
+:root[data-theme='light'] .bg-black\/40 {
+    background-color: rgba(255, 255, 255, 0.7);
+}
+
+:root[data-theme='light'] .bg-black\/20 {
+    background-color: rgba(255, 255, 255, 0.6);
 }
 
 /* Obsidian Scrollbar */

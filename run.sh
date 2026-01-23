@@ -8,6 +8,23 @@ NC='\033[0m' # No Color
 
 echo -e "${GREEN}=== Финансовый Трекер: Запуск Системы ===${NC}"
 
+ROOT_DIR="$(cd "$(dirname "$0")" && pwd)"
+NGINX_CONF_PATH="$ROOT_DIR/client/nginx.conf"
+CERTS_DIR="${CERTS_DIR:-$ROOT_DIR/certs}"
+CERTBOT_CONFIG_DIR="$CERTS_DIR/config"
+CERTBOT_WORK_DIR="$CERTS_DIR/work"
+CERTBOT_LOGS_DIR="$CERTS_DIR/logs"
+HTTPS_MODE="${HTTPS_MODE:-}"
+DOMAIN="${DOMAIN:-}"
+IP_ADDRESS="${IP_ADDRESS:-}"
+CERTBOT_EMAIL="${CERTBOT_EMAIL:-}"
+CERTBOT_PROFILE="${CERTBOT_PROFILE:-}"
+CERT_CHECK_DAYS="${CERT_CHECK_DAYS:-}"
+ENABLE_HTTPS=0
+SERVER_NAMES="_"
+SSL_CERT=""
+SSL_KEY=""
+
 # 1. Определение ОС
 OS="$(uname -s)"
 case "${OS}" in
@@ -92,6 +109,332 @@ install_docker_linux() {
     fi
 }
 
+prompt_https_mode() {
+    if [ -z "$HTTPS_MODE" ] && [ -t 0 ]; then
+        echo -e "\n${YELLOW}[Step 1.6] HTTPS режим${NC}"
+        echo "Выберите режим HTTPS (ip/domain/off). По умолчанию: off"
+        read -r HTTPS_MODE
+    fi
+
+    HTTPS_MODE="$(echo "${HTTPS_MODE:-off}" | tr '[:upper:]' '[:lower:]')"
+    if [ "$HTTPS_MODE" != "ip" ] && [ "$HTTPS_MODE" != "domain" ] && [ "$HTTPS_MODE" != "off" ]; then
+        echo -e "${YELLOW}[WARN] Некорректный HTTPS_MODE. Использую off.${NC}"
+        HTTPS_MODE="off"
+    fi
+
+    if [ "$OS_TYPE" != "Linux" ] && [ "$HTTPS_MODE" != "off" ]; then
+        echo -e "${YELLOW}[INFO] HTTPS режим доступен только на Linux. Использую off.${NC}"
+        HTTPS_MODE="off"
+    fi
+}
+
+ensure_certbot() {
+    if ! command -v certbot >/dev/null 2>&1; then
+        if [ "$OS_TYPE" == "Linux" ]; then
+            echo -e "${YELLOW}[INFO] Устанавливаю certbot...${NC}"
+            install_cmd certbot
+        else
+            echo -e "${RED}[ERROR] certbot не найден и авто-установка доступна только на Linux.${NC}"
+            exit 1
+        fi
+    fi
+}
+
+certbot_supports_profile() {
+    certbot --help 2>/dev/null | grep -q -- '--profile'
+}
+
+ensure_certificates() {
+    if [ "$HTTPS_MODE" == "off" ]; then
+        ENABLE_HTTPS=0
+        return 0
+    fi
+
+    if [ "$HTTPS_MODE" == "ip" ] && ! command -v curl >/dev/null 2>&1; then
+        install_cmd curl
+    fi
+
+    if ! command -v openssl >/dev/null 2>&1; then
+        install_cmd openssl
+    fi
+
+    mkdir -p "$CERTBOT_CONFIG_DIR" "$CERTBOT_WORK_DIR" "$CERTBOT_LOGS_DIR"
+
+    local target=""
+    local cert_name=""
+    local cert_args=()
+
+    if [ "$HTTPS_MODE" == "domain" ]; then
+        if [ -z "$DOMAIN" ] && [ -t 0 ]; then
+            echo -e "${YELLOW}Введите домен для HTTPS:${NC}"
+            read -r DOMAIN
+        fi
+        if [ -z "$DOMAIN" ]; then
+            echo -e "${RED}[ERROR] DOMAIN не задан. Отключаю HTTPS.${NC}"
+            HTTPS_MODE="off"
+            ENABLE_HTTPS=0
+            return 0
+        fi
+        local primary="${DOMAIN#www.}"
+        DOMAIN="$primary"
+        local www_domain="www.${primary}"
+        SERVER_NAMES="${primary} ${www_domain}"
+        cert_name="$primary"
+        cert_args=(-d "$primary" -d "$www_domain")
+    fi
+
+    if [ "$HTTPS_MODE" == "ip" ]; then
+        if [ -z "$IP_ADDRESS" ]; then
+            local detected_ip
+            detected_ip="$(get_public_ip)"
+            if [ -t 0 ]; then
+                echo -e "${YELLOW}Введите IP для HTTPS (по умолчанию: ${detected_ip}):${NC}"
+                read -r IP_ADDRESS
+            fi
+            if [ -z "$IP_ADDRESS" ]; then
+                IP_ADDRESS="$detected_ip"
+            fi
+        fi
+        if [ -z "$IP_ADDRESS" ]; then
+            echo -e "${RED}[ERROR] IP_ADDRESS не задан. Отключаю HTTPS.${NC}"
+            HTTPS_MODE="off"
+            ENABLE_HTTPS=0
+            return 0
+        fi
+        SERVER_NAMES="$IP_ADDRESS"
+        cert_name="$IP_ADDRESS"
+        cert_args=(-d "$IP_ADDRESS")
+        if [ -z "$CERTBOT_PROFILE" ]; then
+            CERTBOT_PROFILE="shortlived"
+        fi
+    fi
+
+    SSL_CERT="/etc/letsencrypt/live/${cert_name}/fullchain.pem"
+    SSL_KEY="/etc/letsencrypt/live/${cert_name}/privkey.pem"
+
+    local check_days
+    if [ -n "$CERT_CHECK_DAYS" ]; then
+        check_days="$CERT_CHECK_DAYS"
+    elif [ "$HTTPS_MODE" == "ip" ]; then
+        check_days="2"
+    else
+        check_days="30"
+    fi
+
+    if [ -f "$CERTBOT_CONFIG_DIR/live/${cert_name}/fullchain.pem" ] && \
+        openssl x509 -checkend "$((check_days * 24 * 3600))" -noout -in "$CERTBOT_CONFIG_DIR/live/${cert_name}/fullchain.pem" >/dev/null 2>&1; then
+        ENABLE_HTTPS=1
+        return 0
+    fi
+
+    ensure_certbot
+
+    local profile_args=()
+    if [ -n "$CERTBOT_PROFILE" ]; then
+        if certbot_supports_profile; then
+            profile_args=(--profile "$CERTBOT_PROFILE")
+        elif [ "$HTTPS_MODE" == "ip" ]; then
+            echo -e "${RED}[ERROR] certbot не поддерживает --profile. Обновите certbot для IP-сертификатов.${NC}"
+            exit 1
+        fi
+    fi
+
+    local email_args=()
+    if [ -n "$CERTBOT_EMAIL" ]; then
+        email_args=(-m "$CERTBOT_EMAIL")
+    elif [ -t 0 ]; then
+        echo -e "${YELLOW}Введите email для certbot (опционально, рекомендуется):${NC}"
+        read -r CERTBOT_EMAIL
+        if [ -n "$CERTBOT_EMAIL" ]; then
+            email_args=(-m "$CERTBOT_EMAIL")
+        fi
+    fi
+
+    if [ "${#email_args[@]}" -eq 0 ]; then
+        email_args=(--register-unsafely-without-email)
+        echo -e "${YELLOW}[WARN] CERTBOT_EMAIL не задан. Использую регистрацию без email.${NC}"
+    fi
+
+    echo -e "${YELLOW}[INFO] Получаю сертификат Let's Encrypt (${HTTPS_MODE})...${NC}"
+    $SUDO certbot certonly \
+        --standalone \
+        --non-interactive \
+        --agree-tos \
+        --preferred-challenges http \
+        "${email_args[@]}" \
+        "${profile_args[@]}" \
+        --config-dir "$CERTBOT_CONFIG_DIR" \
+        --work-dir "$CERTBOT_WORK_DIR" \
+        --logs-dir "$CERTBOT_LOGS_DIR" \
+        "${cert_args[@]}"
+
+    if [ -f "$CERTBOT_CONFIG_DIR/live/${cert_name}/fullchain.pem" ] && [ -f "$CERTBOT_CONFIG_DIR/live/${cert_name}/privkey.pem" ]; then
+        ENABLE_HTTPS=1
+    else
+        echo -e "${RED}[ERROR] Сертификаты не найдены после запроса.${NC}"
+        exit 1
+    fi
+}
+
+write_nginx_conf() {
+    if [ "$ENABLE_HTTPS" -eq 1 ]; then
+        cat <<EOF > "$NGINX_CONF_PATH"
+server {
+    listen 80;
+    server_name ${SERVER_NAMES};
+    return 301 https://\$host\$request_uri;
+}
+
+server {
+    listen 443 ssl http2;
+    server_name ${SERVER_NAMES};
+
+    ssl_certificate ${SSL_CERT};
+    ssl_certificate_key ${SSL_KEY};
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_prefer_server_ciphers on;
+
+    root /usr/share/nginx/html;
+    index index.html;
+
+    location / {
+        try_files \$uri \$uri/ /index.html;
+    }
+
+    location /api/ {
+        proxy_pass http://server:4000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host \$host;
+    }
+
+    location /auth/ {
+        proxy_pass http://server:4000;
+    }
+}
+EOF
+        return 0
+    fi
+
+    cat <<EOF > "$NGINX_CONF_PATH"
+server {
+    listen 80;
+    server_name _;
+
+    root /usr/share/nginx/html;
+    index index.html;
+
+    location / {
+        try_files \$uri \$uri/ /index.html;
+    }
+
+    location /api/ {
+        proxy_pass http://server:4000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host \$host;
+    }
+
+    location /auth/ {
+        proxy_pass http://server:4000;
+    }
+}
+EOF
+}
+
+setup_cert_renewal() {
+    if [ "$ENABLE_HTTPS" -ne 1 ]; then
+        return 0
+    fi
+
+    local renew_script="$CERTS_DIR/renew_my_finance_ssl.sh"
+    local check_days
+    if [ -n "$CERT_CHECK_DAYS" ]; then
+        check_days="$CERT_CHECK_DAYS"
+    elif [ "$HTTPS_MODE" == "ip" ]; then
+        check_days="2"
+    else
+        check_days="30"
+    fi
+
+    $SUDO tee "$renew_script" >/dev/null <<EOF
+#!/bin/bash
+set -e
+HTTPS_MODE="${HTTPS_MODE}"
+DOMAIN="${DOMAIN}"
+IP_ADDRESS="${IP_ADDRESS}"
+CERTBOT_PROFILE="${CERTBOT_PROFILE}"
+CERTBOT_EMAIL="${CERTBOT_EMAIL}"
+CERTBOT_CONFIG_DIR="${CERTBOT_CONFIG_DIR}"
+CERTBOT_WORK_DIR="${CERTBOT_WORK_DIR}"
+CERTBOT_LOGS_DIR="${CERTBOT_LOGS_DIR}"
+CHECK_DAYS="${check_days}"
+
+target=""
+if [ "\$HTTPS_MODE" = "domain" ]; then
+  target="\${DOMAIN#www.}"
+fi
+if [ "\$HTTPS_MODE" = "ip" ]; then
+  target="\$IP_ADDRESS"
+fi
+if [ -z "\$target" ]; then
+  exit 0
+fi
+
+cert_path="\$CERTBOT_CONFIG_DIR/live/\$target/fullchain.pem"
+if [ -f "\$cert_path" ] && openssl x509 -checkend "\$((CHECK_DAYS * 24 * 3600))" -noout -in "\$cert_path" >/dev/null 2>&1; then
+  exit 0
+fi
+
+docker stop budget_client >/dev/null 2>&1 || true
+
+profile_args=()
+if [ -n "\$CERTBOT_PROFILE" ]; then
+  if certbot --help 2>/dev/null | grep -q -- '--profile'; then
+    profile_args=(--profile "\$CERTBOT_PROFILE")
+  fi
+fi
+
+email_args=()
+if [ -n "\$CERTBOT_EMAIL" ]; then
+  email_args=(-m "\$CERTBOT_EMAIL")
+else
+  email_args=(--register-unsafely-without-email)
+fi
+
+cert_args=()
+if [ "\$HTTPS_MODE" = "domain" ]; then
+  primary="\${DOMAIN#www.}"
+  cert_args=(-d "\$primary" -d "www.\$primary")
+else
+  cert_args=(-d "\$IP_ADDRESS")
+fi
+
+certbot certonly --standalone --non-interactive --agree-tos --preferred-challenges http \
+  "\${email_args[@]}" "\${profile_args[@]}" \
+  --config-dir "\$CERTBOT_CONFIG_DIR" \
+  --work-dir "\$CERTBOT_WORK_DIR" \
+  --logs-dir "\$CERTBOT_LOGS_DIR" \
+  "\${cert_args[@]}"
+
+docker start budget_client >/dev/null 2>&1 || true
+EOF
+
+    $SUDO chmod +x "$renew_script"
+    $SUDO tee /etc/cron.d/my_finance_ssl_renew >/dev/null <<EOF
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+0 4 * * * root $renew_script
+EOF
+
+    if systemctl list-unit-files 2>/dev/null | grep -q '^certbot.timer'; then
+        echo -e "${YELLOW}[INFO] Отключаю certbot.timer, чтобы избежать дублирования продления.${NC}"
+        $SUDO systemctl disable --now certbot.timer 2>/dev/null || true
+    fi
+}
+
 configure_remote_access() {
     if [ "$OS_TYPE" != "Linux" ]; then
         return
@@ -104,6 +447,10 @@ configure_remote_access() {
             $SUDO ufw allow 3000/tcp || true
             $SUDO ufw allow 4000/tcp || true
             $SUDO ufw allow 22/tcp || true
+            if [ "$HTTPS_MODE" != "off" ]; then
+                echo -e "${YELLOW}[INFO] HTTPS включен. Открываю порт 443.${NC}"
+                $SUDO ufw allow 443/tcp || true
+            fi
         else
             echo -e "${YELLOW}[INFO] UFW установлен, но не активен. Порты не меняю.${NC}"
         fi
@@ -217,6 +564,9 @@ else
     COMPOSE_CMD="$DOCKER_CMD compose"
 fi
 
+# HTTPS setup (interactive)
+prompt_https_mode
+
 # Ubuntu remote setup
 configure_remote_access
 
@@ -227,18 +577,34 @@ echo "Это обеспечит изолированную работу прил
 # Останавливаем старые контейнеры если есть
 $COMPOSE_CMD down 2>/dev/null
 
+# HTTPS certificates + nginx config
+ensure_certificates
+write_nginx_conf
+setup_cert_renewal
+
 # Запускаем в фоновом режиме (-d) с пересборкой (--build)
 if $COMPOSE_CMD up -d --build; then
     echo -e "\n${GREEN}=== УСПЕХ! Приложение запущено ===${NC}"
-    echo -e "Frontend:  ${YELLOW}http://localhost:3000${NC}"
+    if [ "$ENABLE_HTTPS" -eq 1 ]; then
+        echo -e "Frontend:  ${YELLOW}https://localhost${NC}"
+        echo -e "HTTP:      ${YELLOW}http://localhost:3000${NC}"
+    else
+        echo -e "Frontend:  ${YELLOW}http://localhost:3000${NC}"
+    fi
     echo -e "Backend:   ${YELLOW}http://localhost:4000${NC}"
     echo -e "Database:  ${YELLOW}Port 5432${NC}"
 
     if [ "$OS_TYPE" == "Linux" ]; then
         PUBLIC_IP=$(get_public_ip)
         if [ -n "$PUBLIC_IP" ]; then
-            echo -e "Remote:    ${YELLOW}http://${PUBLIC_IP}:3000${NC}"
-            echo -e "${YELLOW}[INFO] Для облачных серверов откройте порты 3000/4000 (TCP) в Security Group/Firewall.${NC}"
+            if [ "$ENABLE_HTTPS" -eq 1 ]; then
+                echo -e "Remote:    ${YELLOW}https://${PUBLIC_IP}${NC}"
+                echo -e "HTTP:      ${YELLOW}http://${PUBLIC_IP}:3000${NC}"
+                echo -e "${YELLOW}[INFO] Для облачных серверов откройте порты 443/3000/4000 (TCP) в Security Group/Firewall.${NC}"
+            else
+                echo -e "Remote:    ${YELLOW}http://${PUBLIC_IP}:3000${NC}"
+                echo -e "${YELLOW}[INFO] Для облачных серверов откройте порты 3000/4000 (TCP) в Security Group/Firewall.${NC}"
+            fi
             echo -e "${YELLOW}[INFO] ICMP ping может быть закрыт — это нормально.${NC}"
         else
             echo -e "${YELLOW}[INFO] Не удалось определить публичный IP. Используйте IP/домен сервера + :3000${NC}"

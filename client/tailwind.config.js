@@ -18,7 +18,13 @@ export default {
     'fill-[#22c55e]'
   ],
   theme: {
-    extend: {},
+    extend: {
+      fontFamily: {
+        sans: ['var(--font-sans)'],
+        mono: ['var(--font-sans)'],
+        serif: ['var(--font-sans)'],
+      },
+    },
   },
   plugins: [],
 }
