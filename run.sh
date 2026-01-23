@@ -130,12 +130,12 @@ prompt_https_mode() {
 
 ensure_certbot() {
     if command -v certbot >/dev/null 2>&1; then
-        # Check if existing certbot supports --profile (certbot 2.x+)
-        if certbot --help 2>/dev/null | grep -q -- '--profile'; then
-            echo -e "${GREEN}[OK] certbot (с поддержкой --profile) найден.${NC}"
+        # Check if existing certbot supports --preferred-profile (certbot 2.x+)
+        if certbot --help 2>/dev/null | grep -q -- 'preferred-profile'; then
+            echo -e "${GREEN}[OK] certbot (с поддержкой --preferred-profile) найден.${NC}"
             return 0
         else
-            echo -e "${YELLOW}[WARN] certbot найден, но не поддерживает --profile (версия < 2.0).${NC}"
+            echo -e "${YELLOW}[WARN] certbot найден, но не поддерживает --preferred-profile (версия < 2.0).${NC}"
         fi
     fi
 
@@ -152,7 +152,7 @@ ensure_certbot() {
         $SUDO apt-get remove -y certbot python3-certbot 2>/dev/null || true
     fi
 
-    # Install via snap for latest version with --profile support
+    # Install via snap for latest version with --preferred-profile support
     if ! command -v snap >/dev/null 2>&1; then
         echo -e "${YELLOW}[INFO] Устанавливаю snapd...${NC}"
         $SUDO apt-get update -y
@@ -168,17 +168,17 @@ ensure_certbot() {
         $SUDO ln -sf /snap/bin/certbot /usr/bin/certbot
     fi
 
-    if ! certbot --help 2>/dev/null | grep -q -- '--profile'; then
-        echo -e "${RED}[ERROR] certbot установлен, но всё ещё не поддерживает --profile.${NC}"
+    if ! certbot --help 2>/dev/null | grep -q -- 'preferred-profile'; then
+        echo -e "${RED}[ERROR] certbot установлен, но всё ещё не поддерживает --preferred-profile.${NC}"
         echo -e "${YELLOW}[INFO] Попробуйте: sudo snap refresh certbot${NC}"
         exit 1
     fi
 
-    echo -e "${GREEN}[OK] certbot установлен через snap с поддержкой --profile.${NC}"
+    echo -e "${GREEN}[OK] certbot установлен через snap с поддержкой --preferred-profile.${NC}"
 }
 
 certbot_supports_profile() {
-    certbot --help 2>/dev/null | grep -q -- '--profile'
+    certbot --help 2>/dev/null | grep -q -- 'preferred-profile'
 }
 
 ensure_certificates() {
@@ -274,7 +274,7 @@ ensure_certificates() {
 
     local profile_args=()
     if [ -n "$CERTBOT_PROFILE" ]; then
-        profile_args=(--profile "$CERTBOT_PROFILE")
+        profile_args=(--preferred-profile "$CERTBOT_PROFILE")
         echo -e "${YELLOW}[INFO] Использую профиль: ${CERTBOT_PROFILE}${NC}"
     fi
 
