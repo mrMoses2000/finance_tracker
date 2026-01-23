@@ -273,8 +273,8 @@ ensure_certificates() {
                 fi
             fi
             
-            SSL_CERT="/etc/letsencrypt/selfsigned/fullchain.pem"
-            SSL_KEY="/etc/letsencrypt/selfsigned/privkey.pem"
+            SSL_CERT="/etc/ssl/selfsigned/fullchain.pem"
+            SSL_KEY="/etc/ssl/selfsigned/privkey.pem"
             ENABLE_HTTPS=1
             echo -e "${YELLOW}[WARN] Браузер покажет предупреждение — это нормально для self-signed.${NC}"
             return 0
