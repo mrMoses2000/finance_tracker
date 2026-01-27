@@ -247,7 +247,7 @@ const CategoryManager = ({ categories = [], mode = 'inline', onClose, title, sub
         </div>
       )}
 
-      <div className="mt-6 space-y-3">
+      <div className="mt-6 space-y-3 max-h-[40vh] overflow-y-auto pr-2">
         {categories.length === 0 && (
           <div className="text-sm text-slate-500">{t?.category_manager?.empty || 'No categories yet.'}</div>
         )}

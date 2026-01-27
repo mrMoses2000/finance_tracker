@@ -38,7 +38,10 @@
         font-family: var(--font-sans);
     }
 
-    h1, h2, h3, h4 {
+    h1,
+    h2,
+    h3,
+    h4 {
         font-family: var(--font-sans);
     }
 }
@@ -232,6 +235,7 @@
 
 /* Animation Utilities */
 @keyframes glow {
+
     0%,
     100% {
         box-shadow: 0 0 10px rgba(16, 185, 129, 0.12);
@@ -281,6 +285,7 @@
     background: rgba(2, 6, 23, 0.35);
     border-radius: 0.8rem;
     padding: 0.25rem;
+    min-height: 100px;
 }
 
 .fc .fc-daygrid-day.fc-day-today {
@@ -290,6 +295,22 @@
 .fc-event {
     border-radius: 0.6rem;
     padding: 0.2rem 0.35rem;
+    overflow: visible;
+}
+
+/* Improve event text visibility */
+.fc-daygrid-event-harness {
+    margin-bottom: 2px;
+}
+
+.fc-event-title {
+    overflow: visible !important;
+    white-space: normal !important;
+    font-weight: 600;
+}
+
+.fc-daygrid-day-events {
+    min-height: 1.5em;
 }
 
 .fc-event.fc-event-planned {
@@ -298,6 +319,10 @@
 
 .fc-event.fc-event-paid {
     opacity: 0.75;
+}
+
+.fc-event.fc-event-pending {
+    border-width: 2px;
 }
 
 .fc .fc-scrollgrid-section-header,

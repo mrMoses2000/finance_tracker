@@ -160,7 +160,23 @@ const DashboardContent = () => {
     const budgetUsage = plannedExpensesTotal > 0 ? totalExpenses / plannedExpensesTotal : null;
     const variance = plannedExpensesTotal > 0 ? totalExpenses - plannedExpensesTotal : null;
 
-    const normalizedSchedule = scheduleItems.map((item) => ({
+    // Deduplicate schedule items - by ID and by content (title + date + amount)
+    const seenIds = new Set();
+    const seenContent = new Set();
+    const uniqueScheduleItems = scheduleItems.filter((item) => {
+        // Skip if we've seen this ID
+        if (seenIds.has(item.id)) return false;
+        seenIds.add(item.id);
+
+        // Also skip if we've seen this exact content (handles DB duplicates with different IDs)
+        const contentKey = `${item.title}-${item.dueDate}-${item.amountUSD}`;
+        if (seenContent.has(contentKey)) return false;
+        seenContent.add(contentKey);
+
+        return true;
+    });
+
+    const normalizedSchedule = uniqueScheduleItems.map((item) => ({
         id: `schedule-${item.id}`,
         date: item.dueDate,
         description: item.title,
@@ -212,7 +228,7 @@ const DashboardContent = () => {
                             className={`px-4 py-2 rounded-xl text-sm font-bold transition-colors ${view === 'actual'
                                 ? 'bg-white/10 text-white'
                                 : 'text-slate-400 hover:text-white'
-                            }`}
+                                }`}
                         >
                             {t?.dashboard?.tabs?.actual || 'Actual'}
                         </button>
@@ -221,7 +237,7 @@ const DashboardContent = () => {
                             className={`px-4 py-2 rounded-xl text-sm font-bold transition-colors ${view === 'plan'
                                 ? 'bg-white/10 text-white'
                                 : 'text-slate-400 hover:text-white'
-                            }`}
+                                }`}
                         >
                             {t?.dashboard?.tabs?.plan || 'Plan'}
                         </button>
