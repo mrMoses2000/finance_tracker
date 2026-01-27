@@ -160,27 +160,7 @@ const DashboardContent = () => {
     const budgetUsage = plannedExpensesTotal > 0 ? totalExpenses / plannedExpensesTotal : null;
     const variance = plannedExpensesTotal > 0 ? totalExpenses - plannedExpensesTotal : null;
 
-    // Deduplicate schedule items - by ID and by content (title + date + amount)
-    const seenIds = new Set();
-    const seenContent = new Set();
-    const uniqueScheduleItems = scheduleItems.filter((item) => {
-        // Skip if we've seen this ID
-        if (seenIds.has(item.id)) return false;
-        seenIds.add(item.id);
-
-        // Normalize date to YYYY-MM-DD string for comparison
-        const dateStr = new Date(item.dueDate).toISOString().split('T')[0];
-        const amountRounded = Math.round(item.amountUSD * 100); // Round to cents
-
-        // Also skip if we've seen this exact content (handles DB duplicates with different IDs)
-        const contentKey = `${item.title}-${dateStr}-${amountRounded}`;
-        if (seenContent.has(contentKey)) return false;
-        seenContent.add(contentKey);
-
-        return true;
-    });
-
-    const normalizedSchedule = uniqueScheduleItems.map((item) => ({
+    const normalizedSchedule = scheduleItems.map((item) => ({
         id: `schedule-${item.id}`,
         date: item.dueDate,
         description: item.title,
@@ -197,8 +177,22 @@ const DashboardContent = () => {
         isPlanned: false
     }));
 
-    const calendarItemsActual = [...normalizedTransactions, ...normalizedSchedule]
+    // Combine transactions and schedule, then deduplicate
+    // Prefer actual transactions (isPlanned: false) over planned ones
+    const combinedItems = [...normalizedTransactions, ...normalizedSchedule]
         .sort((a, b) => new Date(a.date) - new Date(b.date));
+
+    // Deduplicate by content (description + date + amount)
+    const seenContent = new Set();
+    const calendarItemsActual = combinedItems.filter((item) => {
+        const dateStr = new Date(item.date).toISOString().split('T')[0];
+        const amountRounded = Math.round((item.amountUSD || 0) * 100);
+        const contentKey = `${item.description}-${dateStr}-${amountRounded}`;
+
+        if (seenContent.has(contentKey)) return false;
+        seenContent.add(contentKey);
+        return true;
+    });
 
     const calendarItemsPlan = [...normalizedSchedule]
         .sort((a, b) => new Date(a.date) - new Date(b.date));
