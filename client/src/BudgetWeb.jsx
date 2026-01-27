@@ -168,8 +168,12 @@ const DashboardContent = () => {
         if (seenIds.has(item.id)) return false;
         seenIds.add(item.id);
 
+        // Normalize date to YYYY-MM-DD string for comparison
+        const dateStr = new Date(item.dueDate).toISOString().split('T')[0];
+        const amountRounded = Math.round(item.amountUSD * 100); // Round to cents
+
         // Also skip if we've seen this exact content (handles DB duplicates with different IDs)
-        const contentKey = `${item.title}-${item.dueDate}-${item.amountUSD}`;
+        const contentKey = `${item.title}-${dateStr}-${amountRounded}`;
         if (seenContent.has(contentKey)) return false;
         seenContent.add(contentKey);
 
