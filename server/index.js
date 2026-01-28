@@ -54,7 +54,7 @@ const toMonthKey = (date) => {
     return `${year}-${month}`;
 };
 
-// --- DATA RESTORATION SNAPSHOT ---
+// --- DATA RESTORATION SNAPSHOT (Admin user only) ---
 const CATEGORY_CONFIG = {
     housing: { label: 'Жилье и Связь', color: '#0d9488', limit: 300, type: 'expense' },
     loans_kz: { label: 'Кредиты (KZ)', color: '#16a34a', limit: 200, type: 'expense' },
@@ -68,7 +68,22 @@ const CATEGORY_CONFIG = {
     salary: { label: 'Зарплата', color: '#10b981', limit: 0, type: 'income' },
     freelance: { label: 'Фриланс', color: '#22c55e', limit: 0, type: 'income' },
 };
-const CATEGORY_COLORS = Object.values(CATEGORY_CONFIG).map((item) => item.color);
+
+// --- UNIVERSAL DEFAULT CATEGORIES FOR NEW USERS ---
+// These use labelKey for frontend i18n translation
+const DEFAULT_CATEGORIES = [
+    { labelKey: 'housing', label: 'Housing', color: '#0d9488', limit: 300, type: 'expense' },
+    { labelKey: 'transport', label: 'Transport', color: '#3b82f6', limit: 100, type: 'expense' },
+    { labelKey: 'food', label: 'Food', color: '#ea580c', limit: 400, type: 'expense' },
+    { labelKey: 'entertainment', label: 'Entertainment', color: '#8b5cf6', limit: 100, type: 'expense' },
+    { labelKey: 'health', label: 'Health', color: '#ef4444', limit: 100, type: 'expense' },
+    { labelKey: 'subscriptions', label: 'Subscriptions', color: '#64748b', limit: 50, type: 'expense' },
+    { labelKey: 'shopping', label: 'Shopping', color: '#f59e0b', limit: 150, type: 'expense' },
+    { labelKey: 'salary', label: 'Salary', color: '#10b981', limit: 0, type: 'income' },
+    { labelKey: 'freelance', label: 'Freelance', color: '#22c55e', limit: 0, type: 'income' },
+];
+
+const CATEGORY_COLORS = [...Object.values(CATEGORY_CONFIG).map((item) => item.color), ...DEFAULT_CATEGORIES.map((item) => item.color)];
 
 const pickCategoryColor = (existingColors = []) => {
     const available = CATEGORY_COLORS.filter((color) => !existingColors.includes(color));
@@ -393,15 +408,16 @@ app.post('/auth/register', async (req, res) => {
             data: { email, passwordHash: hashedPassword, name }
         });
 
-        // Seed default categories for new user (Base Set)
-        for (const config of Object.values(CATEGORY_CONFIG)) {
+        // Seed default categories for new user (Universal set with i18n keys)
+        for (const cat of DEFAULT_CATEGORIES) {
             await prisma.category.create({
                 data: {
                     userId: user.id,
-                    label: config.label,
-                    color: config.color,
-                    limit: config.limit,
-                    type: config.type
+                    label: cat.label,
+                    labelKey: cat.labelKey,
+                    color: cat.color,
+                    limit: cat.limit,
+                    type: cat.type
                 }
             });
         }

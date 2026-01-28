@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Edit2, Plus, Save, Trash2, X } from 'lucide-react';
-import { useLanguage } from '../../context/LanguageContext';
+import { useLanguage, getCategoryLabel } from '../../context/LanguageContext';
 import { useCurrency } from '../../context/CurrencyContext';
 import { useBudgetMonth } from '../../hooks/useBudgetMonth';
 
@@ -261,7 +261,7 @@ const CategoryManager = ({ categories = [], mode = 'inline', onClose, title, sub
                 <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: category.color }}></span>
               </span>
               <div>
-                <div className="font-semibold text-slate-100">{category.label}</div>
+                <div className="font-semibold text-slate-100">{getCategoryLabel(category, t)}</div>
                 <div className="text-xs text-slate-400">
                   {category.type === 'income' ? (t?.transactions?.filters?.income || 'Income') : (t?.transactions?.filters?.expense || 'Expense')}
                   {category.type !== 'income' && (

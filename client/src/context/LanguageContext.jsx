@@ -103,6 +103,17 @@ const translations = {
             items: 'items',
             total: 'Total'
         },
+        categories: {
+            housing: 'Housing & Utilities',
+            transport: 'Transport',
+            food: 'Food & Groceries',
+            entertainment: 'Entertainment',
+            health: 'Health & Medicine',
+            subscriptions: 'Subscriptions',
+            shopping: 'Shopping',
+            salary: 'Salary',
+            freelance: 'Freelance'
+        },
         auth: {
             welcome: 'Welcome Back',
             login_subtitle: 'Login to your financial dashboard',
@@ -350,6 +361,17 @@ const translations = {
         common: {
             items: 'поз.',
             total: 'Итого'
+        },
+        categories: {
+            housing: 'Жильё и связь',
+            transport: 'Транспорт',
+            food: 'Еда и продукты',
+            entertainment: 'Развлечения',
+            health: 'Здоровье',
+            subscriptions: 'Подписки',
+            shopping: 'Покупки',
+            salary: 'Зарплата',
+            freelance: 'Фриланс'
         },
         auth: {
             welcome: 'С Возвращением',
@@ -599,6 +621,17 @@ const translations = {
             items: 'Pos.',
             total: 'Gesamt'
         },
+        categories: {
+            housing: 'Wohnung & Nebenkosten',
+            transport: 'Transport',
+            food: 'Lebensmittel',
+            entertainment: 'Unterhaltung',
+            health: 'Gesundheit',
+            subscriptions: 'Abonnements',
+            shopping: 'Einkaufen',
+            salary: 'Gehalt',
+            freelance: 'Freiberuflich'
+        },
         auth: {
             welcome: 'Willkommen zurück',
             login_subtitle: 'Login in Ihr Finanz-Dashboard',
@@ -772,3 +805,14 @@ export const LanguageProvider = ({ children }) => {
 };
 
 export const useLanguage = () => useContext(LanguageContext);
+
+// Helper to get localized category label
+// If category has labelKey (system category), use translation
+// Otherwise use the custom label from database
+export const getCategoryLabel = (category, t) => {
+    if (!category) return '';
+    if (category.labelKey && t?.categories?.[category.labelKey]) {
+        return t.categories[category.labelKey];
+    }
+    return category.label || '';
+};

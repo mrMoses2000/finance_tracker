@@ -1,4 +1,5 @@
 import React from 'react';
+import { getCategoryLabel } from '../../context/LanguageContext';
 
 const CategoryList = ({ categories, budgetItems, transactions, formatMoney, t }) => {
     const plannedMap = new Map();
@@ -47,7 +48,7 @@ const CategoryList = ({ categories, budgetItems, transactions, formatMoney, t })
                             {/* Header */}
                             <div className="px-4 py-3 flex justify-between items-center bg-black/20">
                                 <div>
-                                    <span className="font-bold text-slate-200">{group.category.label}</span>
+                                    <span className="font-bold text-slate-200">{getCategoryLabel(group.category, t)}</span>
                                     <div className="text-xs text-slate-500 mt-1">
                                         {t?.category?.planned || 'Planned'}: {formatMoney(group.planned)} · {t?.category?.actual || 'Actual'}: {formatMoney(total)}
                                     </div>

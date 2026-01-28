@@ -4,7 +4,7 @@ import { Loader2, Trash2, Plus, Calendar, Edit2, Search, Filter, Layers } from '
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useLanguage } from '../context/LanguageContext';
+import { useLanguage, getCategoryLabel } from '../context/LanguageContext';
 import { useCurrency } from '../context/CurrencyContext';
 import { useBudgetMonth } from '../hooks/useBudgetMonth';
 import CategoryManager from '../components/Categories/CategoryManager';
@@ -68,8 +68,9 @@ const Transactions = () => {
     };
 
     const filteredTransactions = transactions?.filter(tx => {
+        const categoryLabel = getCategoryLabel(tx.category, t);
         const matchesText = tx.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            tx.category?.label?.toLowerCase().includes(searchTerm.toLowerCase());
+            categoryLabel?.toLowerCase().includes(searchTerm.toLowerCase());
         const matchesType = typeFilter === 'all' || tx.type === typeFilter;
         return matchesText && matchesType;
     });
@@ -186,7 +187,7 @@ const Transactions = () => {
                                                         borderColor: `${tx.category?.color}20`
                                                     }}
                                                 >
-                                                    {tx.category?.label}
+                                                    {getCategoryLabel(tx.category, t)}
                                                 </span>
                                             </td>
                                             <td className="p-6">
@@ -340,7 +341,7 @@ const TransactionModal = ({ categories, item, onClose }) => {
                             <select {...formik.getFieldProps('categoryId')} className="input-field appearance-none cursor-pointer">
                                 <option value="" className="bg-slate-900 text-slate-500">{t?.transactions?.fields?.category_placeholder || 'Select Category'}</option>
                                 {filteredCategories?.map(cat => (
-                                    <option key={cat.id} value={cat.id} className="bg-slate-900 text-white">{cat.label}</option>
+                                    <option key={cat.id} value={cat.id} className="bg-slate-900 text-white">{getCategoryLabel(cat, t)}</option>
                                 ))}
                             </select>
                             <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">▼</div>

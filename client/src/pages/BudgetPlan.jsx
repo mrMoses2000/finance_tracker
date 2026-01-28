@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Loader2, Save, ChevronLeft, ChevronRight, AlertTriangle, Trash2 } from 'lucide-react';
-import { useLanguage } from '../context/LanguageContext';
+import { useLanguage, getCategoryLabel } from '../context/LanguageContext';
 import { useBudgetMonth } from '../hooks/useBudgetMonth';
 import { useCurrency } from '../context/CurrencyContext';
 import ExpenseChart from '../components/Budget/ExpenseChart';
@@ -129,10 +129,11 @@ const BudgetPlan = () => {
         (budget?.items || []).forEach((item) => {
             const category = categories?.find((cat) => cat.id === item.categoryId);
             if (!category) return;
-            byCategory[category.label] = (byCategory[category.label] || 0) + (item.plannedAmount || 0);
+            const label = getCategoryLabel(category, t);
+            byCategory[label] = (byCategory[label] || 0) + (item.plannedAmount || 0);
         });
         return Object.entries(byCategory).map(([label, value]) => {
-            const category = categories?.find((cat) => cat.label === label);
+            const category = categories?.find((cat) => getCategoryLabel(cat, t) === label);
             return {
                 label,
                 value,
@@ -140,7 +141,7 @@ const BudgetPlan = () => {
                 percent: plannedExpensesTotal > 0 ? (value / plannedExpensesTotal) * 100 : 0
             };
         });
-    }, [budget?.items, categories, plannedExpensesTotal]);
+    }, [budget?.items, categories, plannedExpensesTotal, t]);
 
     const isLoading = isCategoriesLoading || isBudgetLoading;
 
@@ -286,7 +287,7 @@ const CategoryLimitCard = ({ category, plannedAmount, hasItem, onSave, onDelete,
         <div className="bg-slate-900/50 border border-white/5 rounded-xl p-6 backdrop-blur-sm hover:bg-slate-900/80 transition-colors ring-1 ring-white/5 shadow-xl">
             <div className="flex items-center gap-3 mb-4">
                 <div className="w-4 h-4 rounded-full shadow-sm shadow-emerald-500/50" style={{ backgroundColor: category.color }}></div>
-                <h3 className="font-bold text-lg text-slate-100">{category.label}</h3>
+                <h3 className="font-bold text-lg text-slate-100">{getCategoryLabel(category, t)}</h3>
             </div>
 
             <div className="relative">

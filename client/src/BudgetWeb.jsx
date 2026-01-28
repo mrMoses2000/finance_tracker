@@ -7,7 +7,7 @@ import CategoryList from './components/Budget/CategoryList';
 import PlanCategoryList from './components/Budget/PlanCategoryList';
 import { useBudget } from './hooks/useBudget';
 import { useBudgetMonth } from './hooks/useBudgetMonth';
-import { useLanguage } from './context/LanguageContext';
+import { useLanguage, getCategoryLabel } from './context/LanguageContext';
 import { useCurrency } from './context/CurrencyContext';
 import { AlertTriangle, Sparkles } from 'lucide-react';
 
@@ -105,14 +105,14 @@ const DashboardContent = () => {
     const chartDataActual = useMemo(() => {
         const byCategory = {};
         expenses.forEach((item) => {
-            const label = item.category?.label || 'Other';
+            const label = getCategoryLabel(item.category, t) || 'Other';
             if (!byCategory[label]) byCategory[label] = 0;
             byCategory[label] += item.amountUSD;
         });
 
         return Object.entries(byCategory)
             .map(([label, value]) => {
-                const configEntry = categories.find((c) => c.label === label);
+                const configEntry = categories.find((c) => getCategoryLabel(c, t) === label);
                 return {
                     label,
                     value,
@@ -121,19 +121,20 @@ const DashboardContent = () => {
                 };
             })
             .filter((item) => item.value > 0);
-    }, [expenses, categories, totalExpenses]);
+    }, [expenses, categories, totalExpenses, t]);
 
     const chartDataPlanned = useMemo(() => {
         const byCategory = {};
         (budget?.items || []).forEach((item) => {
             const category = categories.find((cat) => cat.id === item.categoryId);
             if (!category) return;
-            byCategory[category.label] = (byCategory[category.label] || 0) + (item.plannedAmount || 0);
+            const label = getCategoryLabel(category, t);
+            byCategory[label] = (byCategory[label] || 0) + (item.plannedAmount || 0);
         });
 
         return Object.entries(byCategory)
             .map(([label, value]) => {
-                const configEntry = categories.find((c) => c.label === label);
+                const configEntry = categories.find((c) => getCategoryLabel(c, t) === label);
                 return {
                     label,
                     value,
@@ -142,7 +143,7 @@ const DashboardContent = () => {
                 };
             })
             .filter((item) => item.value > 0);
-    }, [budget?.items, categories, plannedExpensesTotal]);
+    }, [budget?.items, categories, plannedExpensesTotal, t]);
 
     const warningCategories = useMemo(() => {
         const warnings = [];

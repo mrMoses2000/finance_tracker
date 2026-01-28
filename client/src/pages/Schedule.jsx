@@ -7,7 +7,7 @@ import interactionPlugin from '@fullcalendar/interaction';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
-import { useLanguage } from '../context/LanguageContext';
+import { useLanguage, getCategoryLabel } from '../context/LanguageContext';
 import { useBudgetMonth } from '../hooks/useBudgetMonth';
 import { useCurrency } from '../context/CurrencyContext';
 import { getCategoryIcon } from '../data/categoryIcons';
@@ -136,7 +136,7 @@ const Schedule = () => {
 
     const renderEventContent = (eventInfo) => {
         const { amountUSD, type, category, color } = eventInfo.event.extendedProps || {};
-        const Icon = getCategoryIcon(category?.label, type);
+        const Icon = getCategoryIcon(getCategoryLabel(category, t), type);
         return (
             <div className="flex items-center gap-2 truncate text-xs">
                 <span
@@ -271,7 +271,7 @@ const Schedule = () => {
                                 >
                                     {selectedItems.map((item) => {
                                         const category = item.category || categoryMap.get(item.categoryId);
-                                        const Icon = getCategoryIcon(category?.label, item.type);
+                                        const Icon = getCategoryIcon(getCategoryLabel(category, t), item.type);
                                         return (
                                             <div
                                                 key={item.id}
@@ -287,7 +287,7 @@ const Schedule = () => {
                                                         </span>
                                                         <div>
                                                             <div className="text-sm font-semibold text-slate-100">{item.title}</div>
-                                                            <div className="text-xs text-slate-400">{category?.label || t?.calendar?.uncategorized || 'Uncategorized'}</div>
+                                                            <div className="text-xs text-slate-400">{getCategoryLabel(category, t) || t?.calendar?.uncategorized || 'Uncategorized'}</div>
                                                         </div>
                                                     </div>
                                                     <div className={`text-sm font-bold ${item.type === 'income' ? 'text-emerald-300' : 'text-rose-300'}`}>
@@ -451,7 +451,7 @@ const ScheduleModal = ({ categories, item, onClose }) => {
                             <select {...formik.getFieldProps('categoryId')} className="input-field appearance-none cursor-pointer">
                                 <option value="" className="bg-slate-900 text-slate-500">{t?.schedule?.fields?.category_placeholder || 'Select Category'}</option>
                                 {categories?.map(cat => (
-                                    <option key={cat.id} value={cat.id} className="bg-slate-900 text-white">{cat.label}</option>
+                                    <option key={cat.id} value={cat.id} className="bg-slate-900 text-white">{getCategoryLabel(cat, t)}</option>
                                 ))}
                             </select>
                             <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">▼</div>

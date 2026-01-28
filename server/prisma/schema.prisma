@@ -25,6 +25,7 @@ model User {
 model Category {
   id        String    @id @default(uuid())
   label     String
+  labelKey  String?   // For system categories: "housing", "transport", etc. Null for custom user categories.
   color     String
   limit     Float     @default(0)
   type      String    @default("expense") // "expense" | "income"

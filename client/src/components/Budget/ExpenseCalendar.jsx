@@ -5,6 +5,7 @@ import interactionPlugin from '@fullcalendar/interaction';
 import { Calendar } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { getCategoryIcon } from '../../data/categoryIcons';
+import { getCategoryLabel } from '../../context/LanguageContext';
 
 const hexWithAlpha = (hex, alpha = '26') => {
     if (!hex || !hex.startsWith('#') || hex.length !== 7) return hex || '#94a3b8';
@@ -46,7 +47,7 @@ const ExpenseCalendar = ({ calendarItems, categories, formatMoney, t, lang = 'en
 
     const renderEventContent = (eventInfo) => {
         const { amountUSD, type, category, color } = eventInfo.event.extendedProps || {};
-        const Icon = getCategoryIcon(category?.label, type);
+        const Icon = getCategoryIcon(getCategoryLabel(category, t), type);
         return (
             <div className="flex items-center gap-1.5 text-xs min-w-0">
                 <span
@@ -126,7 +127,7 @@ const ExpenseCalendar = ({ calendarItems, categories, formatMoney, t, lang = 'en
                             >
                                 {selectedItems.map((item) => {
                                     const category = item.category || categoryMap.get(item.categoryId);
-                                    const Icon = getCategoryIcon(category?.label, item.type);
+                                    const Icon = getCategoryIcon(getCategoryLabel(category, t), item.type);
                                     return (
                                         <div
                                             key={item.id}
@@ -141,7 +142,7 @@ const ExpenseCalendar = ({ calendarItems, categories, formatMoney, t, lang = 'en
                                                 </span>
                                                 <div>
                                                     <div className="text-sm font-semibold text-slate-100">{item.description}</div>
-                                                    <div className="text-xs text-slate-400">{category?.label || t?.calendar?.uncategorized || 'Uncategorized'}</div>
+                                                    <div className="text-xs text-slate-400">{getCategoryLabel(category, t) || t?.calendar?.uncategorized || 'Uncategorized'}</div>
                                                 </div>
                                             </div>
                                             <div className={`text-sm font-bold ${item.type === 'income' ? 'text-emerald-300' : 'text-rose-300'}`}>
