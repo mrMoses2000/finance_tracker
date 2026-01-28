@@ -408,10 +408,18 @@ ensure_certificates() {
         --logs-dir "$CERTBOT_LOGS_DIR" \
         "${cert_args[@]}"
 
-    if [ -f "$CERTBOT_CONFIG_DIR/live/${cert_name}/fullchain.pem" ] && [ -f "$CERTBOT_CONFIG_DIR/live/${cert_name}/privkey.pem" ]; then
+    local actual_cert_name="${DOMAIN:-$IP_ADDRESS}"
+    local cert_path="$CERTBOT_CONFIG_DIR/live/${actual_cert_name}"
+    
+    echo -e "${YELLOW}[DEBUG] Проверяю сертификаты в: ${cert_path}${NC}"
+    
+    if [ -f "${cert_path}/fullchain.pem" ] && [ -f "${cert_path}/privkey.pem" ]; then
+        echo -e "${GREEN}[OK] Сертификаты найдены!${NC}"
         ENABLE_HTTPS=1
     else
-        echo -e "${RED}[ERROR] Сертификаты не найдены после запроса.${NC}"
+        echo -e "${RED}[ERROR] Сертификаты не найдены в ${cert_path}${NC}"
+        echo -e "${YELLOW}[DEBUG] Содержимое $CERTBOT_CONFIG_DIR/live/:${NC}"
+        ls -la "$CERTBOT_CONFIG_DIR/live/" 2>/dev/null || echo "Папка не существует"
         exit 1
     fi
 }
