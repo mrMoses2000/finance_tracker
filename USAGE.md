@@ -4,6 +4,7 @@
    - USAGE.md
    - README.md
    - директории meta и scripts
+   - .env.example (для локальных/серверных секретов)
 2) Убедиться, что meta содержит все служебные документы.
 3) Заполнить плейсхолдеры в meta/AGENTS.md, meta/CONTINUITY.md, README.md, meta/Info.md.
    > **ВАЖНО:** В `meta/AGENTS.md` есть блок "CRITICAL: START HERE". Убедитесь, что он на месте.
@@ -12,3 +13,4 @@
    - rg --files
    - scripts/generate_index_report.sh
 6) Обновить Agent Stamp в meta/AGENTS.md и добавить запись в meta/AGENT_LOG.md.
+7) Секреты хранить только в `.env` на серверах/локально, не коммитить.

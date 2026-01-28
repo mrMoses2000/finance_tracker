@@ -406,7 +406,7 @@ ensure_certificates() {
         --config-dir "$CERTBOT_CONFIG_DIR" \
         --work-dir "$CERTBOT_WORK_DIR" \
         --logs-dir "$CERTBOT_LOGS_DIR" \
-        \"${cert_args[@]}\"
+        "${cert_args[@]}"
 
     # Fix permissions - certbot runs with sudo and creates root-owned files
     if [ -d "$CERTS_DIR" ]; then
@@ -547,8 +547,8 @@ docker stop budget_client >/dev/null 2>&1 || true
 
 profile_args=()
 if [ -n "\$CERTBOT_PROFILE" ]; then
-  if certbot --help 2>/dev/null | grep -q -- '--profile'; then
-    profile_args=(--profile "\$CERTBOT_PROFILE")
+  if certbot --help 2>/dev/null | grep -q -- '--preferred-profile'; then
+    profile_args=(--preferred-profile "\$CERTBOT_PROFILE")
   fi
 fi
 
@@ -603,7 +603,8 @@ configure_remote_access() {
             $SUDO ufw allow 4000/tcp || true
             $SUDO ufw allow 22/tcp || true
             if [ "$HTTPS_MODE" != "off" ]; then
-                echo -e "${YELLOW}[INFO] HTTPS включен. Открываю порт 443.${NC}"
+                echo -e "${YELLOW}[INFO] HTTPS включен. Открываю порты 80 и 443.${NC}"
+                $SUDO ufw allow 80/tcp || true
                 $SUDO ufw allow 443/tcp || true
             fi
         else

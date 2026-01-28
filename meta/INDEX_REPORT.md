@@ -1,5 +1,5 @@
 # Project Index Report
-Generated on Fri 23 Jan 2026 02:32:16 +05
+Generated on Wed 28 Jan 2026 17:55:47 +05
 
 ## File Structure
 ```
@@ -18,19 +18,59 @@ Generated on Fri 23 Jan 2026 02:32:16 +05
 ./meta/AGENT_LOG.md
 ./meta/AGENTS.md
 ./server
-./server/test
-./server/test/live.test.js
+./server/middleware
+./server/middleware/auth.js
+./server/middleware/error.js
+./server/config
+./server/config/cors.js
+./server/config/env.js
 ./server/Dockerfile
 ./server/prisma
 ./server/prisma/schema.prisma
 ./server/tests
-./server/tests/api.test.cjs
+./server/tests/clawd.test.js
+./server/tests/auth.test.js
+./server/tests/setupDb.js
+./server/tests/ownership.test.js
+./server/tests/helpers.js
+./server/tests/setupEnv.js
+./server/tests/expenses.test.js
 ./server/index.js
+./server/utils
+./server/utils/parseExpense.js
+./server/utils/ownership.js
+./server/utils/asyncHandler.js
+./server/utils/currency.js
+./server/utils/category.js
+./server/utils/date.js
 ./server/migrate.sh
 ./server/package-lock.json
 ./server/package.json
+./server/db
+./server/db/prisma.js
+./server/data
+./server/data/seedData.js
+./server/data/defaultCategories.js
+./server/routes
+./server/routes/profile.js
+./server/routes/categories.js
+./server/routes/auth.js
+./server/routes/expenses.js
+./server/routes/debts.js
+./server/routes/clawd.js
+./server/routes/schedules.js
+./server/routes/api.js
+./server/routes/overview.js
+./server/routes/budgets.js
+./server/routes/notifications.js
+./server/app.js
+./server/services
+./server/services/seed.js
 ./run.sh
 ./README.md
+./certs
+./certs/config
+./certs/selfsigned
 ./scripts
 ./scripts/generate_index_report.sh
 ./docker-compose.yml
@@ -58,6 +98,7 @@ Generated on Fri 23 Jan 2026 02:32:16 +05
 ./client/package-lock.json
 ./client/package.json
 ./client/eslint.config.js
+./client/nginx.conf
 ./client/postcss.config.js
 ./client/src
 ./client/src/context
@@ -71,4 +112,5 @@ Generated on Fri 23 Jan 2026 02:32:16 +05
 ./client/src/data
 ./client/src/assets
 ./client/src/pages
+./local-dev.sh
 ```

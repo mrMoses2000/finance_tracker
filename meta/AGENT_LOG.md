@@ -2,6 +2,7 @@
 
 | Date | Agent | Action | Result |
 |------|-------|--------|--------|
+| 2026-01-28 | Codex | Security + Clawd Currency + Refactor | Modular server, currency conversion for Clawd, ownership checks, new tests. |
 | 2026-01-22 | Antigravity | Full Stack Refactor | Split into Client/Server, added Auth, Dockerized. |
 | 2026-01-22 | Antigravity | Visual Upgrade | Implemented Dark Glass theme + Tremor. |
 | 2026-01-22 | Antigravity | Fix Build | Downgraded to Node 22/Prisma 5 to fix Docker. |
@@ -27,3 +28,4 @@
 - **[2026-01-23] UX + HTTPS Upgrade (Codex)**: Category management, budget item removal, EUR currency, donut total label, unified fonts, light theme fixes, and HTTPS automation in run.sh.
 - **[2026-01-27] Default Categories Localization (Antigravity)**: Added `labelKey` to Category model, created DEFAULT_CATEGORIES for new users, implemented `getCategoryLabel` helper, localized all category displays (RU/EN/DE).
 - **[2026-01-28] Clawd.bot Integration (Antigravity)**: Added `/api/clawd/*` endpoints for expense parsing, monthly summaries, budget alerts, and category listing. Added DuckDNS support to run.sh. Created separate `clawdbot-config` repository for Stockholm server deployment.
+- **[2026-01-28] Security + Currency + Refactor (Codex)**: Fixed Clawd budget endpoints + currency conversion, added ownership checks/CORS/JWT expiry, modularized server routes, replaced tests.

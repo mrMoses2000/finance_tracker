@@ -11,9 +11,7 @@
 - [x] **Feature**: Payment Schedule page + upcoming notifications endpoint.
 - [x] **Integration**: n8n workflow template for Telegram reminders.
 - [x] **Performance**: Staggered Animations (Framer Motion) & Optimized Tooltips (Tremor).
-- [x] **Testing**: Integration tests passed (`npm test` in `server`).
 - [x] **Localization**: Full RU/EN/DE support via `LanguageContext` (Login, Register, Dashboard, Landing).
-- [x] **Refactor**: Fixed Auth API endpoint (`/auth/login`) and cleaned up `Login.jsx`.
 - [x] **Assets**: Fixed "Futuristic Dashboard" image on Landing page and restored TrendingUp icon color.
 - [x] **Indexing**: Generated index report in meta/INDEX_REPORT.md.
 - [x] **Ops**: Updated run.sh with auto-install checks and Ubuntu remote access prep.
@@ -30,23 +28,26 @@
 - [x] **UI**: В центре донат‑диаграмм отображается сумма, добавлена валюта EUR.
 - [x] **Theme**: Унифицирован шрифт и исправлена читаемость в светлой теме.
 - [x] **HTTPS**: run.sh поддерживает интерактивный HTTPS_MODE, short‑lived сертификаты и авто‑renew.
+- [x] **Clawd Fix**: Исправлены `/api/clawd/*` (BudgetMonth) и добавлена конвертация валюты.
+- [x] **Security**: JWT expiry + CORS config + ownership checks для всех сущностей.
+- [x] **Refactor**: Бэкенд разбит на модули (routes/middleware/services/utils).
+- [x] **Testing**: Обновлены Jest тесты (auth/expenses/ownership/clawd).
+- [x] **Config**: Секреты вынесены в `.env` и добавлен `.env.example`.
 
 ## 🚧 In Progress / Next Steps (For Codex Agent)
 - [ ] **Clawd.bot Deployment**: SSH into Stockholm server (16.171.28.19) and run deployment
 - [ ] **Telegram Bot**: Create bot via @BotFather, configure token
 - [ ] **API Token**: Generate secure token for Clawd.bot → Finance API communication
 - [ ] **Testing**: Verify expense parsing via Telegram messages
-- [ ] **Migrations**: Run `prisma db push` / migrations to apply new models (BudgetMonth, BudgetItem, Debt, ScheduleItem).
-- [ ] **QA**: Verify tests still pass with server running (`npm test`).
-- [ ] **Code Cleanup**: Remove any remaining unused CSS utility classes or legacy "Teal" styles if found.
-- [ ] **Deployment**: Prepare Docker Compose for production (set `NODE_ENV=production`, valid secrets).
+- [ ] **Migrations**: Sync production DB with Prisma schema (BudgetMonth, BudgetItem, Debt, ScheduleItem)
+- [ ] **Deployment**: Prepare Docker Compose for production (set `NODE_ENV=production`, valid secrets)
 
 ## Clawd.bot Integration
 **Domains**:
 - Finance App: `moneycheckos.duckdns.org` → 18.184.198.233 (Frankfurt)
 - Clawd.bot: `clawdmoneycheckos.duckdns.org` → 16.171.28.19 (Stockholm)
 
-**API Endpoints** (implemented in `server/index.js`):
+**API Endpoints** (implemented in `server/routes/clawd.js`):
 | Endpoint | Method | Purpose |
 |----------|--------|---------|
 | `/api/clawd/expense` | POST | Add expense from natural language |
@@ -59,8 +60,8 @@
 ## Critical Warnings
 - `BudgetWeb.jsx` serves as the main Dashboard container.
 - `Transactions.jsx` handles the full CRUD table.
-- `Debts.jsx` and `Schedule.jsx` are new premium pages relying on `/api/debts` and `/api/schedules`.
+- `Debts.jsx` and `Schedule.jsx` are premium pages relying on `/api/debts` and `/api/schedules`.
 - `LanguageContext.jsx` manages all translations. Add new keys here first.
 - Use `npm test` in `server/` to verify backend logic before major refactors.
 - The `index.css` contains the global "Obsidian" theme variables and scrollbar styles.
-- **Clawd.bot API** endpoints are in `server/index.js` after line 1065.
+- **Clawd.bot API** endpoints live in `server/routes/clawd.js`.

@@ -8,14 +8,19 @@
 
 ## Tech Stack
 - **Frontend**: React 18, Vite, Tailwind CSS, Framer Motion, TanStack Query, Tremor, Lucide React.
-- **Backend**: Node.js 22, Express, Prisma ORM, JSON Web Token (JWT).
+- **Backend**: Node.js, Express (modular routes + middleware), Prisma ORM, JSON Web Token (JWT).
 - **Database**: PostgreSQL 15.
 - **DevOps**: Docker, Docker Compose, Nginx (Reverse Proxy).
 
 ## Key Features
-- Multi-user support with secure Auth.
+- Multi-user support with secure Auth (JWT expiry + CORS control).
 - Dashboard with real-time KPI and Charts.
 - Transaction management (CRUD).
 - Budget Planning (Monthly limits + planned income).
 - Debts & Loans tracking with payment schedule.
 - Upcoming payment notifications (n8n workflow ready).
+- **Clawd.bot Integration**: Natural-language expenses with currency conversion.
+
+## Environment
+All secrets and runtime configuration are stored in `.env` on the server (see `.env.example`).
+No credentials are committed to the repository.
