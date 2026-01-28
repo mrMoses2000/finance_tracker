@@ -20,6 +20,8 @@ IP_ADDRESS="${IP_ADDRESS:-}"
 CERTBOT_EMAIL="${CERTBOT_EMAIL:-}"
 CERTBOT_PROFILE="${CERTBOT_PROFILE:-}"
 CERT_CHECK_DAYS="${CERT_CHECK_DAYS:-}"
+DUCKDNS_TOKEN="${DUCKDNS_TOKEN:-}"
+DUCKDNS_DOMAIN="${DUCKDNS_DOMAIN:-}"
 ENABLE_HTTPS=0
 SERVER_NAMES="_"
 SSL_CERT=""
@@ -126,6 +128,61 @@ prompt_https_mode() {
         echo -e "${YELLOW}[INFO] HTTPS режим доступен только на Linux. Использую off.${NC}"
         HTTPS_MODE="off"
     fi
+}
+
+# ===== DUCKDNS SUPPORT =====
+update_duckdns() {
+    if [ -z "$DUCKDNS_TOKEN" ]; then
+        return 0
+    fi
+    
+    if [ -z "$DUCKDNS_DOMAIN" ]; then
+        # Extract subdomain from DOMAIN if it's a .duckdns.org domain
+        if [[ "$DOMAIN" == *".duckdns.org" ]]; then
+            DUCKDNS_DOMAIN="${DOMAIN%.duckdns.org}"
+        else
+            return 0
+        fi
+    fi
+    
+    echo -e "${YELLOW}[INFO] Обновляю DuckDNS запись для ${DUCKDNS_DOMAIN}...${NC}"
+    
+    local public_ip
+    public_ip="$(get_public_ip)"
+    
+    if [ -z "$public_ip" ]; then
+        echo -e "${YELLOW}[WARN] Не удалось определить публичный IP для DuckDNS.${NC}"
+        return 1
+    fi
+    
+    local response
+    response=$(curl -s "https://www.duckdns.org/update?domains=${DUCKDNS_DOMAIN}&token=${DUCKDNS_TOKEN}&ip=${public_ip}")
+    
+    if [ "$response" == "OK" ]; then
+        echo -e "${GREEN}[OK] DuckDNS обновлен: ${DUCKDNS_DOMAIN}.duckdns.org -> ${public_ip}${NC}"
+        return 0
+    else
+        echo -e "${RED}[ERROR] DuckDNS обновление не удалось: ${response}${NC}"
+        return 1
+    fi
+}
+
+install_certbot_duckdns_plugin() {
+    if [ "$OS_TYPE" != "Linux" ]; then
+        return 1
+    fi
+    
+    echo -e "${YELLOW}[INFO] Устанавливаю certbot-dns-duckdns плагин...${NC}"
+    
+    # Try pip install first
+    if command -v pip3 &> /dev/null; then
+        pip3 install certbot-dns-duckdns 2>/dev/null && return 0
+    fi
+    
+    # Fallback to apt
+    $SUDO apt-get update -y
+    $SUDO apt-get install -y python3-pip
+    pip3 install certbot-dns-duckdns
 }
 
 ensure_certbot() {
@@ -654,6 +711,9 @@ mkdir -p "$ROOT_DIR/certs/config" "$ROOT_DIR/certs/selfsigned"
 
 # Останавливаем старые контейнеры если есть
 $COMPOSE_CMD down 2>/dev/null
+
+# Update DuckDNS if configured
+update_duckdns
 
 # HTTPS certificates + nginx config
 ensure_certificates

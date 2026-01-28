@@ -25,3 +25,5 @@
 - **[2026-01-23] Build Fix (Codex)**: Pinned FullCalendar to v5 and fixed CSS imports for a clean build.
 - **[2026-01-23] Ops Script Fix (Codex)**: Updated run.sh to detect AWS public IP via IMDSv2.
 - **[2026-01-23] UX + HTTPS Upgrade (Codex)**: Category management, budget item removal, EUR currency, donut total label, unified fonts, light theme fixes, and HTTPS automation in run.sh.
+- **[2026-01-27] Default Categories Localization (Antigravity)**: Added `labelKey` to Category model, created DEFAULT_CATEGORIES for new users, implemented `getCategoryLabel` helper, localized all category displays (RU/EN/DE).
+- **[2026-01-28] Clawd.bot Integration (Antigravity)**: Added `/api/clawd/*` endpoints for expense parsing, monthly summaries, budget alerts, and category listing. Added DuckDNS support to run.sh. Created separate `clawdbot-config` repository for Stockholm server deployment.

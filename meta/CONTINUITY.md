@@ -32,13 +32,29 @@
 - [x] **HTTPS**: run.sh поддерживает интерактивный HTTPS_MODE, short‑lived сертификаты и авто‑renew.
 
 ## 🚧 In Progress / Next Steps (For Codex Agent)
+- [ ] **Clawd.bot Deployment**: SSH into Stockholm server (16.171.28.19) and run deployment
+- [ ] **Telegram Bot**: Create bot via @BotFather, configure token
+- [ ] **API Token**: Generate secure token for Clawd.bot → Finance API communication
+- [ ] **Testing**: Verify expense parsing via Telegram messages
 - [ ] **Migrations**: Run `prisma db push` / migrations to apply new models (BudgetMonth, BudgetItem, Debt, ScheduleItem).
 - [ ] **QA**: Verify tests still pass with server running (`npm test`).
 - [ ] **Code Cleanup**: Remove any remaining unused CSS utility classes or legacy "Teal" styles if found.
-- [ ] **Refinement**: Improve the mobile responsiveness of the Transaction table if needed.
-- [ ] **UX Polish**: Add confirmation/toast feedback for schedule/debt edits.
 - [ ] **Deployment**: Prepare Docker Compose for production (set `NODE_ENV=production`, valid secrets).
-- [ ] **CI/CD**: Set up GitHub Actions or similar if repository is pushed.
+
+## Clawd.bot Integration
+**Domains**:
+- Finance App: `moneycheckos.duckdns.org` → 18.184.198.233 (Frankfurt)
+- Clawd.bot: `clawdmoneycheckos.duckdns.org` → 16.171.28.19 (Stockholm)
+
+**API Endpoints** (implemented in `server/index.js`):
+| Endpoint | Method | Purpose |
+|----------|--------|---------|
+| `/api/clawd/expense` | POST | Add expense from natural language |
+| `/api/clawd/summary` | GET | Monthly financial summary |
+| `/api/clawd/alerts` | GET | Budget limit warnings (80%/95%/100%) |
+| `/api/clawd/categories` | GET | Available categories with keywords |
+
+**Related Repository**: `~/clawdbot-config` - deployment configuration for Clawd.bot
 
 ## Critical Warnings
 - `BudgetWeb.jsx` serves as the main Dashboard container.
@@ -47,3 +63,4 @@
 - `LanguageContext.jsx` manages all translations. Add new keys here first.
 - Use `npm test` in `server/` to verify backend logic before major refactors.
 - The `index.css` contains the global "Obsidian" theme variables and scrollbar styles.
+- **Clawd.bot API** endpoints are in `server/index.js` after line 1065.

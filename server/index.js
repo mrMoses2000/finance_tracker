@@ -1072,4 +1072,327 @@ app.get('/api/me', authenticateToken, async (req, res) => {
     }
 });
 
+// ===== CLAWD.BOT INTEGRATION API =====
+
+// Category keywords for smart matching (multi-language)
+const CATEGORY_KEYWORDS = {
+    housing: ['аренда', 'квартира', 'жилье', 'связь', 'интернет', 'rent', 'apartment', 'housing', 'utilities', 'internet'],
+    transport: ['такси', 'бензин', 'проезд', 'транспорт', 'метро', 'автобус', 'taxi', 'gas', 'fuel', 'transport', 'bus', 'metro'],
+    food: ['еда', 'продукты', 'обед', 'ужин', 'завтрак', 'кофе', 'ресторан', 'food', 'groceries', 'lunch', 'dinner', 'breakfast', 'coffee', 'restaurant'],
+    entertainment: ['развлечения', 'кино', 'игры', 'netflix', 'spotify', 'entertainment', 'movies', 'games'],
+    health: ['здоровье', 'аптека', 'врач', 'лекарства', 'медицина', 'health', 'pharmacy', 'doctor', 'medicine'],
+    subscriptions: ['подписка', 'подписки', 'сервис', 'subscription', 'service'],
+    shopping: ['покупки', 'одежда', 'магазин', 'shopping', 'clothes', 'store'],
+    salary: ['зарплата', 'зп', 'salary', 'paycheck', 'wage'],
+    freelance: ['фриланс', 'заказ', 'проект', 'freelance', 'project', 'gig']
+};
+
+// Parse expense from natural language text
+const parseExpenseText = (text) => {
+    // Extract amount (supports: 5000, 5 000, 5,000, 5k, 5К)
+    const amountPatterns = [
+        /(\d{1,3}(?:[\s,]\d{3})+)/,  // 5 000 or 5,000
+        /(\d+)[kкК]/i,                // 5k or 5К
+        /(\d+(?:\.\d+)?)/             // 5000 or 50.5
+    ];
+
+    let amount = null;
+    for (const pattern of amountPatterns) {
+        const match = text.match(pattern);
+        if (match) {
+            let value = match[1].replace(/[\s,]/g, '');
+            if (text.toLowerCase().includes('k') || text.includes('к') || text.includes('К')) {
+                value = parseFloat(value) * 1000;
+            }
+            amount = parseFloat(value);
+            if (!isNaN(amount) && amount > 0) break;
+        }
+    }
+
+    // Determine type (income vs expense)
+    const incomeKeywords = ['получил', 'зарплата', 'доход', 'заработал', 'пришло', 'received', 'earned', 'income', 'salary'];
+    const expenseKeywords = ['потратил', 'купил', 'заплатил', 'оплатил', 'spent', 'bought', 'paid'];
+
+    let type = 'expense';
+    const lowerText = text.toLowerCase();
+    if (incomeKeywords.some(kw => lowerText.includes(kw))) {
+        type = 'income';
+    }
+
+    // Match category
+    let matchedCategory = null;
+    let maxMatches = 0;
+
+    for (const [categoryKey, keywords] of Object.entries(CATEGORY_KEYWORDS)) {
+        const matches = keywords.filter(kw => lowerText.includes(kw.toLowerCase())).length;
+        if (matches > maxMatches) {
+            maxMatches = matches;
+            matchedCategory = categoryKey;
+        }
+    }
+
+    // Extract description (remove amount and common verbs)
+    let description = text
+        .replace(/\d{1,3}(?:[\s,]\d{3})+/g, '')
+        .replace(/\d+[kкК]?/gi, '')
+        .replace(/потратил|купил|заплатил|оплатил|получил|на|за|spent|bought|paid|for|on/gi, '')
+        .trim()
+        .replace(/\s+/g, ' ')
+        .trim();
+
+    if (!description || description.length < 2) {
+        description = matchedCategory || 'Expense';
+    }
+
+    return {
+        amount,
+        type,
+        categoryKey: matchedCategory,
+        description: description.charAt(0).toUpperCase() + description.slice(1)
+    };
+};
+
+// POST /api/clawd/expense - Add expense from natural language
+app.post('/api/clawd/expense', authenticateToken, async (req, res) => {
+    try {
+        const { text, date } = req.body;
+
+        if (!text) {
+            return res.status(400).json({ error: 'Text is required' });
+        }
+
+        const parsed = parseExpenseText(text);
+
+        if (!parsed.amount || parsed.amount <= 0) {
+            return res.status(400).json({
+                error: 'Could not parse amount from text',
+                parsed
+            });
+        }
+
+        // Find matching category
+        let category = null;
+        if (parsed.categoryKey) {
+            category = await prisma.category.findFirst({
+                where: {
+                    userId: req.user.id,
+                    OR: [
+                        { labelKey: parsed.categoryKey },
+                        { label: { contains: parsed.categoryKey, mode: 'insensitive' } }
+                    ]
+                }
+            });
+        }
+
+        // Fallback to first category of matching type
+        if (!category) {
+            category = await prisma.category.findFirst({
+                where: {
+                    userId: req.user.id,
+                    type: parsed.type === 'income' ? 'income' : 'expense'
+                }
+            });
+        }
+
+        if (!category) {
+            console.error('[Clawd] Error: No matching category found in DB');
+            return res.status(400).json({ error: 'No matching category found' });
+        }
+        console.log(`[Clawd] Matched Category: ${category.label} (${category.id})`);
+
+        // Create expense
+        const expense = await prisma.expense.create({
+            data: {
+                userId: req.user.id,
+                categoryId: category.id,
+                amountUSD: parsed.amount,
+                description: parsed.description,
+                date: date ? new Date(date) : new Date(),
+                type: parsed.type
+            },
+            include: { category: true }
+        });
+
+        console.log(`[Clawd] Expense created successfully: ${expense.id}`);
+        res.json({
+            success: true,
+            expense,
+            parsed,
+            message: `✅ Added: ${parsed.description} - ${parsed.amount} (${category.label})`
+        });
+    } catch (e) {
+        console.error('[Clawd] Exception in /api/clawd/expense:', e);
+        res.status(500).json({ error: e.message });
+    }
+});
+
+// GET /api/clawd/summary - Monthly summary
+app.get('/api/clawd/summary', authenticateToken, async (req, res) => {
+    try {
+        console.log(`[Clawd] GET /api/clawd/summary - Query:`, req.query);
+        const monthStr = req.query.month;
+        const monthStart = toMonthStart(monthStr);
+        const { start, end } = getMonthRange(monthStart);
+
+        // Get expenses
+        const expenses = await prisma.expense.findMany({
+            where: {
+                userId: req.user.id,
+                date: { gte: start, lt: end }
+            },
+            include: { category: true }
+        });
+
+        // Calculate totals
+        const totalIncome = expenses
+            .filter(e => e.type === 'income')
+            .reduce((sum, e) => sum + e.amountUSD, 0);
+
+        const totalExpenses = expenses
+            .filter(e => e.type !== 'income')
+            .reduce((sum, e) => sum + e.amountUSD, 0);
+
+        // Get budget for planned income
+        const budget = await prisma.budget.findFirst({
+            where: { userId: req.user.id, month: toMonthKey(monthStart) }
+        });
+
+        // Group by category
+        const byCategory = {};
+        expenses.filter(e => e.type !== 'income').forEach(e => {
+            const label = e.category?.label || 'Other';
+            if (!byCategory[label]) {
+                byCategory[label] = { spent: 0, limit: e.category?.limit || 0 };
+            }
+            byCategory[label].spent += e.amountUSD;
+        });
+
+        res.json({
+            month: toMonthKey(monthStart),
+            income: totalIncome,
+            expenses: totalExpenses,
+            balance: totalIncome - totalExpenses,
+            plannedIncome: budget?.incomePlanned || 0,
+            byCategory
+        });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+// GET /api/clawd/alerts - Budget limit warnings
+app.get('/api/clawd/alerts', authenticateToken, async (req, res) => {
+    try {
+        console.log(`[Clawd] GET /api/clawd/alerts - Query:`, req.query);
+        const monthStr = req.query.month;
+        const monthStart = toMonthStart(monthStr);
+        const { start, end } = getMonthRange(monthStart);
+
+        // Get categories with limits
+        const categories = await prisma.category.findMany({
+            where: { userId: req.user.id, type: 'expense' }
+        });
+
+        // Get budget items
+        const budget = await prisma.budget.findFirst({
+            where: { userId: req.user.id, month: toMonthKey(monthStart) },
+            include: { items: true }
+        });
+
+        const budgetLimits = new Map();
+        (budget?.items || []).forEach(item => {
+            if (item.plannedAmount > 0) {
+                budgetLimits.set(item.categoryId, item.plannedAmount);
+            }
+        });
+
+        // Get expenses by category
+        const expenses = await prisma.expense.findMany({
+            where: {
+                userId: req.user.id,
+                type: 'expense',
+                date: { gte: start, lt: end }
+            }
+        });
+
+        const spentByCategory = new Map();
+        expenses.forEach(e => {
+            const current = spentByCategory.get(e.categoryId) || 0;
+            spentByCategory.set(e.categoryId, current + e.amountUSD);
+        });
+
+        // Generate alerts
+        const alerts = [];
+        const THRESHOLDS = [
+            { percent: 100, level: 'exceeded', emoji: '🚨' },
+            { percent: 95, level: 'critical', emoji: '⚠️' },
+            { percent: 80, level: 'warning', emoji: '⚡' }
+        ];
+
+        for (const category of categories) {
+            const limit = budgetLimits.get(category.id) || category.limit || 0;
+            if (limit <= 0) continue;
+
+            const spent = spentByCategory.get(category.id) || 0;
+            const percent = Math.round((spent / limit) * 100);
+
+            for (const threshold of THRESHOLDS) {
+                if (percent >= threshold.percent) {
+                    alerts.push({
+                        categoryId: category.id,
+                        category: category.label,
+                        labelKey: category.labelKey,
+                        spent,
+                        limit,
+                        percent,
+                        remaining: Math.max(0, limit - spent),
+                        level: threshold.level,
+                        emoji: threshold.emoji,
+                        message: `${threshold.emoji} ${category.label}: ${spent.toFixed(0)}/${limit.toFixed(0)} (${percent}%)`
+                    });
+                    break;
+                }
+            }
+        }
+
+        // Sort by percent descending
+        alerts.sort((a, b) => b.percent - a.percent);
+
+        console.log(`[Clawd] Generated ${alerts.length} alerts`);
+        res.json({
+            month: toMonthKey(monthStart),
+            alerts,
+            hasAlerts: alerts.length > 0
+        });
+    } catch (e) {
+        console.error('[Clawd] Exception in /api/clawd/alerts:', e);
+        res.status(500).json({ error: e.message });
+    }
+});
+
+// GET /api/clawd/categories - List categories for matching
+app.get('/api/clawd/categories', authenticateToken, async (req, res) => {
+    try {
+        console.log(`[Clawd] GET /api/clawd/categories`);
+        const categories = await prisma.category.findMany({
+            where: { userId: req.user.id },
+            orderBy: { type: 'asc' }
+        });
+
+        const result = categories.map(cat => ({
+            id: cat.id,
+            label: cat.label,
+            labelKey: cat.labelKey,
+            type: cat.type,
+            color: cat.color,
+            keywords: cat.labelKey ? (CATEGORY_KEYWORDS[cat.labelKey] || []) : []
+        }));
+
+        res.json(result);
+    } catch (e) {
+        console.error('[Clawd] Exception in /api/clawd/categories:', e);
+        res.status(500).json({ error: e.message });
+    }
+});
+
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

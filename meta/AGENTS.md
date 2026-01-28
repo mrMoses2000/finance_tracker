@@ -15,9 +15,9 @@
 - The `USAGE.md` file dictates the documentation structure. Do not deviate.
 
 ## Current Agent Stamp
-- **Agent**: Codex (OpenAI)
-- **Date**: 2026-01-23
-- **Status**: **UPDATED**. Month-based budgeting, schedules, debts/loans, and n8n workflow added.
+- **Agent**: Antigravity (Google DeepMind)
+- **Date**: 2026-01-28
+- **Status**: **UPDATED**. Clawd.bot integration complete. DuckDNS + SSL automation added.
 
 ## Handover Note for Codex
 Welcome! The project is in a very stable state.
@@ -27,7 +27,9 @@ Welcome! The project is in a very stable state.
 - **Testing**: `npm test` in `server/` checks the API. Please keep it passing.
 - **New**: Month selector replaces Standard/February mode, budgets are monthly, and schedule/debt pages exist.
 - **n8n**: Workflow template saved at `meta/n8n/budgetflow-upcoming-payments.json`.
-- **Next Goal**: Verify migrations + tests, and polish schedule/debt UX flows.
+- **Clawd.bot**: Integration added! API endpoints at `/api/clawd/*`. Config repo at `~/clawdbot-config`.
+- **DuckDNS**: Domain `moneycheckos.duckdns.org` points to Frankfurt server.
+- **Next Goal**: Deploy Clawd.bot to Stockholm server and test Telegram integration.
 
 ## Protocols
 - **Commits**: Use semantic commit messages.
