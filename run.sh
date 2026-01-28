@@ -406,7 +406,14 @@ ensure_certificates() {
         --config-dir "$CERTBOT_CONFIG_DIR" \
         --work-dir "$CERTBOT_WORK_DIR" \
         --logs-dir "$CERTBOT_LOGS_DIR" \
-        "${cert_args[@]}"
+        \"${cert_args[@]}\"
+
+    # Fix permissions - certbot runs with sudo and creates root-owned files
+    if [ -d "$CERTS_DIR" ]; then
+        echo -e "${YELLOW}[INFO] Исправляю права доступа к сертификатам...${NC}"
+        $SUDO chown -R "$(id -u):$(id -g)" "$CERTS_DIR" 2>/dev/null || true
+        chmod -R 755 "$CERTS_DIR" 2>/dev/null || true
+    fi
 
     local actual_cert_name="${DOMAIN:-$IP_ADDRESS}"
     local cert_path="$CERTBOT_CONFIG_DIR/live/${actual_cert_name}"
@@ -419,7 +426,7 @@ ensure_certificates() {
     else
         echo -e "${RED}[ERROR] Сертификаты не найдены в ${cert_path}${NC}"
         echo -e "${YELLOW}[DEBUG] Содержимое $CERTBOT_CONFIG_DIR/live/:${NC}"
-        ls -la "$CERTBOT_CONFIG_DIR/live/" 2>/dev/null || echo "Папка не существует"
+        $SUDO ls -la "$CERTBOT_CONFIG_DIR/live/" 2>/dev/null || echo "Папка не существует"
         exit 1
     fi
 }
