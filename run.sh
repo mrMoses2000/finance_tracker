@@ -267,10 +267,18 @@ ensure_certificates() {
         fi
         local primary="${DOMAIN#www.}"
         DOMAIN="$primary"
-        local www_domain="www.${primary}"
-        SERVER_NAMES="${primary} ${www_domain}"
         cert_name="$primary"
-        cert_args=(-d "$primary" -d "$www_domain")
+        
+        # DuckDNS doesn't support www subdomains, so skip www for *.duckdns.org
+        if [[ "$primary" == *".duckdns.org" ]]; then
+            echo -e "${YELLOW}[INFO] DuckDNS домен обнаружен. Пропускаю www поддомен.${NC}"
+            SERVER_NAMES="${primary}"
+            cert_args=(-d "$primary")
+        else
+            local www_domain="www.${primary}"
+            SERVER_NAMES="${primary} ${www_domain}"
+            cert_args=(-d "$primary" -d "$www_domain")
+        fi
     fi
 
     # IP mode: Let's Encrypt supports IP certs with --preferred-profile shortlived
