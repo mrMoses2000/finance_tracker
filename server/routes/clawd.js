@@ -4,6 +4,9 @@ import { asyncHandler } from '../utils/asyncHandler.js';
 import { parseExpenseText, CATEGORY_KEYWORDS } from '../utils/parseExpense.js';
 import { convertFromUSD, convertToUSD, getCurrencySymbol, normalizeCurrency } from '../utils/currency.js';
 import { getMonthRange, toMonthKey, toMonthStart } from '../utils/date.js';
+import { toDecimal } from '../utils/money.js';
+import { formatBudgetMonth, formatCategory, formatExpense } from '../utils/serializers.js';
+import { logAudit } from '../services/auditLog.js';
 
 const router = Router();
 
@@ -64,7 +67,7 @@ router.post('/expense', asyncHandler(async (req, res) => {
     data: {
       userId: req.user.id,
       categoryId: category.id,
-      amountUSD,
+      amountUSD: toDecimal(amountUSD),
       description: parsed.description,
       date: date ? new Date(date) : new Date(),
       type: parsed.type,
@@ -76,9 +79,18 @@ router.post('/expense', asyncHandler(async (req, res) => {
   const symbol = getCurrencySymbol(targetCurrency);
   const amountLocal = convertFromUSD(amountUSD, targetCurrency);
 
+  await logAudit({
+    req,
+    userId: req.user.id,
+    action: 'create',
+    entity: 'expense',
+    entityId: expense.id,
+    metadata: { source: 'clawd' },
+  });
+
   return res.json({
     success: true,
-    expense,
+    expense: formatExpense(expense),
     parsed: {
       ...parsed,
       amountUSD,
@@ -104,12 +116,13 @@ router.get('/summary', asyncHandler(async (req, res) => {
     },
     include: { category: true },
   });
+  const formattedExpenses = expenses.map(formatExpense);
 
-  const totalIncomeUSD = expenses
+  const totalIncomeUSD = formattedExpenses
     .filter((e) => e.type === 'income')
     .reduce((sum, e) => sum + e.amountUSD, 0);
 
-  const totalExpensesUSD = expenses
+  const totalExpensesUSD = formattedExpenses
     .filter((e) => e.type !== 'income')
     .reduce((sum, e) => sum + e.amountUSD, 0);
 
@@ -117,16 +130,17 @@ router.get('/summary', asyncHandler(async (req, res) => {
     where: { userId_month: { userId: req.user.id, month: monthStart } },
     include: { items: true },
   });
+  const formattedBudget = budgetMonth ? formatBudgetMonth(budgetMonth) : null;
 
   const budgetLimits = new Map();
-  (budgetMonth?.items || []).forEach((item) => {
+  (formattedBudget?.items || []).forEach((item) => {
     if (item.plannedAmount > 0) {
       budgetLimits.set(item.categoryId, item.plannedAmount);
     }
   });
 
   const byCategory = {};
-  expenses.filter((e) => e.type !== 'income').forEach((e) => {
+  formattedExpenses.filter((e) => e.type !== 'income').forEach((e) => {
     const label = e.category?.label || 'Other';
     const limitUSD = budgetLimits.get(e.categoryId) || e.category?.limit || 0;
     if (!byCategory[label]) {
@@ -142,7 +156,7 @@ router.get('/summary', asyncHandler(async (req, res) => {
     income: convertFromUSD(totalIncomeUSD, currency),
     expenses: convertFromUSD(totalExpensesUSD, currency),
     balance: convertFromUSD(totalIncomeUSD - totalExpensesUSD, currency),
-    plannedIncome: convertFromUSD(budgetMonth?.incomePlanned || 0, currency),
+    plannedIncome: convertFromUSD(formattedBudget?.incomePlanned || 0, currency),
     byCategory,
   });
 }));
@@ -158,14 +172,16 @@ router.get('/alerts', asyncHandler(async (req, res) => {
   const categories = await prisma.category.findMany({
     where: { userId: req.user.id, type: 'expense' },
   });
+  const formattedCategories = categories.map(formatCategory);
 
   const budgetMonth = await prisma.budgetMonth.findUnique({
     where: { userId_month: { userId: req.user.id, month: monthStart } },
     include: { items: true },
   });
+  const formattedBudget = budgetMonth ? formatBudgetMonth(budgetMonth) : null;
 
   const budgetLimits = new Map();
-  (budgetMonth?.items || []).forEach((item) => {
+  (formattedBudget?.items || []).forEach((item) => {
     if (item.plannedAmount > 0) {
       budgetLimits.set(item.categoryId, item.plannedAmount);
     }
@@ -178,9 +194,10 @@ router.get('/alerts', asyncHandler(async (req, res) => {
       date: { gte: start, lt: end },
     },
   });
+  const formattedExpenses = expenses.map(formatExpense);
 
   const spentByCategory = new Map();
-  expenses.forEach((e) => {
+  formattedExpenses.forEach((e) => {
     const current = spentByCategory.get(e.categoryId) || 0;
     spentByCategory.set(e.categoryId, current + e.amountUSD);
   });
@@ -192,7 +209,7 @@ router.get('/alerts', asyncHandler(async (req, res) => {
     { percent: 80, level: 'warning', emoji: '\u26A1' },
   ];
 
-  for (const category of categories) {
+  for (const category of formattedCategories) {
     const limitUSD = budgetLimits.get(category.id) || category.limit || 0;
     if (limitUSD <= 0) continue;
 

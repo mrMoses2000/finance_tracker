@@ -3,6 +3,9 @@ import prisma from '../db/prisma.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { ensureCategoryOwnership, ensureDebtOwnership } from '../utils/ownership.js';
 import { getMonthRange, toMonthStart } from '../utils/date.js';
+import { toDecimal } from '../utils/money.js';
+import { formatScheduleItem } from '../utils/serializers.js';
+import { logAudit } from '../services/auditLog.js';
 
 const router = Router();
 
@@ -27,7 +30,7 @@ router.get('/schedules', asyncHandler(async (req, res) => {
     include: { category: true, debt: true },
     orderBy: { dueDate: 'asc' },
   });
-  return res.json(items);
+  return res.json(items.map(formatScheduleItem));
 }));
 
 router.post('/schedules', asyncHandler(async (req, res) => {
@@ -49,7 +52,7 @@ router.post('/schedules', asyncHandler(async (req, res) => {
     data: {
       userId: req.user.id,
       title,
-      amountUSD: parsedAmount,
+      amountUSD: toDecimal(parsedAmount),
       type: type || 'expense',
       dueDate: new Date(dueDate),
       recurrence: recurrence || 'once',
@@ -58,7 +61,17 @@ router.post('/schedules', asyncHandler(async (req, res) => {
       debtId: debtId || null,
     },
   });
-  return res.json(item);
+
+  await logAudit({
+    req,
+    userId: req.user.id,
+    action: 'create',
+    entity: 'scheduleItem',
+    entityId: item.id,
+    metadata: { status: status || 'pending' },
+  });
+
+  return res.json(formatScheduleItem(item));
 }));
 
 router.put('/schedules/:id', asyncHandler(async (req, res) => {
@@ -83,7 +96,7 @@ router.put('/schedules/:id', asyncHandler(async (req, res) => {
     where: { id },
     data: {
       title: title ?? existing.title,
-      amountUSD: Number.isFinite(parsedAmount) ? parsedAmount : existing.amountUSD,
+      amountUSD: Number.isFinite(parsedAmount) ? toDecimal(parsedAmount) : existing.amountUSD,
       type: type || existing.type,
       dueDate: dueDate ? new Date(dueDate) : existing.dueDate,
       recurrence: recurrence || existing.recurrence,
@@ -92,7 +105,17 @@ router.put('/schedules/:id', asyncHandler(async (req, res) => {
       debtId: debtId === '' ? null : debtId ?? existing.debtId,
     },
   });
-  return res.json(updated);
+
+  await logAudit({
+    req,
+    userId: req.user.id,
+    action: 'update',
+    entity: 'scheduleItem',
+    entityId: id,
+    metadata: { status: status || existing.status },
+  });
+
+  return res.json(formatScheduleItem(updated));
 }));
 
 router.delete('/schedules/:id', asyncHandler(async (req, res) => {
@@ -103,6 +126,15 @@ router.delete('/schedules/:id', asyncHandler(async (req, res) => {
   if (!existing) return res.sendStatus(404);
 
   await prisma.scheduleItem.delete({ where: { id } });
+
+  await logAudit({
+    req,
+    userId: req.user.id,
+    action: 'delete',
+    entity: 'scheduleItem',
+    entityId: id,
+  });
+
   return res.json({ success: true });
 }));
 

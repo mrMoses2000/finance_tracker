@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import prisma from '../db/prisma.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
+import { formatScheduleItem } from '../utils/serializers.js';
 
 const router = Router();
 
@@ -19,7 +20,7 @@ router.get('/notifications/upcoming', asyncHandler(async (req, res) => {
     orderBy: { dueDate: 'asc' },
   });
 
-  return res.json({ days, items });
+  return res.json({ days, items: items.map(formatScheduleItem) });
 }));
 
 export default router;

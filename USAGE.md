@@ -14,3 +14,4 @@
    - scripts/generate_index_report.sh
 6) Обновить Agent Stamp в meta/AGENTS.md и добавить запись в meta/AGENT_LOG.md.
 7) Секреты хранить только в `.env` на серверах/локально, не коммитить.
+8) Если добавляете новые переменные (rate limit, audit log, prod профили), обновляйте `.env.example` и README.

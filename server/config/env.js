@@ -15,6 +15,19 @@ export const SEED_ADMIN_EMAIL = process.env.SEED_ADMIN_EMAIL || '';
 export const SEED_ADMIN_PASSWORD = process.env.SEED_ADMIN_PASSWORD || '';
 export const SEED_ADMIN_NAME = process.env.SEED_ADMIN_NAME || 'Admin User';
 
+export const TRUST_PROXY = process.env.TRUST_PROXY === 'true';
+
+export const RATE_LIMIT_ENABLED = process.env.RATE_LIMIT_ENABLED !== 'false';
+export const RATE_LIMIT_WINDOW_MS = Number.parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000', 10);
+export const RATE_LIMIT_MAX = Number.parseInt(process.env.RATE_LIMIT_MAX || '300', 10);
+export const RATE_LIMIT_AUTH_WINDOW_MS = Number.parseInt(
+  process.env.RATE_LIMIT_AUTH_WINDOW_MS || String(RATE_LIMIT_WINDOW_MS),
+  10,
+);
+export const RATE_LIMIT_AUTH_MAX = Number.parseInt(process.env.RATE_LIMIT_AUTH_MAX || '20', 10);
+
+export const AUDIT_LOG_ENABLED = process.env.AUDIT_LOG_ENABLED !== 'false';
+
 export const validateEnv = () => {
   if (NODE_ENV === 'production') {
     if (!JWT_SECRET) {

@@ -1,6 +1,7 @@
 import prisma from '../db/prisma.js';
 
 export const resetDb = async () => {
+  await prisma.auditLog.deleteMany();
   await prisma.scheduleItem.deleteMany();
   await prisma.budgetItem.deleteMany();
   await prisma.budgetMonth.deleteMany();

@@ -14,11 +14,18 @@ cp .env.example .env
 ```
 This requires Docker. It will start Frontend (:3000), Backend (:4000), and Postgres (:5432).
 
+### 2.1 Production Profile
+```bash
+RUN_MODE=prod ./run.sh
+```
+Uses `docker-compose.prod.yml` with `NODE_ENV=production` and applies migrations (`prisma migrate deploy`).
+
 ### 3. Access
 Open http://localhost:3000
 
 > Admin seed is optional and controlled by `.env` variables.
 > No credentials are stored in the repository.
+> Enable audit logs and rate limiting via `AUDIT_LOG_ENABLED` and `RATE_LIMIT_*`.
 
 ## 🛠 Features
 

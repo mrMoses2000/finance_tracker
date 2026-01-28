@@ -1,3 +1,5 @@
+import { toNumber } from './money.js';
+
 const RATES = {
   USD: 1,
   EUR: 0.92,
@@ -21,7 +23,7 @@ export const normalizeCurrency = (currency) => {
 export const convertToUSD = (amount, currency) => {
   const code = normalizeCurrency(currency);
   const rate = RATES[code] || 1;
-  const value = Number(amount || 0);
+  const value = toNumber(amount, 0);
   if (!rate) return 0;
   return value / rate;
 };
@@ -29,7 +31,7 @@ export const convertToUSD = (amount, currency) => {
 export const convertFromUSD = (amountUSD, currency) => {
   const code = normalizeCurrency(currency);
   const rate = RATES[code] || 1;
-  const value = Number(amountUSD || 0);
+  const value = toNumber(amountUSD, 0);
   return value * rate;
 };
 

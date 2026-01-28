@@ -2,6 +2,12 @@ import { Router } from 'express';
 import prisma from '../db/prisma.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { getMonthRange, toMonthKey, toMonthStart } from '../utils/date.js';
+import {
+  formatBudgetMonth,
+  formatCategory,
+  formatExpense,
+  formatScheduleItem,
+} from '../utils/serializers.js';
 
 const router = Router();
 
@@ -28,16 +34,18 @@ router.get('/overview', asyncHandler(async (req, res) => {
     }),
   ]);
 
+  const formattedBudget = budgetMonth ? formatBudgetMonth(budgetMonth) : null;
+
   return res.json({
     month: toMonthKey(monthStart),
-    transactions,
-    categories,
+    transactions: transactions.map(formatExpense),
+    categories: categories.map(formatCategory),
     budget: budgetMonth
       ? {
-          id: budgetMonth.id,
+          id: formattedBudget.id,
           month: toMonthKey(monthStart),
-          incomePlanned: budgetMonth.incomePlanned,
-          items: budgetMonth.items,
+          incomePlanned: formattedBudget.incomePlanned,
+          items: formattedBudget.items,
         }
       : {
           id: null,
@@ -45,7 +53,7 @@ router.get('/overview', asyncHandler(async (req, res) => {
           incomePlanned: 0,
           items: [],
         },
-    schedule: scheduleItems,
+    schedule: scheduleItems.map(formatScheduleItem),
   });
 }));
 

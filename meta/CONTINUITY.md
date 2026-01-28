@@ -33,14 +33,18 @@
 - [x] **Refactor**: Бэкенд разбит на модули (routes/middleware/services/utils).
 - [x] **Testing**: Обновлены Jest тесты (auth/expenses/ownership/clawd).
 - [x] **Config**: Секреты вынесены в `.env` и добавлен `.env.example`.
+- [x] **Data**: Денежные поля переведены на Prisma Decimal + миграция.
+- [x] **Ops**: Добавлен `docker-compose.prod.yml` и режим `RUN_MODE=prod`.
+- [x] **Security**: Rate limiting для API и auth.
+- [x] **Observability**: AuditLog для всех mutating эндпоинтов.
 
 ## 🚧 In Progress / Next Steps (For Codex Agent)
 - [ ] **Clawd.bot Deployment**: SSH into Stockholm server (16.171.28.19) and run deployment
 - [ ] **Telegram Bot**: Create bot via @BotFather, configure token
 - [ ] **API Token**: Generate secure token for Clawd.bot → Finance API communication
 - [ ] **Testing**: Verify expense parsing via Telegram messages
-- [ ] **Migrations**: Sync production DB with Prisma schema (BudgetMonth, BudgetItem, Debt, ScheduleItem)
-- [ ] **Deployment**: Prepare Docker Compose for production (set `NODE_ENV=production`, valid secrets)
+- [ ] **Deployment**: Применить миграцию в проде (`npx prisma migrate deploy`).
+- [ ] **Deployment**: Запуск в прод-режиме (`RUN_MODE=prod ./run.sh`).
 
 ## Clawd.bot Integration
 **Domains**:

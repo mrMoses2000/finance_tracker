@@ -3,6 +3,9 @@ import prisma from '../db/prisma.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { pickCategoryColor } from '../utils/category.js';
 import { ensureCategoryOwnership } from '../utils/ownership.js';
+import { toDecimal } from '../utils/money.js';
+import { formatCategory } from '../utils/serializers.js';
+import { logAudit } from '../services/auditLog.js';
 
 const router = Router();
 
@@ -10,7 +13,7 @@ router.get('/categories', asyncHandler(async (req, res) => {
   const categories = await prisma.category.findMany({
     where: { userId: req.user.id },
   });
-  return res.json(categories);
+  return res.json(categories.map(formatCategory));
 }));
 
 router.post('/categories', asyncHandler(async (req, res) => {
@@ -33,12 +36,21 @@ router.post('/categories', asyncHandler(async (req, res) => {
         userId: req.user.id,
         label,
         color,
-        limit: Number.isNaN(limit) ? 0 : limit,
+        limit: Number.isNaN(limit) ? toDecimal(0) : toDecimal(limit),
         type,
       },
     });
 
-    return res.json(category);
+    await logAudit({
+      req,
+      userId: req.user.id,
+      action: 'create',
+      entity: 'category',
+      entityId: category.id,
+      metadata: { label, type },
+    });
+
+    return res.json(formatCategory(category));
   } catch (e) {
     if (e.code === 'P2002') {
       return res.status(409).json({ error: 'Category already exists' });
@@ -53,17 +65,35 @@ router.put('/categories/:id', asyncHandler(async (req, res) => {
 
   await ensureCategoryOwnership(req.user.id, id);
 
+  const limitProvided = limit !== undefined;
+  const parsedLimit = limitProvided ? Number.parseFloat(limit) : null;
+  const limitValue = limitProvided
+    ? Number.isNaN(parsedLimit)
+      ? toDecimal(0)
+      : toDecimal(parsedLimit)
+    : undefined;
+
   try {
     const updated = await prisma.category.update({
       where: { id },
       data: {
         label,
         color,
-        limit: Number.isNaN(Number.parseFloat(limit)) ? 0 : Number.parseFloat(limit || 0),
+        limit: limitValue,
         type,
       },
     });
-    return res.json(updated);
+
+    await logAudit({
+      req,
+      userId: req.user.id,
+      action: 'update',
+      entity: 'category',
+      entityId: id,
+      metadata: { label, type },
+    });
+
+    return res.json(formatCategory(updated));
   } catch (e) {
     if (e.code === 'P2002') {
       return res.status(409).json({ error: 'Category already exists' });
@@ -92,6 +122,15 @@ router.delete('/categories/:id', asyncHandler(async (req, res) => {
   }
 
   await prisma.category.delete({ where: { id } });
+
+  await logAudit({
+    req,
+    userId: req.user.id,
+    action: 'delete',
+    entity: 'category',
+    entityId: id,
+  });
+
   return res.json({ success: true });
 }));
 

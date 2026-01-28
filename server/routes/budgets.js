@@ -3,6 +3,9 @@ import prisma from '../db/prisma.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { toMonthStart, toMonthKey } from '../utils/date.js';
 import { ensureCategoryOwnership } from '../utils/ownership.js';
+import { toDecimal } from '../utils/money.js';
+import { formatBudgetItem, formatBudgetMonth } from '../utils/serializers.js';
+import { logAudit } from '../services/auditLog.js';
 
 const router = Router();
 
@@ -22,11 +25,12 @@ router.get('/budgets', asyncHandler(async (req, res) => {
     });
   }
 
+  const formatted = formatBudgetMonth(budgetMonth);
   return res.json({
-    id: budgetMonth.id,
+    id: formatted.id,
     month: toMonthKey(monthStart),
-    incomePlanned: budgetMonth.incomePlanned,
-    items: budgetMonth.items,
+    incomePlanned: formatted.incomePlanned,
+    items: formatted.items,
   });
 }));
 
@@ -35,21 +39,31 @@ router.put('/budgets/income', asyncHandler(async (req, res) => {
   const monthStart = toMonthStart(month);
 
   const parsedIncome = Number.parseFloat(incomePlanned || 0);
+  const incomeValue = Number.isNaN(parsedIncome) ? toDecimal(0) : toDecimal(parsedIncome);
 
   const budgetMonth = await prisma.budgetMonth.upsert({
     where: { userId_month: { userId: req.user.id, month: monthStart } },
-    update: { incomePlanned: Number.isNaN(parsedIncome) ? 0 : parsedIncome },
+    update: { incomePlanned: incomeValue },
     create: {
       userId: req.user.id,
       month: monthStart,
-      incomePlanned: Number.isNaN(parsedIncome) ? 0 : parsedIncome,
+      incomePlanned: incomeValue,
     },
+  });
+
+  await logAudit({
+    req,
+    userId: req.user.id,
+    action: 'update',
+    entity: 'budgetMonth',
+    entityId: budgetMonth.id,
+    metadata: { month: toMonthKey(monthStart) },
   });
 
   return res.json({
     id: budgetMonth.id,
     month: toMonthKey(monthStart),
-    incomePlanned: budgetMonth.incomePlanned,
+    incomePlanned: formatBudgetMonth(budgetMonth).incomePlanned,
   });
 }));
 
@@ -74,6 +88,7 @@ router.put('/budgets/item', asyncHandler(async (req, res) => {
   });
 
   const parsedAmount = Number.parseFloat(plannedAmount || 0);
+  const amountValue = Number.isNaN(parsedAmount) ? toDecimal(0) : toDecimal(parsedAmount);
 
   const updatedItem = await prisma.budgetItem.upsert({
     where: {
@@ -82,16 +97,25 @@ router.put('/budgets/item', asyncHandler(async (req, res) => {
         categoryId,
       },
     },
-    update: { plannedAmount: Number.isNaN(parsedAmount) ? 0 : parsedAmount },
+    update: { plannedAmount: amountValue },
     create: {
       budgetMonthId: budgetMonth.id,
       categoryId,
-      plannedAmount: Number.isNaN(parsedAmount) ? 0 : parsedAmount,
+      plannedAmount: amountValue,
     },
     include: { category: true },
   });
 
-  return res.json(updatedItem);
+  await logAudit({
+    req,
+    userId: req.user.id,
+    action: 'update',
+    entity: 'budgetItem',
+    entityId: updatedItem.id,
+    metadata: { month: toMonthKey(monthStart), categoryId },
+  });
+
+  return res.json(formatBudgetItem(updatedItem));
 }));
 
 router.delete('/budgets/item', asyncHandler(async (req, res) => {
@@ -125,6 +149,14 @@ router.delete('/budgets/item', asyncHandler(async (req, res) => {
       throw e;
     }
   }
+
+  await logAudit({
+    req,
+    userId: req.user.id,
+    action: 'delete',
+    entity: 'budgetItem',
+    metadata: { month: toMonthKey(monthStart), categoryId },
+  });
 
   return res.json({ success: true });
 }));

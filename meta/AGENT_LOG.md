@@ -2,6 +2,7 @@
 
 | Date | Agent | Action | Result |
 |------|-------|--------|--------|
+| 2026-01-28 | Codex | Decimal + Audit + Rate Limit + Prod Compose | Money fields to Decimal, audit logs, API rate limiting, docker-compose.prod.yml. |
 | 2026-01-28 | Codex | Security + Clawd Currency + Refactor | Modular server, currency conversion for Clawd, ownership checks, new tests. |
 | 2026-01-22 | Antigravity | Full Stack Refactor | Split into Client/Server, added Auth, Dockerized. |
 | 2026-01-22 | Antigravity | Visual Upgrade | Implemented Dark Glass theme + Tremor. |
@@ -29,3 +30,4 @@
 - **[2026-01-27] Default Categories Localization (Antigravity)**: Added `labelKey` to Category model, created DEFAULT_CATEGORIES for new users, implemented `getCategoryLabel` helper, localized all category displays (RU/EN/DE).
 - **[2026-01-28] Clawd.bot Integration (Antigravity)**: Added `/api/clawd/*` endpoints for expense parsing, monthly summaries, budget alerts, and category listing. Added DuckDNS support to run.sh. Created separate `clawdbot-config` repository for Stockholm server deployment.
 - **[2026-01-28] Security + Currency + Refactor (Codex)**: Fixed Clawd budget endpoints + currency conversion, added ownership checks/CORS/JWT expiry, modularized server routes, replaced tests.
+- **[2026-01-28] Decimal + Audit + Rate Limit + Prod Compose (Codex)**: Converted money fields to Prisma Decimal with migration, added audit logs + rate limiting, and introduced `docker-compose.prod.yml`.

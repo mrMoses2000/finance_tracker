@@ -3,6 +3,9 @@ import prisma from '../db/prisma.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { ensureCategoryOwnership } from '../utils/ownership.js';
 import { convertToUSD, normalizeCurrency } from '../utils/currency.js';
+import { toDecimal } from '../utils/money.js';
+import { formatExpense } from '../utils/serializers.js';
+import { logAudit } from '../services/auditLog.js';
 
 const router = Router();
 
@@ -11,7 +14,7 @@ router.get('/data', asyncHandler(async (req, res) => {
     where: { userId: req.user.id },
     include: { category: true },
   });
-  return res.json({ expenses });
+  return res.json({ expenses: expenses.map(formatExpense) });
 }));
 
 const resolveAmountUSD = ({ amountUSD, amountLocal, currency }) => {
@@ -41,7 +44,7 @@ router.post('/expenses', asyncHandler(async (req, res) => {
   const expense = await prisma.expense.create({
     data: {
       userId: req.user.id,
-      amountUSD: parsedAmount,
+      amountUSD: toDecimal(parsedAmount),
       description: description || '',
       categoryId,
       date: date ? new Date(date) : new Date(),
@@ -49,7 +52,17 @@ router.post('/expenses', asyncHandler(async (req, res) => {
       currency: normalizeCurrency(currency || 'USD'),
     },
   });
-  return res.json(expense);
+
+  await logAudit({
+    req,
+    userId: req.user.id,
+    action: 'create',
+    entity: 'expense',
+    entityId: expense.id,
+    metadata: { categoryId, type: type || 'expense' },
+  });
+
+  return res.json(formatExpense(expense));
 }));
 
 router.put('/expenses/:id', asyncHandler(async (req, res) => {
@@ -72,7 +85,7 @@ router.put('/expenses/:id', asyncHandler(async (req, res) => {
   const updated = await prisma.expense.update({
     where: { id },
     data: {
-      amountUSD: Number.isFinite(parsedAmount) ? parsedAmount : expense.amountUSD,
+      amountUSD: Number.isFinite(parsedAmount) ? toDecimal(parsedAmount) : expense.amountUSD,
       description: description ?? expense.description,
       categoryId: categoryId || expense.categoryId,
       date: date ? new Date(date) : expense.date,
@@ -80,7 +93,17 @@ router.put('/expenses/:id', asyncHandler(async (req, res) => {
       currency: currency ? normalizeCurrency(currency) : expense.currency,
     },
   });
-  return res.json(updated);
+
+  await logAudit({
+    req,
+    userId: req.user.id,
+    action: 'update',
+    entity: 'expense',
+    entityId: id,
+    metadata: { categoryId: categoryId || expense.categoryId },
+  });
+
+  return res.json(formatExpense(updated));
 }));
 
 router.delete('/expenses/:id', asyncHandler(async (req, res) => {
@@ -93,6 +116,15 @@ router.delete('/expenses/:id', asyncHandler(async (req, res) => {
   }
 
   await prisma.expense.delete({ where: { id } });
+
+  await logAudit({
+    req,
+    userId: req.user.id,
+    action: 'delete',
+    entity: 'expense',
+    entityId: id,
+  });
+
   return res.json({ success: true });
 }));
 

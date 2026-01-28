@@ -29,7 +29,77 @@ BudgetFlow is a premium, high-performance financial tracking application. It hel
 ### Environment
 ```bash
 cp .env.example .env
-# Fill in JWT_SECRET and DB credentials
+# Fill in JWT_SECRET, DB credentials, and security settings
+```
+
+### Example `.env` (EN)
+```env
+# Database
+POSTGRES_USER=budget_user
+POSTGRES_PASSWORD=change_me_strong
+POSTGRES_DB=budget_app
+
+# Auth
+JWT_SECRET=replace_with_32_char_secret
+JWT_EXPIRES_IN=7d
+
+# CORS
+CORS_ORIGINS=https://moneycheckos.duckdns.org
+CORS_ALLOW_ALL=false
+
+# Networking
+TRUST_PROXY=true
+
+# Rate limiting
+RATE_LIMIT_ENABLED=true
+RATE_LIMIT_WINDOW_MS=900000
+RATE_LIMIT_MAX=300
+RATE_LIMIT_AUTH_WINDOW_MS=900000
+RATE_LIMIT_AUTH_MAX=20
+
+# Audit log
+AUDIT_LOG_ENABLED=true
+
+# Optional admin seed
+SEED_ADMIN=false
+SEED_ADMIN_EMAIL=admin@example.com
+SEED_ADMIN_PASSWORD=change_me_strong
+SEED_ADMIN_NAME=Admin User
+```
+
+### Пример `.env` (RU)
+```env
+# База данных
+POSTGRES_USER=budget_user
+POSTGRES_PASSWORD=change_me_strong
+POSTGRES_DB=budget_app
+
+# Аутентификация
+JWT_SECRET=replace_with_32_char_secret
+JWT_EXPIRES_IN=7d
+
+# CORS
+CORS_ORIGINS=https://moneycheckos.duckdns.org
+CORS_ALLOW_ALL=false
+
+# Сеть / прокси
+TRUST_PROXY=true
+
+# Лимиты запросов
+RATE_LIMIT_ENABLED=true
+RATE_LIMIT_WINDOW_MS=900000
+RATE_LIMIT_MAX=300
+RATE_LIMIT_AUTH_WINDOW_MS=900000
+RATE_LIMIT_AUTH_MAX=20
+
+# Аудит-лог
+AUDIT_LOG_ENABLED=true
+
+# Опциональный seed администратора
+SEED_ADMIN=false
+SEED_ADMIN_EMAIL=admin@example.com
+SEED_ADMIN_PASSWORD=change_me_strong
+SEED_ADMIN_NAME=Admin User
 ```
 
 ### Running the App (Docker)
@@ -37,6 +107,13 @@ cp .env.example .env
 ./run.sh
 ```
 This script builds and launches Frontend (:3000), Backend (:4000), and Postgres (:5432).
+
+### Production Profile (Docker)
+Use the production compose file and migration-based startup.
+```bash
+RUN_MODE=prod ./run.sh
+```
+This uses `docker-compose.prod.yml` (no bind mounts, `NODE_ENV=production`) and runs `prisma migrate deploy` on startup.
 
 ### Running Tests
 Tests use a dedicated test database.
@@ -51,6 +128,11 @@ DATABASE_URL="postgresql://user:password@localhost:5432/budget_app_test?schema=p
 # Run tests
 DATABASE_URL="postgresql://user:password@localhost:5432/budget_app_test?schema=public" npm test
 ```
+
+## 🔐 Security & Observability
+- **Rate limiting**: Configurable via `RATE_LIMIT_*` in `.env.example`.
+- **Audit logs**: Enabled by default (`AUDIT_LOG_ENABLED=true`) and stored in `AuditLog`.
+- **Reverse proxy**: Set `TRUST_PROXY=true` if running behind Nginx/Cloudflare.
 
 ## 📂 Project Structure
 - `client/`: React Frontend (Obsidian Theme).

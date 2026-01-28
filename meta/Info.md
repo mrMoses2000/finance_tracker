@@ -20,7 +20,11 @@
 - Debts & Loans tracking with payment schedule.
 - Upcoming payment notifications (n8n workflow ready).
 - **Clawd.bot Integration**: Natural-language expenses with currency conversion.
+- **Precision**: Money fields stored as Prisma Decimal (DB-level precision).
+- **Security**: API rate limiting + audit logs for all mutating endpoints.
+- **Ops**: Production Docker profile (`docker-compose.prod.yml`) with `prisma migrate deploy`.
 
 ## Environment
 All secrets and runtime configuration are stored in `.env` on the server (see `.env.example`).
 No credentials are committed to the repository.
+Use `TRUST_PROXY=true` when running behind Nginx/Cloudflare and tune `RATE_LIMIT_*` if needed.

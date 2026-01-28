@@ -20,6 +20,7 @@ model User {
   budgetMonths  BudgetMonth[]
   scheduleItems ScheduleItem[]
   debts         Debt[]
+  auditLogs     AuditLog[]
 }
 
 model Category {
@@ -27,7 +28,7 @@ model Category {
   label     String
   labelKey  String?   // For system categories: "housing", "transport", etc. Null for custom user categories.
   color     String
-  limit     Float     @default(0)
+  limit     Decimal   @default(0) @db.Decimal(18, 2)
   type      String    @default("expense") // "expense" | "income"
   userId    String
   user      User      @relation(fields: [userId], references: [id])
@@ -40,7 +41,7 @@ model Category {
 
 model Expense {
   id          String   @id @default(uuid())
-  amountUSD   Float
+  amountUSD   Decimal  @db.Decimal(18, 2)
   currency    String   @default("USD")
   description String
   date        DateTime @default(now())
@@ -54,7 +55,7 @@ model Expense {
 model BudgetMonth {
   id            String     @id @default(uuid())
   month         DateTime
-  incomePlanned Float      @default(0)
+  incomePlanned Decimal    @default(0) @db.Decimal(18, 2)
   userId        String
   user          User       @relation(fields: [userId], references: [id])
   items         BudgetItem[]
@@ -69,7 +70,7 @@ model BudgetItem {
   budgetMonth   BudgetMonth @relation(fields: [budgetMonthId], references: [id])
   categoryId    String
   category      Category    @relation(fields: [categoryId], references: [id])
-  plannedAmount Float       @default(0)
+  plannedAmount Decimal     @default(0) @db.Decimal(18, 2)
 
   @@unique([budgetMonthId, categoryId])
 }
@@ -80,9 +81,9 @@ model Debt {
   user            User           @relation(fields: [userId], references: [id])
   name            String
   type            String         @default("debt") // "debt" | "loan"
-  principal       Float
-  balance         Float
-  interestRate    Float          @default(0)
+  principal       Decimal        @db.Decimal(18, 2)
+  balance         Decimal        @db.Decimal(18, 2)
+  interestRate    Decimal        @default(0) @db.Decimal(7, 4)
   startDate       DateTime
   termMonths      Int?
   nextPaymentDate DateTime?
@@ -96,7 +97,7 @@ model ScheduleItem {
   userId     String
   user       User      @relation(fields: [userId], references: [id])
   title      String
-  amountUSD  Float
+  amountUSD  Decimal   @db.Decimal(18, 2)
   type       String    @default("expense") // "expense" | "income"
   dueDate    DateTime
   recurrence String    @default("once") // "once" | "monthly"
@@ -106,4 +107,19 @@ model ScheduleItem {
   debtId     String?
   debt       Debt?     @relation(fields: [debtId], references: [id])
   createdAt  DateTime  @default(now())
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action    String
+  entity    String
+  entityId  String?
+  metadata  Json?
+  ip        String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
 }

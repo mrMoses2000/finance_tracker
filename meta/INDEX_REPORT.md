@@ -1,5 +1,5 @@
 # Project Index Report
-Generated on Wed 28 Jan 2026 17:55:47 +05
+Generated on Wed 28 Jan 2026 18:28:29 +05
 
 ## File Structure
 ```
@@ -19,6 +19,7 @@ Generated on Wed 28 Jan 2026 17:55:47 +05
 ./meta/AGENTS.md
 ./server
 ./server/middleware
+./server/middleware/rateLimit.js
 ./server/middleware/auth.js
 ./server/middleware/error.js
 ./server/config
@@ -26,6 +27,7 @@ Generated on Wed 28 Jan 2026 17:55:47 +05
 ./server/config/env.js
 ./server/Dockerfile
 ./server/prisma
+./server/prisma/migrations
 ./server/prisma/schema.prisma
 ./server/tests
 ./server/tests/clawd.test.js
@@ -37,6 +39,8 @@ Generated on Wed 28 Jan 2026 17:55:47 +05
 ./server/tests/expenses.test.js
 ./server/index.js
 ./server/utils
+./server/utils/serializers.js
+./server/utils/money.js
 ./server/utils/parseExpense.js
 ./server/utils/ownership.js
 ./server/utils/asyncHandler.js
@@ -66,6 +70,7 @@ Generated on Wed 28 Jan 2026 17:55:47 +05
 ./server/app.js
 ./server/services
 ./server/services/seed.js
+./server/services/auditLog.js
 ./run.sh
 ./README.md
 ./certs
@@ -74,6 +79,7 @@ Generated on Wed 28 Jan 2026 17:55:47 +05
 ./scripts
 ./scripts/generate_index_report.sh
 ./docker-compose.yml
+./docker-compose.prod.yml
 ./client
 ./client/start_local.sh
 ./client/index.html

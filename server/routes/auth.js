@@ -5,6 +5,8 @@ import prisma from '../db/prisma.js';
 import { DEFAULT_CATEGORIES } from '../data/defaultCategories.js';
 import { JWT_EXPIRES_IN, JWT_SECRET } from '../config/env.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
+import { toDecimal } from '../utils/money.js';
+import { logAudit } from '../services/auditLog.js';
 
 const router = Router();
 
@@ -31,9 +33,17 @@ router.post('/register', asyncHandler(async (req, res) => {
       label: cat.label,
       labelKey: cat.labelKey,
       color: cat.color,
-      limit: cat.limit,
+      limit: toDecimal(cat.limit),
       type: cat.type,
     })),
+  });
+
+  await logAudit({
+    req,
+    userId: user.id,
+    action: 'register',
+    entity: 'user',
+    entityId: user.id,
   });
 
   return res.json({ message: 'User created' });
@@ -61,6 +71,14 @@ router.post('/login', asyncHandler(async (req, res) => {
 
   const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, {
     expiresIn: JWT_EXPIRES_IN,
+  });
+
+  await logAudit({
+    req,
+    userId: user.id,
+    action: 'login',
+    entity: 'user',
+    entityId: user.id,
   });
 
   return res.json({

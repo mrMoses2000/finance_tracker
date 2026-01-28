@@ -22,6 +22,7 @@ CERTBOT_PROFILE="${CERTBOT_PROFILE:-}"
 CERT_CHECK_DAYS="${CERT_CHECK_DAYS:-}"
 DUCKDNS_TOKEN="${DUCKDNS_TOKEN:-}"
 DUCKDNS_DOMAIN="${DUCKDNS_DOMAIN:-}"
+RUN_MODE="${RUN_MODE:-dev}"
 ENABLE_HTTPS=0
 SERVER_NAMES="_"
 SSL_CERT=""
@@ -720,6 +721,16 @@ else
     COMPOSE_CMD="$DOCKER_CMD compose"
 fi
 
+COMPOSE_FILE="$ROOT_DIR/docker-compose.yml"
+if [ "$RUN_MODE" == "prod" ] || [ "$RUN_MODE" == "production" ]; then
+    COMPOSE_FILE="$ROOT_DIR/docker-compose.prod.yml"
+fi
+
+if [ ! -f "$COMPOSE_FILE" ]; then
+    echo -e "${RED}[ERROR] Файл compose не найден: $COMPOSE_FILE${NC}"
+    exit 1
+fi
+
 # HTTPS setup (interactive)
 prompt_https_mode
 
@@ -734,7 +745,7 @@ echo "Это обеспечит изолированную работу прил
 mkdir -p "$ROOT_DIR/certs/config" "$ROOT_DIR/certs/selfsigned"
 
 # Останавливаем старые контейнеры если есть
-$COMPOSE_CMD down 2>/dev/null
+$COMPOSE_CMD -f "$COMPOSE_FILE" down 2>/dev/null
 
 # Update DuckDNS if configured
 update_duckdns
@@ -745,7 +756,7 @@ write_nginx_conf
 setup_cert_renewal
 
 # Запускаем в фоновом режиме (-d) с пересборкой (--build)
-if $COMPOSE_CMD up -d --build; then
+if $COMPOSE_CMD -f "$COMPOSE_FILE" up -d --build; then
     echo -e "\n${GREEN}=== УСПЕХ! Приложение запущено ===${NC}"
     if [ "$ENABLE_HTTPS" -eq 1 ]; then
         echo -e "Frontend:  ${YELLOW}https://localhost${NC}"
@@ -773,7 +784,7 @@ if $COMPOSE_CMD up -d --build; then
         fi
     fi
     
-    echo -e "\n${YELLOW}[INFO] Чтобы остановить приложение, выполните: $COMPOSE_CMD down${NC}"
+    echo -e "\n${YELLOW}[INFO] Чтобы остановить приложение, выполните: $COMPOSE_CMD -f \"$COMPOSE_FILE\" down${NC}"
 else
     echo -e "\n${RED}[ERROR] Ошибка при запуске Docker Compose.${NC}"
     exit 1

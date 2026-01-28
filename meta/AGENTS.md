@@ -17,7 +17,7 @@
 ## Current Agent Stamp
 - **Agent**: Codex
 - **Date**: 2026-01-28
-- **Status**: **UPDATED**. Modular backend, Clawd currency fix, ownership checks, JWT expiry, CORS config, new tests.
+- **Status**: **UPDATED**. Added Decimal money fields + migration, audit logs, rate limiting, production compose profile.
 
 ## Handover Note for Codex
 Welcome! The project is in a very stable state.
