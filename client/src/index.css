@@ -335,3 +335,34 @@
 .fc-theme-standard .fc-scrollgrid {
     border-color: var(--app-border);
 }
+
+/* Make calendar events show more text */
+.fc-daygrid-event {
+    padding: 2px 4px;
+    font-size: 11px;
+}
+
+.fc-daygrid-day-events {
+    overflow: visible;
+}
+
+.fc-daygrid-event-harness {
+    margin-bottom: 3px;
+}
+
+/* Light theme calendar overrides */
+:root[data-theme='light'] .fc-daygrid-day-frame {
+    background: rgba(0, 0, 0, 0.03);
+}
+
+:root[data-theme='light'] .fc-daygrid-day.fc-day-today {
+    background: rgba(16, 185, 129, 0.08);
+}
+
+:root[data-theme='light'] .fc-event {
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+:root[data-theme='light'] .bg-black\/20 {
+    background-color: rgba(0, 0, 0, 0.04);
+}

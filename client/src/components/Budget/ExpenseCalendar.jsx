@@ -48,15 +48,17 @@ const ExpenseCalendar = ({ calendarItems, categories, formatMoney, t, lang = 'en
         const { amountUSD, type, category, color } = eventInfo.event.extendedProps || {};
         const Icon = getCategoryIcon(category?.label, type);
         return (
-            <div className="flex items-center gap-2 truncate text-xs">
+            <div className="flex items-center gap-1.5 text-xs min-w-0">
                 <span
-                    className="w-6 h-6 rounded-lg flex items-center justify-center"
+                    className="w-5 h-5 rounded flex-shrink-0 flex items-center justify-center"
                     style={{ backgroundColor: hexWithAlpha(color, '2e'), color: color }}
                 >
-                    <Icon size={12} />
+                    <Icon size={10} />
                 </span>
-                <div className="flex flex-col truncate">
-                    <span className="font-semibold truncate text-slate-100">{eventInfo.event.title}</span>
+                <div className="flex flex-col min-w-0 flex-1">
+                    <span className="font-semibold text-slate-100 truncate" title={eventInfo.event.title}>
+                        {eventInfo.event.title}
+                    </span>
                     <span className={`text-[10px] ${type === 'income' ? 'text-emerald-300' : 'text-rose-300'}`}>
                         {formatMoney(amountUSD)}
                     </span>
@@ -81,7 +83,7 @@ const ExpenseCalendar = ({ calendarItems, categories, formatMoney, t, lang = 'en
                 {variant === 'plan' ? (t?.calendar?.title_plan || t?.calendar?.title || 'Payment Calendar') : (t?.calendar?.title || 'Payment Calendar')}
             </h2>
 
-            <div className="grid grid-cols-1 lg:grid-cols-[1.6fr_1fr] gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-[2.5fr_1fr] gap-6">
                 <div className="rounded-2xl border border-white/5 bg-black/20 p-4">
                     <FullCalendar
                         plugins={[dayGridPlugin, interactionPlugin]}

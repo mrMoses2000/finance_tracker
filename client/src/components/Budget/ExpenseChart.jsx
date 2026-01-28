@@ -60,7 +60,7 @@ const ExpenseChart = ({ totalExpenses, chartData, formatMoney, t, title }) => {
                                 valueFormatter={valueFormatter}
                                 colors={formattedData.map((item) => item.color)}
                                 className="w-48 h-48"
-                                showLabel={true}
+                                showLabel={false}
                                 customTooltip={(props) => <CustomTooltip {...props} formatMoney={formatMoney} />}
                             />
                             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
