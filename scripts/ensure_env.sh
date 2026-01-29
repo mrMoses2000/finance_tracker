@@ -56,7 +56,16 @@ sanitize_env_file() {
       continue
     fi
     if [[ "$line" =~ ^[A-Za-z_][A-Za-z0-9_]*= ]]; then
-      printf '%s\n' "$line" >> "$tmp"
+      local key value
+      key="${line%%=*}"
+      value="${line#*=}"
+      value="${value#"${value%%[![:space:]]*}"}"
+      value="${value%"${value##*[![:space:]]}"}"
+      if [[ "$value" =~ [[:space:]] ]] && [[ ! "$value" =~ ^\".*\"$ ]] && [[ ! "$value" =~ ^\'.*\'$ ]]; then
+        printf '%s="%s"\n' "$key" "$value" >> "$tmp"
+      else
+        printf '%s\n' "$line" >> "$tmp"
+      fi
     else
       printf '# INVALID: %s\n' "$line" >> "$tmp"
     fi
@@ -195,6 +204,65 @@ prompt_yes_no() {
   return 1
 }
 
+normalize_bool() {
+  local key="$1"
+  local default="$2"
+  local val="${!key:-}"
+  local lowered=""
+  lowered="$(printf '%s' "$val" | tr '[:upper:]' '[:lower:]')"
+  case "$lowered" in
+    true|false)
+      if [ "$lowered" != "$val" ]; then
+        write_env_kv "$key" "$lowered"
+        export "$key=$lowered"
+      fi
+      return 0
+      ;;
+  esac
+  if [ -n "$val" ]; then
+    echo "[WARN] Некорректное значение $key=$val. Устанавливаю $default."
+  fi
+  write_env_kv "$key" "$default"
+  export "$key=$default"
+}
+
+normalize_int() {
+  local key="$1"
+  local default="$2"
+  local val="${!key:-}"
+  if [[ "$val" =~ ^[0-9]+$ ]]; then
+    return 0
+  fi
+  if [ -n "$val" ]; then
+    echo "[WARN] Некорректное число $key=$val. Устанавливаю $default."
+  fi
+  write_env_kv "$key" "$default"
+  export "$key=$default"
+}
+
+ensure_jwt_strength() {
+  local val="${JWT_SECRET:-}"
+  if [ -z "$val" ]; then
+    return 0
+  fi
+  if [ "${#val}" -ge 32 ]; then
+    return 0
+  fi
+  if [ "$AUTO_JWT_SECRET" == "true" ] || ! is_tty; then
+    jwt_secret="$(generate_secret)"
+    write_env_kv "JWT_SECRET" "$jwt_secret"
+    export JWT_SECRET="$jwt_secret"
+    return 0
+  fi
+  if prompt_yes_no "JWT_SECRET слишком короткий. Сгенерировать новый?" "yes"; then
+    jwt_secret="$(generate_secret)"
+    write_env_kv "JWT_SECRET" "$jwt_secret"
+    export JWT_SECRET="$jwt_secret"
+  else
+    echo "[WARN] JWT_SECRET слишком короткий — рекомендуется заменить."
+  fi
+}
+
 set_cors_from_domain() {
   local domain="$1"
   domain="${domain#https://}"
@@ -318,6 +386,11 @@ apply_mode() {
         AUTO_DB_PASSWORD="true"
         AUTO_CORS_ORIGINS="true"
         AUTO_JWT_SECRET="true"
+        if [ -f "$EXAMPLE_FILE" ]; then
+          cp "$EXAMPLE_FILE" "$ENV_FILE"
+        else
+          : > "$ENV_FILE"
+        fi
       fi
       ;;
     stop)
@@ -339,6 +412,19 @@ is_placeholder() {
   local val="$1"
   case "$val" in
     ""|change_me|change_me_secure|admin@example.com|user|password|dev_secret_for_tests)
+      return 0
+      ;;
+  esac
+  return 1
+}
+
+is_default_cors() {
+  local val="$1"
+  case "$val" in
+    "http://localhost:3000,http://localhost:5173"|\
+    "http://localhost:3000, http://localhost:5173"|\
+    "http://localhost:5173,http://localhost:3000"|\
+    "http://localhost:5173, http://localhost:3000")
       return 0
       ;;
   esac
@@ -400,25 +486,31 @@ if is_placeholder "${JWT_EXPIRES_IN:-}"; then
   write_env_kv "JWT_EXPIRES_IN" "7d"
   export JWT_EXPIRES_IN="7d"
 fi
+ensure_jwt_strength
 
 # CORS
 if is_placeholder "${CORS_ALLOW_ALL:-}"; then
   write_env_kv "CORS_ALLOW_ALL" "false"
   export CORS_ALLOW_ALL="false"
 fi
+normalize_bool "CORS_ALLOW_ALL" "false"
 
-if is_placeholder "${CORS_ORIGINS:-}"; then
-  if [ "$AUTO_CORS_ORIGINS" == "true" ]; then
-    if [ -z "$CORS_DOMAIN" ]; then
-      prompt_value "CORS_DOMAIN" "Домен для CORS (пример: moneycheckos.duckdns.org)" ""
-      CORS_DOMAIN="${CORS_DOMAIN:-}"
-    fi
-    if ! set_cors_from_domain "$CORS_DOMAIN"; then
-      prompt_value "CORS_ORIGINS" "Разрешённые CORS домены (через запятую)" "http://localhost:3000,http://localhost:5173"
-    fi
-  elif [ "$AUTO_CORS_ORIGINS" == "false" ]; then
+if [ -n "$CORS_DOMAIN" ] || [ "$AUTO_CORS_ORIGINS" == "true" ]; then
+  if [ -z "$CORS_DOMAIN" ]; then
+    prompt_value "CORS_DOMAIN" "Домен для CORS (пример: moneycheckos.duckdns.org)" ""
+    CORS_DOMAIN="${CORS_DOMAIN:-}"
+  fi
+  if set_cors_from_domain "$CORS_DOMAIN"; then
+    :
+  elif is_placeholder "${CORS_ORIGINS:-}" || is_default_cors "${CORS_ORIGINS:-}"; then
     prompt_value "CORS_ORIGINS" "Разрешённые CORS домены (через запятую)" "http://localhost:3000,http://localhost:5173"
-  else
+  fi
+elif [ "$AUTO_CORS_ORIGINS" == "false" ]; then
+  if is_placeholder "${CORS_ORIGINS:-}" || is_default_cors "${CORS_ORIGINS:-}"; then
+    prompt_value "CORS_ORIGINS" "Разрешённые CORS домены (через запятую)" "http://localhost:3000,http://localhost:5173"
+  fi
+else
+  if is_placeholder "${CORS_ORIGINS:-}" || is_default_cors "${CORS_ORIGINS:-}"; then
     if prompt_yes_no "Автонастройка CORS по домену?" "no"; then
       prompt_value "CORS_DOMAIN" "Домен для CORS (пример: moneycheckos.duckdns.org)" ""
       CORS_DOMAIN="${CORS_DOMAIN:-}"
@@ -439,6 +531,8 @@ if is_placeholder "${TRUST_PROXY:-}"; then
     prompt_value "TRUST_PROXY" "Backend за reverse‑proxy (nginx/Cloudflare)? (true/false)" "false"
   fi
 fi
+
+normalize_bool "TRUST_PROXY" "false"
 
 # Rate limiting
 if is_placeholder "${RATE_LIMIT_ENABLED:-}"; then
@@ -462,17 +556,25 @@ if is_placeholder "${RATE_LIMIT_AUTH_MAX:-}"; then
   export RATE_LIMIT_AUTH_MAX="20"
 fi
 
+normalize_bool "RATE_LIMIT_ENABLED" "true"
+normalize_int "RATE_LIMIT_WINDOW_MS" "900000"
+normalize_int "RATE_LIMIT_MAX" "300"
+normalize_int "RATE_LIMIT_AUTH_WINDOW_MS" "900000"
+normalize_int "RATE_LIMIT_AUTH_MAX" "20"
+
 # Audit log
 if is_placeholder "${AUDIT_LOG_ENABLED:-}"; then
   write_env_kv "AUDIT_LOG_ENABLED" "true"
   export AUDIT_LOG_ENABLED="true"
 fi
+normalize_bool "AUDIT_LOG_ENABLED" "true"
 
 # Seed admin (optional)
 if is_placeholder "${SEED_ADMIN:-}"; then
   write_env_kv "SEED_ADMIN" "false"
   export SEED_ADMIN="false"
 fi
+normalize_bool "SEED_ADMIN" "false"
 if is_placeholder "${SEED_ADMIN_EMAIL:-}"; then
   write_env_kv "SEED_ADMIN_EMAIL" "admin@example.com"
   export SEED_ADMIN_EMAIL="admin@example.com"

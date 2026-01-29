@@ -41,6 +41,8 @@ cp .env.example .env
 - Optional automation:
   - `AUTO_DB_PASSWORD=true` to auto-generate DB password.
   - `AUTO_CORS_ORIGINS=true` + `CORS_DOMAIN=example.com` to auto-set CORS.
+- If `HTTPS_MODE=domain` and `DOMAIN` is provided, `CORS_DOMAIN` is auto-set and overrides localhost CORS defaults.
+- You can pass env overrides as `VAR=value ./run.sh` or `./run.sh VAR=value`.
 - Auto‑mode in the menu enables these options without long command lines.
 - `.env` with spaces is handled safely; scripts parse it without `source`.
 ```bash
@@ -79,7 +81,7 @@ AUDIT_LOG_ENABLED=true
 SEED_ADMIN=false
 SEED_ADMIN_EMAIL=admin@example.com
 SEED_ADMIN_PASSWORD=change_me_strong
-SEED_ADMIN_NAME=Admin User
+SEED_ADMIN_NAME="Admin User"
 ```
 
 ### Пример `.env` (RU)
@@ -114,7 +116,7 @@ AUDIT_LOG_ENABLED=true
 SEED_ADMIN=false
 SEED_ADMIN_EMAIL=admin@example.com
 SEED_ADMIN_PASSWORD=change_me_strong
-SEED_ADMIN_NAME=Admin User
+SEED_ADMIN_NAME="Admin User"
 ```
 
 ### Running the App (Docker)

@@ -23,10 +23,20 @@ CERT_CHECK_DAYS="${CERT_CHECK_DAYS:-}"
 DUCKDNS_TOKEN="${DUCKDNS_TOKEN:-}"
 DUCKDNS_DOMAIN="${DUCKDNS_DOMAIN:-}"
 RUN_MODE="${RUN_MODE:-dev}"
+CORS_DOMAIN="${CORS_DOMAIN:-}"
 ENABLE_HTTPS=0
 SERVER_NAMES="_"
 SSL_CERT=""
 SSL_KEY=""
+
+CLI_UNUSED_ARGS=()
+for arg in "$@"; do
+    if [[ "$arg" =~ ^[A-Za-z_][A-Za-z0-9_]*= ]]; then
+        export "$arg"
+    else
+        CLI_UNUSED_ARGS+=("$arg")
+    fi
+done
 
 # 1. Определение ОС
 OS="$(uname -s)"
@@ -74,6 +84,11 @@ print_warn() {
 print_info() {
     echo -e "${YELLOW}[INFO] $1${NC}"
 }
+
+if [ "${#CLI_UNUSED_ARGS[@]}" -gt 0 ]; then
+    print_warn "Неизвестные параметры запуска: ${CLI_UNUSED_ARGS[*]}"
+    print_info "Если хотели передать env-переменные, используйте формат: VAR=value ./run.sh"
+fi
 
 require_file() {
     local path="$1"
@@ -249,6 +264,20 @@ prompt_https_mode() {
     if [ "$OS_TYPE" != "Linux" ] && [ "$HTTPS_MODE" != "off" ]; then
         echo -e "${YELLOW}[INFO] HTTPS режим доступен только на Linux. Использую off.${NC}"
         HTTPS_MODE="off"
+    fi
+}
+
+prompt_https_domain() {
+    if [ "$HTTPS_MODE" != "domain" ]; then
+        return 0
+    fi
+    if [ -z "$DOMAIN" ] && [ -t 0 ]; then
+        echo -e "${YELLOW}Введите домен для HTTPS:${NC}"
+        read -r DOMAIN
+    fi
+    if [ -n "$DOMAIN" ] && [ -z "$CORS_DOMAIN" ]; then
+        CORS_DOMAIN="$DOMAIN"
+        export CORS_DOMAIN
     fi
 }
 
@@ -908,6 +937,10 @@ if [ ! -f "$COMPOSE_FILE" ]; then
     exit 1
 fi
 
+# HTTPS setup (early, to auto-fill CORS domain if needed)
+prompt_https_mode
+prompt_https_domain
+
 # Ensure env is present and valid (interactive menu if needed)
 if [ -x "$ROOT_DIR/scripts/ensure_env.sh" ]; then
     COMPOSE_CMD="$COMPOSE_CMD" COMPOSE_FILE="$COMPOSE_FILE" bash "$ROOT_DIR/scripts/ensure_env.sh"
@@ -922,9 +955,6 @@ check_port_in_use 3000
 check_port_in_use 4000
 check_port_in_use 5432
 check_port_in_use 443
-
-# HTTPS setup (interactive)
-prompt_https_mode
 
 # Ubuntu remote setup
 configure_remote_access

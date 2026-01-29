@@ -2,6 +2,8 @@
 
 | Date | Agent | Action | Result |
 |------|-------|--------|--------|
+| 2026-01-29 | Codex | CORS Auto-Override | Auto-set CORS for domain even if .env has localhost defaults. |
+| 2026-01-29 | Codex | Env Robustness | Added env arg overrides in run.sh, CORS auto from HTTPS domain, safer .env sanitization/quoting, and stricter env normalization. |
 | 2026-01-29 | Codex | Clawd.bot Integration Plan | Added implementation plan document for bot/server/messenger integration. |
 | 2026-01-29 | Codex | Env Auto-Fill Script | Added auto-mode menu, Russian prompts, auto JWT, nginx proxy detection, and safe .env parsing (no source). |
 | 2026-01-28 | Codex | Decimal + Audit + Rate Limit + Prod Compose | Money fields to Decimal, audit logs, API rate limiting, docker-compose.prod.yml. |
