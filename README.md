@@ -32,6 +32,14 @@ cp .env.example .env
 # Fill in JWT_SECRET, DB credentials, and security settings
 ```
 
+### Auto-fill & Validation (Interactive)
+`run.sh` now calls `scripts/ensure_env.sh` to auto-fill missing `.env` values.
+- If a value is missing, it will ask you in the console.
+- `JWT_SECRET` can be auto-generated.
+```bash
+./run.sh
+```
+
 ### Example `.env` (EN)
 ```env
 # Database

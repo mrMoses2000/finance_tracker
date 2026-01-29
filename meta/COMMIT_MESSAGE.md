@@ -1,10 +1,8 @@
 # Commit Message Template
 
 Type: Feat
-Subject: decimals, audit logs, rate limiting, prod compose
+Subject: env bootstrap script
 
 Body:
-- Converted all money fields to Prisma Decimal with migration.
-- Added audit logging for mutating endpoints.
-- Added API and auth rate limiting middleware.
-- Added production compose profile with migrate deploy.
+- Added scripts/ensure_env.sh for interactive .env setup.
+- Hooked run.sh to auto-generate missing env values.

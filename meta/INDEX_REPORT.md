@@ -1,5 +1,5 @@
 # Project Index Report
-Generated on Wed 28 Jan 2026 18:28:29 +05
+Generated on Thu 29 Jan 2026 09:40:27 +05
 
 ## File Structure
 ```
@@ -78,6 +78,7 @@ Generated on Wed 28 Jan 2026 18:28:29 +05
 ./certs/selfsigned
 ./scripts
 ./scripts/generate_index_report.sh
+./scripts/ensure_env.sh
 ./docker-compose.yml
 ./docker-compose.prod.yml
 ./client

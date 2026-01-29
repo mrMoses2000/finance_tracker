@@ -2,6 +2,7 @@
 
 | Date | Agent | Action | Result |
 |------|-------|--------|--------|
+| 2026-01-29 | Codex | Env Auto-Fill Script | Added scripts/ensure_env.sh and run.sh hook for interactive .env setup. |
 | 2026-01-28 | Codex | Decimal + Audit + Rate Limit + Prod Compose | Money fields to Decimal, audit logs, API rate limiting, docker-compose.prod.yml. |
 | 2026-01-28 | Codex | Security + Clawd Currency + Refactor | Modular server, currency conversion for Clawd, ownership checks, new tests. |
 | 2026-01-22 | Antigravity | Full Stack Refactor | Split into Client/Server, added Auth, Dockerized. |

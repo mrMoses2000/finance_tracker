@@ -16,8 +16,8 @@
 
 ## Current Agent Stamp
 - **Agent**: Codex
-- **Date**: 2026-01-28
-- **Status**: **UPDATED**. Added Decimal money fields + migration, audit logs, rate limiting, production compose profile.
+- **Date**: 2026-01-29
+- **Status**: **UPDATED**. Added interactive env bootstrap script and run.sh hook.
 
 ## Handover Note for Codex
 Welcome! The project is in a very stable state.

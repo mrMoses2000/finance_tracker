@@ -28,6 +28,11 @@ SERVER_NAMES="_"
 SSL_CERT=""
 SSL_KEY=""
 
+# Ensure env is present and valid (interactive if needed)
+if [ -x "$ROOT_DIR/scripts/ensure_env.sh" ]; then
+    bash "$ROOT_DIR/scripts/ensure_env.sh"
+fi
+
 # 1. Определение ОС
 OS="$(uname -s)"
 case "${OS}" in
