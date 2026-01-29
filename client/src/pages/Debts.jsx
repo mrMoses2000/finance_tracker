@@ -60,8 +60,8 @@ const Debts = () => {
         <div className="space-y-8 pb-20">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold text-white mb-2">{t?.debts?.title || 'Debts & Loans'}</h1>
-                    <p className="text-emerald-200 opacity-70">{t?.debts?.subtitle || 'Track obligations and incoming repayments.'}</p>
+                    <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">{t?.debts?.title || 'Debts & Loans'}</h1>
+                    <p className="text-emerald-200 opacity-70 text-sm sm:text-base">{t?.debts?.subtitle || 'Track obligations and incoming repayments.'}</p>
                 </div>
                 <button onClick={handleAddNew} className="btn-primary">
                     <Plus size={18} /> {t?.debts?.add || 'Add Obligation'}
@@ -76,7 +76,7 @@ const Debts = () => {
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
                 <SummaryCard
                     title={t?.debts?.summary?.owed || 'Total Owed'}
                     value={format(totalOwed)}
@@ -99,7 +99,8 @@ const Debts = () => {
                 <div className="flex justify-center p-20"><Loader2 className="animate-spin text-emerald-500" size={40} /></div>
             ) : (
                 <div className="glass-panel rounded-2xl overflow-hidden">
-                    <table className="w-full text-left border-collapse">
+                    <div className="hidden md:block overflow-x-auto">
+                        <table className="w-full text-left border-collapse min-w-[700px]">
                         <thead>
                             <tr className="border-b border-white/5 text-emerald-200/50 text-xs uppercase tracking-wider">
                                 <th className="p-6 font-semibold">{t?.debts?.table?.name || 'Name'}</th>
@@ -142,11 +143,48 @@ const Debts = () => {
                             ))}
                         </tbody>
                     </table>
-                    {debts?.length === 0 && (
-                        <div className="p-12 text-center text-slate-500 bg-white/5">
-                            {t?.debts?.empty || 'No obligations yet.'}
-                        </div>
-                    )}
+                    </div>
+                    <div className="md:hidden p-4 space-y-3">
+                        {debts?.length === 0 && (
+                            <div className="text-center text-slate-500 bg-white/5 rounded-xl p-6">
+                                {t?.debts?.empty || 'No obligations yet.'}
+                            </div>
+                        )}
+                        {debts?.map((debt) => (
+                            <div key={debt.id} className="bg-white/5 border border-white/10 rounded-xl p-4 space-y-3">
+                                <div className="flex items-start justify-between gap-3">
+                                    <div className="min-w-0">
+                                        <div className="text-white font-semibold truncate">{debt.name}</div>
+                                        <div className="text-xs text-slate-400 mt-1">
+                                            {debt.nextPaymentDate ? new Date(debt.nextPaymentDate).toLocaleDateString() : (t?.debts?.table?.none || '—')}
+                                        </div>
+                                    </div>
+                                    <div className={`text-sm font-bold ${debt.type === 'loan' ? 'text-emerald-300' : 'text-rose-300'}`}>
+                                        {format(debt.balance)}
+                                    </div>
+                                </div>
+                                <div className="flex flex-wrap items-center gap-2">
+                                    <span className={`px-2.5 py-1 rounded-full text-[11px] font-bold border ${debt.type === 'loan' ? 'text-emerald-300 border-emerald-500/30 bg-emerald-500/10' : 'text-rose-300 border-rose-500/30 bg-rose-500/10'}`}>
+                                        {debt.type === 'loan' ? (t?.debts?.types?.loan || 'Loan') : (t?.debts?.types?.debt || 'Debt')}
+                                    </span>
+                                </div>
+                                <div className="flex items-center justify-end gap-2">
+                                    <button
+                                        onClick={() => handleEdit(debt)}
+                                        className="p-2 rounded-lg hover:bg-white/10 text-slate-400 hover:text-emerald-400 transition-colors"
+                                    >
+                                        <Edit2 size={16} />
+                                    </button>
+                                    <button
+                                        onClick={() => deleteMutation.mutate(debt.id)}
+                                        className="p-2 rounded-lg hover:bg-rose-500/10 text-slate-400 hover:text-rose-400 transition-colors"
+                                    >
+                                        <Trash2 size={16} />
+                                    </button>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
                 </div>
             )}
 
@@ -162,11 +200,11 @@ const Debts = () => {
 };
 
 const SummaryCard = ({ title, value, tone, isCount }) => (
-    <div className="glass-card p-6">
+    <div className="glass-card p-4 sm:p-6">
         <div className="flex items-center justify-between">
             <div>
-                <div className="text-xs text-slate-400 uppercase tracking-widest font-bold">{title}</div>
-                <div className={`text-2xl font-extrabold mt-2 ${tone === 'rose' ? 'text-rose-400' : tone === 'emerald' ? 'text-emerald-400' : tone === 'amber' ? 'text-amber-300' : 'text-slate-300'}`}>
+                <div className="text-[11px] sm:text-xs text-slate-400 uppercase tracking-widest font-bold">{title}</div>
+                <div className={`text-xl sm:text-2xl font-extrabold mt-2 ${tone === 'rose' ? 'text-rose-400' : tone === 'emerald' ? 'text-emerald-400' : tone === 'amber' ? 'text-amber-300' : 'text-slate-300'}`}>
                     {isCount ? value : value}
                 </div>
             </div>
@@ -229,8 +267,8 @@ const DebtModal = ({ categories, item, onClose }) => {
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-            <div className="glass-panel w-full max-w-2xl rounded-2xl p-8 shadow-2xl relative">
-                <h2 className="text-2xl font-bold text-white mb-6">
+            <div className="glass-panel w-full max-w-2xl rounded-2xl p-5 sm:p-8 shadow-2xl relative">
+                <h2 className="text-xl sm:text-2xl font-bold text-white mb-6">
                     {isEdit ? (t?.debts?.edit || 'Edit Obligation') : (t?.debts?.add || 'Add Obligation')}
                 </h2>
 
@@ -252,7 +290,7 @@ const DebtModal = ({ categories, item, onClose }) => {
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                         <div>
                             <label className="block text-xs font-bold text-emerald-300 uppercase tracking-wider mb-2">{t?.debts?.fields?.principal || 'Principal'} ({currency})</label>
                             <input type="number" {...formik.getFieldProps('principalLocal')} className="input-field" placeholder="0.00" />
@@ -267,7 +305,7 @@ const DebtModal = ({ categories, item, onClose }) => {
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                         <div>
                             <label className="block text-xs font-bold text-emerald-300 uppercase tracking-wider mb-2">{t?.debts?.fields?.start || 'Start Date'}</label>
                             <input type="date" {...formik.getFieldProps('startDate')} className="input-field" />
@@ -282,7 +320,7 @@ const DebtModal = ({ categories, item, onClose }) => {
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <label className="block text-xs font-bold text-emerald-300 uppercase tracking-wider mb-2">{t?.debts?.fields?.payment || 'Monthly Payment'} ({currency})</label>
                             <input type="number" {...formik.getFieldProps('monthlyPaymentLocal')} className="input-field" placeholder="0.00" />
@@ -301,7 +339,7 @@ const DebtModal = ({ categories, item, onClose }) => {
                         </div>
                     </div>
 
-                    <div className="flex gap-3 mt-8">
+                    <div className="flex flex-col sm:flex-row gap-3 mt-8">
                         <button type="button" onClick={onClose} className="btn-secondary w-full">{t?.debts?.actions?.cancel || 'Cancel'}</button>
                         <button type="submit" className="btn-primary w-full">
                             {isEdit ? (t?.debts?.actions?.save || 'Save Changes') : (t?.debts?.actions?.add || 'Add')}

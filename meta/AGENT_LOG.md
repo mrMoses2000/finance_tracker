@@ -48,3 +48,4 @@
 - **[2026-01-29] run.sh Menu Update (Codex)**: Added interactive menu item for quick update mode.
 - **[2026-01-29] Ops SG Hint (Codex)**: Added explicit Security Group 443 warning in run.sh output and docs.
 - **[2026-01-29] Mobile UI Pass (Codex)**: Refined dashboard header + KPI cards for small screens.
+- **[2026-01-29] Mobile UI Pass (Codex)**: Improved mobile layouts for Transactions, Debts, Schedule, Budget Plan, Category Manager, and calendars.

@@ -151,10 +151,10 @@ const BudgetPlan = () => {
         <div className="space-y-6">
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold text-white">{t?.budget_plan?.title}</h1>
-                    <p className="text-slate-400">{t?.budget_plan?.subtitle}</p>
+                    <h1 className="text-2xl sm:text-3xl font-bold text-white">{t?.budget_plan?.title}</h1>
+                    <p className="text-slate-400 text-sm sm:text-base">{t?.budget_plan?.subtitle}</p>
                 </div>
-                <div className="flex items-center gap-2 bg-white/5 rounded-xl p-1">
+                <div className="flex items-center gap-2 bg-white/5 rounded-xl p-1 w-full lg:w-auto justify-between">
                     <button
                         onClick={() => shiftMonth(-1)}
                         className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition-colors"
@@ -170,7 +170,7 @@ const BudgetPlan = () => {
                             className="absolute inset-0 opacity-0 cursor-pointer"
                             aria-label={t?.month?.picker || 'Pick month'}
                         />
-                        <div className="px-4 py-2 rounded-lg text-sm font-bold text-white min-w-[160px] text-center">
+                        <div className="px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-bold text-white min-w-[120px] sm:min-w-[160px] text-center">
                             {toMonthLabel(month)}
                         </div>
                     </div>
@@ -185,23 +185,23 @@ const BudgetPlan = () => {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div className="glass-panel rounded-2xl p-6 flex flex-col gap-4">
+                <div className="glass-panel rounded-2xl p-5 sm:p-6 flex flex-col gap-4">
                     <div>
                         <h3 className="text-lg font-bold text-white">{t?.budget_plan?.income_title || 'Planned Income'}</h3>
                         <p className="text-slate-400 text-sm">{t?.budget_plan?.income_subtitle || 'Set the monthly target for income.'}</p>
                     </div>
-                    <div className="flex items-center gap-3">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-3">
                         <input
                             type="number"
                             value={incomeValue}
                             onChange={(e) => { setIncomeValue(e.target.value); setIncomeDirty(true); }}
-                            className="bg-transparent text-3xl font-mono font-bold text-white border-b border-white/10 focus:border-emerald-500 outline-none w-full transition-colors pb-1 text-right"
+                            className="bg-transparent text-2xl sm:text-3xl font-mono font-bold text-white border-b border-white/10 focus:border-emerald-500 outline-none w-full transition-colors pb-1 text-right"
                         />
                         <span className="text-slate-400 text-sm">{currency}</span>
                         {incomeDirty && (
                             <button
                                 onClick={() => incomeMutation.mutate({ incomePlanned: incomeValue, currency })}
-                                className="flex items-center justify-center gap-2 bg-emerald-600/20 text-emerald-200 hover:bg-emerald-600/30 px-4 py-2 rounded-lg text-sm font-bold transition-all border border-emerald-500/20"
+                                className="w-full sm:w-auto flex items-center justify-center gap-2 bg-emerald-600/20 text-emerald-200 hover:bg-emerald-600/30 px-4 py-2 rounded-lg text-sm font-bold transition-all border border-emerald-500/20"
                             >
                                 <Save size={16} />
                                 {t?.budget_plan?.save_changes}
@@ -210,15 +210,15 @@ const BudgetPlan = () => {
                     </div>
                 </div>
 
-                <div className="glass-panel rounded-2xl p-6 flex flex-col justify-between">
+                <div className="glass-panel rounded-2xl p-5 sm:p-6 flex flex-col justify-between">
                     <div>
                         <div className="text-xs uppercase tracking-[0.2em] text-slate-400 font-bold mb-2">{t?.budget_plan?.summary_title || 'Plan Summary'}</div>
-                        <div className="text-2xl font-bold text-white">{format(plannedExpensesTotal)}</div>
+                        <div className="text-xl sm:text-2xl font-bold text-white">{format(plannedExpensesTotal)}</div>
                         <div className="text-sm text-slate-400">{t?.budget_plan?.summary_subtitle || 'Total planned expenses'}</div>
                     </div>
                     <div className={`mt-4 p-3 rounded-xl border ${plannedBalance < 0 ? 'border-rose-500/40 bg-rose-500/10' : 'border-emerald-500/40 bg-emerald-500/10'}`}>
                         <div className="text-xs uppercase tracking-[0.2em] text-slate-400 font-bold mb-2">{t?.budget_plan?.balance || 'Balance'}</div>
-                        <div className={`text-xl font-bold ${plannedBalance < 0 ? 'text-rose-300' : 'text-emerald-300'}`}>
+                        <div className={`text-lg sm:text-xl font-bold ${plannedBalance < 0 ? 'text-rose-300' : 'text-emerald-300'}`}>
                             {format(plannedBalance)}
                         </div>
                         {plannedBalance < 0 && (
@@ -283,10 +283,10 @@ const CategoryLimitCard = ({ category, plannedAmount, hasItem, onSave, onDelete,
     };
 
     return (
-        <div className="bg-slate-900/50 border border-white/5 rounded-xl p-6 backdrop-blur-sm hover:bg-slate-900/80 transition-colors ring-1 ring-white/5 shadow-xl">
+        <div className="bg-slate-900/50 border border-white/5 rounded-xl p-4 sm:p-6 backdrop-blur-sm hover:bg-slate-900/80 transition-colors ring-1 ring-white/5 shadow-xl">
             <div className="flex items-center gap-3 mb-4">
                 <div className="w-4 h-4 rounded-full shadow-sm shadow-emerald-500/50" style={{ backgroundColor: category.color }}></div>
-                <h3 className="font-bold text-lg text-slate-100">{getCategoryLabel(category, t)}</h3>
+                <h3 className="font-bold text-base sm:text-lg text-slate-100">{getCategoryLabel(category, t)}</h3>
             </div>
 
             <div className="relative">

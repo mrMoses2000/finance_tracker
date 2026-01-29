@@ -95,8 +95,8 @@ const Transactions = () => {
         <div className="space-y-8 pb-20">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold text-white mb-2">{t?.transactions?.title || t?.nav?.transactions || 'Operations'}</h1>
-                    <p className="text-emerald-200 opacity-70">{t?.transactions?.subtitle || 'Manage your financial records.'}</p>
+                    <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">{t?.transactions?.title || t?.nav?.transactions || 'Operations'}</h1>
+                    <p className="text-emerald-200 opacity-70 text-sm sm:text-base">{t?.transactions?.subtitle || 'Manage your financial records.'}</p>
                 </div>
                 <div className="flex flex-wrap items-center gap-3">
                     <button
@@ -114,7 +114,7 @@ const Transactions = () => {
                 </div>
             </div>
 
-            <div className="glass-panel p-2 rounded-xl flex flex-col md:flex-row md:items-center gap-3">
+            <div className="glass-panel p-3 sm:p-2 rounded-xl flex flex-col md:flex-row md:items-center gap-3">
                 <div className="flex items-center gap-3 flex-1">
                     <Search className="text-slate-400 ml-2" size={20} />
                     <input
@@ -141,7 +141,8 @@ const Transactions = () => {
 
             {isLoading ? <div className="flex justify-center p-20"><Loader2 className="animate-spin text-emerald-500" size={40} /></div> : (
                 <div className="glass-panel rounded-2xl overflow-hidden">
-                    <table className="w-full text-left border-collapse">
+                    <div className="hidden md:block overflow-x-auto">
+                        <table className="w-full text-left border-collapse min-w-[720px]">
                         <thead>
                             <tr className="border-b border-white/5 text-emerald-200/50 text-xs uppercase tracking-wider">
                                 <th className="p-6 font-semibold">{t?.transactions?.fields?.date || 'Date'}</th>
@@ -222,11 +223,59 @@ const Transactions = () => {
                             </AnimatePresence>
                         </tbody>
                     </table>
-                    {filteredTransactions?.length === 0 && (
-                        <div className="p-12 text-center text-slate-500 bg-white/5">
-                            {t?.transactions?.empty || 'No operations found matching your search.'}
-                        </div>
-                    )}
+                    </div>
+                    <div className="md:hidden p-4 space-y-3">
+                        {filteredTransactions?.length === 0 && (
+                            <div className="text-center text-slate-500 bg-white/5 rounded-xl p-6">
+                                {t?.transactions?.empty || 'No operations found matching your search.'}
+                            </div>
+                        )}
+                        {filteredTransactions?.map((tx) => (
+                            <div key={tx.id} className="bg-white/5 border border-white/10 rounded-xl p-4 space-y-3">
+                                <div className="flex items-start justify-between gap-3">
+                                    <div className="min-w-0">
+                                        <div className="text-white font-semibold truncate">{tx.description}</div>
+                                        <div className="text-xs text-slate-400 flex items-center gap-2 mt-1">
+                                            <Calendar size={12} className="opacity-60" />
+                                            {new Date(tx.date).toLocaleDateString()}
+                                        </div>
+                                    </div>
+                                    <div className={`text-sm font-bold ${tx.type === 'income' ? 'text-emerald-300' : 'text-rose-300'}`}>
+                                        {tx.type === 'income' ? '+' : '-'}{format(tx.amountUSD)}
+                                    </div>
+                                </div>
+                                <div className="flex flex-wrap items-center gap-2">
+                                    <span
+                                        className="px-2.5 py-1 rounded-full text-[11px] font-bold border border-current"
+                                        style={{
+                                            color: tx.category?.color,
+                                            backgroundColor: `${tx.category?.color}10`,
+                                            borderColor: `${tx.category?.color}20`
+                                        }}
+                                    >
+                                        {getCategoryLabel(tx.category, t)}
+                                    </span>
+                                    <span className={`px-2.5 py-1 rounded-full text-[11px] font-bold border ${tx.type === 'income' ? 'text-emerald-300 border-emerald-500/30 bg-emerald-500/10' : 'text-rose-300 border-rose-500/30 bg-rose-500/10'}`}>
+                                        {tx.type === 'income' ? (t?.transactions?.filters?.income || 'Income') : (t?.transactions?.filters?.expense || 'Expense')}
+                                    </span>
+                                </div>
+                                <div className="flex items-center justify-end gap-2">
+                                    <button
+                                        onClick={() => handleEdit(tx)}
+                                        className="p-2 rounded-lg hover:bg-white/10 text-slate-400 hover:text-emerald-400 transition-colors"
+                                    >
+                                        <Edit2 size={16} />
+                                    </button>
+                                    <button
+                                        onClick={() => deleteMutation.mutate(tx.id)}
+                                        className="p-2 rounded-lg hover:bg-rose-500/10 text-slate-400 hover:text-rose-400 transition-colors"
+                                    >
+                                        <Trash2 size={16} />
+                                    </button>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
                 </div>
             )}
 
@@ -301,8 +350,8 @@ const TransactionModal = ({ categories, item, onClose }) => {
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-            <div className="glass-panel w-full max-w-md rounded-2xl p-8 shadow-2xl relative">
-                <h2 className="text-2xl font-bold text-white mb-6">
+            <div className="glass-panel w-full max-w-md rounded-2xl p-5 sm:p-8 shadow-2xl relative">
+                <h2 className="text-xl sm:text-2xl font-bold text-white mb-6">
                     {isEdit ? (t?.transactions?.edit || 'Edit Operation') : (t?.transactions?.add || 'Add Operation')}
                 </h2>
 
@@ -323,7 +372,7 @@ const TransactionModal = ({ categories, item, onClose }) => {
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <label className="block text-xs font-bold text-emerald-300 uppercase tracking-wider mb-2">
                                 {t?.transactions?.fields?.amount || 'Amount'} ({currency})
@@ -349,7 +398,7 @@ const TransactionModal = ({ categories, item, onClose }) => {
                         </div>
                     </div>
 
-                    <div className="flex gap-3 mt-8">
+                    <div className="flex flex-col sm:flex-row gap-3 mt-8">
                         <button type="button" onClick={onClose} className="btn-secondary w-full">{t?.transactions?.actions?.cancel || 'Cancel'}</button>
                         <button type="submit" className="btn-primary w-full">
                             {isEdit ? (t?.transactions?.actions?.save || 'Save Changes') : (t?.transactions?.actions?.add || 'Add Operation')}

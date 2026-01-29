@@ -152,7 +152,7 @@ const CategoryManager = ({ categories = [], mode = 'inline', onClose, title, sub
   };
 
   const content = (
-    <div className="glass-panel rounded-2xl p-6">
+    <div className="glass-panel rounded-2xl p-4 sm:p-6">
       <div className="flex items-start justify-between gap-4 mb-6">
         <div>
           <h2 className="text-xl font-bold text-white">{title || t?.category_manager?.title || 'Manage Categories'}</h2>
@@ -227,7 +227,7 @@ const CategoryManager = ({ categories = [], mode = 'inline', onClose, title, sub
             ))}
           </div>
         </div>
-        <div className="md:col-span-4 flex flex-col md:flex-row gap-3">
+        <div className="md:col-span-4 flex flex-col sm:flex-row gap-3">
           <button type="submit" className="btn-primary">
             {editingId ? <Save size={16} /> : <Plus size={16} />}
             {editingId ? (t?.category_manager?.save || 'Save') : (t?.category_manager?.add || 'Add Category')}
@@ -294,7 +294,7 @@ const CategoryManager = ({ categories = [], mode = 'inline', onClose, title, sub
   if (mode === 'modal') {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-        <div className="w-full max-w-2xl">
+        <div className="w-full max-w-2xl max-h-[85vh] overflow-y-auto">
           {content}
         </div>
       </div>

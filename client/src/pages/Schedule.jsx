@@ -181,8 +181,8 @@ const Schedule = () => {
         <div className="space-y-8 pb-20">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold text-white mb-2">{t?.schedule?.title || 'Payment Schedule'}</h1>
-                    <p className="text-emerald-200 opacity-70">{t?.schedule?.subtitle || 'Upcoming obligations and recurring payments.'}</p>
+                    <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">{t?.schedule?.title || 'Payment Schedule'}</h1>
+                    <p className="text-emerald-200 opacity-70 text-sm sm:text-base">{t?.schedule?.subtitle || 'Upcoming obligations and recurring payments.'}</p>
                 </div>
                 <button onClick={handleAddNew} className="btn-primary">
                     <Plus size={18} /> {t?.schedule?.add || 'Add Schedule Item'}
@@ -190,7 +190,7 @@ const Schedule = () => {
             </div>
 
             <div className="flex flex-col lg:flex-row lg:items-center gap-4">
-                <div className="flex items-center gap-2 bg-white/5 rounded-xl p-1">
+                <div className="flex items-center gap-2 bg-white/5 rounded-xl p-1 w-full lg:w-auto justify-between">
                     <button
                         onClick={() => shiftMonth(-1)}
                         className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition-colors"
@@ -206,7 +206,7 @@ const Schedule = () => {
                             className="absolute inset-0 opacity-0 cursor-pointer"
                             aria-label={t?.month?.picker || 'Pick month'}
                         />
-                        <div className="px-4 py-2 rounded-lg text-sm font-bold text-white min-w-[160px] text-center">
+                        <div className="px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-bold text-white min-w-[120px] sm:min-w-[160px] text-center">
                             {toMonthLabel(month)}
                         </div>
                     </div>
@@ -218,7 +218,7 @@ const Schedule = () => {
                         <ChevronRight size={18} />
                     </button>
                 </div>
-                <div className="flex items-center gap-2 text-sm text-slate-400 bg-white/5 rounded-xl px-3 py-2">
+                <div className="flex items-center gap-2 text-sm text-slate-400 bg-white/5 rounded-xl px-3 py-2 w-full lg:w-auto">
                     <CalendarClock size={16} />
                     <select
                         value={statusFilter}
@@ -230,7 +230,7 @@ const Schedule = () => {
                         <option value="paid" className="bg-slate-900 text-white">{t?.schedule?.filters?.paid || 'Paid'}</option>
                     </select>
                 </div>
-                <div className="flex items-center gap-2 text-xs text-slate-400 bg-white/5 rounded-xl px-3 py-2">
+                <div className="hidden sm:flex items-center gap-2 text-xs text-slate-400 bg-white/5 rounded-xl px-3 py-2">
                     <Move size={14} />
                     {t?.schedule?.drag_hint || 'Drag to reschedule payments'}
                 </div>
@@ -419,8 +419,8 @@ const ScheduleModal = ({ categories, item, onClose }) => {
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-            <div className="glass-panel w-full max-w-xl rounded-2xl p-8 shadow-2xl relative">
-                <h2 className="text-2xl font-bold text-white mb-6">
+            <div className="glass-panel w-full max-w-xl rounded-2xl p-5 sm:p-8 shadow-2xl relative">
+                <h2 className="text-xl sm:text-2xl font-bold text-white mb-6">
                     {isEdit ? (t?.schedule?.edit || 'Edit Schedule') : (t?.schedule?.add || 'Add Schedule Item')}
                 </h2>
 
@@ -430,7 +430,7 @@ const ScheduleModal = ({ categories, item, onClose }) => {
                         <input {...formik.getFieldProps('title')} className="input-field" placeholder={t?.schedule?.fields?.title_placeholder || 'Rent payment'} />
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <label className="block text-xs font-bold text-emerald-300 uppercase tracking-wider mb-2">
                                 {t?.schedule?.fields?.amount || 'Amount'} ({currency})
@@ -443,7 +443,7 @@ const ScheduleModal = ({ categories, item, onClose }) => {
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                         <div>
                             <label className="block text-xs font-bold text-emerald-300 uppercase tracking-wider mb-2">{t?.schedule?.fields?.type || 'Type'}</label>
                             <div className="relative">
@@ -489,7 +489,7 @@ const ScheduleModal = ({ categories, item, onClose }) => {
                         </div>
                     </div>
 
-                    <div className="flex gap-3 mt-8">
+                    <div className="flex flex-col sm:flex-row gap-3 mt-8">
                         <button type="button" onClick={onClose} className="btn-secondary w-full">{t?.schedule?.actions?.cancel || 'Cancel'}</button>
                         <button type="submit" className="btn-primary w-full">
                             {isEdit ? (t?.schedule?.actions?.save || 'Save Changes') : (t?.schedule?.actions?.add || 'Add')}

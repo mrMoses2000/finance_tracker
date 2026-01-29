@@ -91,10 +91,10 @@ const ExpenseCalendar = ({ calendarItems, categories, formatMoney, t, lang = 'en
         : selectedDate;
 
     return (
-        <div className="glass-panel p-8 rounded-3xl relative overflow-hidden">
+        <div className="glass-panel p-4 sm:p-8 rounded-3xl relative overflow-hidden">
             <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-white/10 to-transparent"></div>
 
-            <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-3">
+            <h2 className="text-lg sm:text-xl font-bold text-white mb-6 flex items-center gap-3">
                 <div className="p-2 bg-emerald-500/10 rounded-lg text-emerald-400 border border-emerald-500/20">
                     <Calendar size={22} />
                 </div>
