@@ -42,3 +42,5 @@
 - **[2026-01-29] run.sh Post‑Start Checks (Codex)**: Added server container readiness check and `curl` verification inside the container.
 - **[2026-01-29] Base Currency Control (Codex)**: Added base currency selector in dashboard header and localized labels.
 - **[2026-01-29] Base Currency Recalc (Codex)**: Changing base currency now converts all stored amounts using latest FX rates.
+- **[2026-01-29] Dashboard Calendar Sync (Codex)**: Payment calendar now shows only schedule items and syncs month with dashboard header.
+- **[2026-01-29] i18n Calendar + Debts Categories (Codex)**: FullCalendar now respects RU/DE locales; debt category labels localized.

@@ -27,6 +27,8 @@ Exchange rates are pulled from the Central Bank (CBR) twice daily via cron insid
 After startup, run.sh verifies that the server container is running and that `curl` is available inside it.
 Base currency can be changed from the dashboard header (separate from display currency).
 Changing base currency recalculates stored amounts using the latest FX rates.
+Dashboard payment calendar shows only schedule items and follows the selected month.
+FullCalendar uses RU/DE locales when language is switched.
 
 ### 2.1 Production Profile
 ```bash

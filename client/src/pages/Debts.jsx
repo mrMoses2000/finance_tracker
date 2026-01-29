@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Loader2, Plus, Trash2, Edit2, Landmark, Info } from 'lucide-react';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
-import { useLanguage } from '../context/LanguageContext';
+import { useLanguage, getCategoryLabel } from '../context/LanguageContext';
 import { useCurrency } from '../context/CurrencyContext';
 
 const Debts = () => {
@@ -293,7 +293,7 @@ const DebtModal = ({ categories, item, onClose }) => {
                                 <select {...formik.getFieldProps('categoryId')} className="input-field appearance-none cursor-pointer">
                                     <option value="" className="bg-slate-900 text-slate-500">{t?.debts?.fields?.category_placeholder || 'Select Category'}</option>
                                     {categories?.map(cat => (
-                                        <option key={cat.id} value={cat.id} className="bg-slate-900 text-white">{cat.label}</option>
+                                        <option key={cat.id} value={cat.id} className="bg-slate-900 text-white">{getCategoryLabel(cat, t)}</option>
                                     ))}
                                 </select>
                                 <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">▼</div>

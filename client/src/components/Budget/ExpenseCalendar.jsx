@@ -1,7 +1,9 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
+import ruLocale from '@fullcalendar/core/locales/ru';
+import deLocale from '@fullcalendar/core/locales/de';
 import { Calendar } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { getCategoryIcon } from '../../data/categoryIcons';
@@ -12,9 +14,23 @@ const hexWithAlpha = (hex, alpha = '26') => {
     return `${hex}${alpha}`;
 };
 
-const ExpenseCalendar = ({ calendarItems, categories, formatMoney, t, lang = 'en', variant = 'actual' }) => {
+const ExpenseCalendar = ({ calendarItems, categories, formatMoney, t, lang = 'en', variant = 'actual', month, onMonthChange }) => {
     const categoryMap = useMemo(() => new Map(categories.map((cat) => [cat.id, cat])), [categories]);
     const [selectedDate, setSelectedDate] = useState(() => new Date().toISOString().split('T')[0]);
+    const initialDate = month ? `${month}-01` : undefined;
+
+    useEffect(() => {
+        if (!month) return;
+        const [yearStr, monthStr] = month.split('-');
+        const selected = new Date(selectedDate);
+        const currentYear = selected.getFullYear();
+        const currentMonth = selected.getMonth() + 1;
+        const targetYear = parseInt(yearStr, 10);
+        const targetMonth = parseInt(monthStr, 10);
+        if (currentYear !== targetYear || currentMonth !== targetMonth) {
+            setSelectedDate(`${month}-01`);
+        }
+    }, [month, selectedDate]);
 
     const events = useMemo(() => {
         return (calendarItems || []).map((item) => {
@@ -69,6 +85,7 @@ const ExpenseCalendar = ({ calendarItems, categories, formatMoney, t, lang = 'en
     };
 
     const locale = lang === 'ru' ? 'ru-RU' : lang === 'de' ? 'de-DE' : 'en-US';
+    const calendarLocale = lang === 'ru' ? ruLocale : lang === 'de' ? deLocale : undefined;
     const selectedLabel = selectedDate
         ? new Date(`${selectedDate}T00:00:00Z`).toLocaleDateString(locale, { day: 'numeric', month: 'long', year: 'numeric' })
         : selectedDate;
@@ -92,12 +109,27 @@ const ExpenseCalendar = ({ calendarItems, categories, formatMoney, t, lang = 'en
                         height="auto"
                         headerToolbar={{ left: 'prev,next today', center: 'title', right: '' }}
                         dayMaxEventRows={3}
+                        initialDate={initialDate}
+                        key={month || 'calendar'}
+                        locales={[ruLocale, deLocale]}
+                        locale={calendarLocale || 'en'}
                         events={events}
                         eventContent={renderEventContent}
                         eventClick={(info) => {
                             setSelectedDate(info.event.startStr.split('T')[0]);
                         }}
                         dateClick={(info) => setSelectedDate(info.dateStr)}
+                        datesSet={(info) => {
+                            if (onMonthChange) {
+                                const current = info.view?.currentStart || info.start;
+                                if (current) {
+                                    const nextMonth = `${current.getFullYear()}-${String(current.getMonth() + 1).padStart(2, '0')}`;
+                                    if (nextMonth !== month) {
+                                        onMonthChange(nextMonth);
+                                    }
+                                }
+                            }
+                        }}
                         eventDisplay="block"
                     />
                 </div>

@@ -1,9 +1,11 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Loader2, Plus, Edit2, Trash2, CheckCircle2, Undo2, CalendarClock, ChevronLeft, ChevronRight, Move } from 'lucide-react';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
+import ruLocale from '@fullcalendar/core/locales/ru';
+import deLocale from '@fullcalendar/core/locales/de';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
@@ -27,6 +29,7 @@ const Schedule = () => {
     const [selectedDate, setSelectedDate] = useState(() => new Date().toISOString().split('T')[0]);
     const [isModalOpen, setModalOpen] = useState(false);
     const [editingItem, setEditingItem] = useState(null);
+    const initialDate = month ? `${month}-01` : undefined;
 
     const toMonthLabel = (value) => {
         if (!value) return '';
@@ -156,9 +159,23 @@ const Schedule = () => {
     };
 
     const locale = lang === 'ru' ? 'ru-RU' : lang === 'de' ? 'de-DE' : 'en-US';
+    const calendarLocale = lang === 'ru' ? ruLocale : lang === 'de' ? deLocale : undefined;
     const selectedLabel = selectedDate
         ? new Date(`${selectedDate}T00:00:00Z`).toLocaleDateString(locale, { day: 'numeric', month: 'long', year: 'numeric' })
         : selectedDate;
+
+    useEffect(() => {
+        if (!month) return;
+        const [yearStr, monthStr] = month.split('-');
+        const selected = new Date(selectedDate);
+        const currentYear = selected.getFullYear();
+        const currentMonth = selected.getMonth() + 1;
+        const targetYear = parseInt(yearStr, 10);
+        const targetMonth = parseInt(monthStr, 10);
+        if (currentYear !== targetYear || currentMonth !== targetMonth) {
+            setSelectedDate(`${month}-01`);
+        }
+    }, [month, selectedDate]);
 
     return (
         <div className="space-y-8 pb-20">
@@ -230,6 +247,10 @@ const Schedule = () => {
                             height="auto"
                             headerToolbar={{ left: 'prev,next today', center: 'title', right: '' }}
                             dayMaxEventRows={3}
+                            initialDate={initialDate}
+                            key={month || 'schedule'}
+                            locales={[ruLocale, deLocale]}
+                            locale={calendarLocale || 'en'}
                             events={events}
                             eventContent={renderEventContent}
                             eventClick={(info) => {
@@ -242,6 +263,15 @@ const Schedule = () => {
                             eventDrop={(info) => {
                                 const id = info.event.id;
                                 updateMutation.mutate({ id, payload: { dueDate: info.event.startStr } });
+                            }}
+                            datesSet={(info) => {
+                                const current = info.view?.currentStart || info.start;
+                                if (current) {
+                                    const nextMonth = `${current.getFullYear()}-${String(current.getMonth() + 1).padStart(2, '0')}`;
+                                    if (nextMonth !== month) {
+                                        setMonth(nextMonth);
+                                    }
+                                }
                             }}
                         />
                     </div>

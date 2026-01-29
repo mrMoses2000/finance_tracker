@@ -204,27 +204,7 @@ const DashboardContent = () => {
         isPlanned: true
     }));
 
-    const normalizedTransactions = transactions.map((item) => ({
-        ...item,
-        isPlanned: false
-    }));
-
-    // Combine transactions and schedule, then deduplicate
-    // Prefer actual transactions (isPlanned: false) over planned ones
-    const combinedItems = [...normalizedTransactions, ...normalizedSchedule]
-        .sort((a, b) => new Date(a.date) - new Date(b.date));
-
-    // Deduplicate by content (description + date + amount)
-    const seenContent = new Set();
-    const calendarItemsActual = combinedItems.filter((item) => {
-        const dateStr = new Date(item.date).toISOString().split('T')[0];
-        const amountRounded = Math.round((item.amountUSD || 0) * 100);
-        const contentKey = `${item.description}-${dateStr}-${amountRounded}`;
-
-        if (seenContent.has(contentKey)) return false;
-        seenContent.add(contentKey);
-        return true;
-    });
+    const calendarItemsActual = [...normalizedSchedule];
 
     const calendarItemsPlan = [...normalizedSchedule]
         .sort((a, b) => new Date(a.date) - new Date(b.date));
@@ -359,6 +339,8 @@ const DashboardContent = () => {
                             t={t}
                             lang={lang}
                             variant="actual"
+                            month={month}
+                            onMonthChange={setMonth}
                         />
                     </>
                 ) : (
@@ -395,6 +377,8 @@ const DashboardContent = () => {
                             t={t}
                             lang={lang}
                             variant="plan"
+                            month={month}
+                            onMonthChange={setMonth}
                         />
                     </>
                 )}
