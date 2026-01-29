@@ -8,6 +8,9 @@ EXAMPLE_FILE="${EXAMPLE_FILE:-$ROOT_DIR/.env.example}"
 COMPOSE_FILE="${COMPOSE_FILE:-$ROOT_DIR/docker-compose.yml}"
 COMPOSE_CMD="${COMPOSE_CMD:-}"
 ENV_SETUP_MODE="${ENV_SETUP_MODE:-}"
+AUTO_DB_PASSWORD="${AUTO_DB_PASSWORD:-}"
+AUTO_CORS_ORIGINS="${AUTO_CORS_ORIGINS:-}"
+CORS_DOMAIN="${CORS_DOMAIN:-}"
 
 is_tty() {
   [ -t 0 ]
@@ -145,6 +148,40 @@ prompt_value() {
   export "$key=$value"
 }
 
+prompt_yes_no() {
+  local prompt="$1"
+  local default_yes="${2-}"
+  local value=""
+  local default="N"
+  if [ "$default_yes" == "yes" ]; then
+    default="Y"
+  fi
+  if ! is_tty; then
+    if [ "$default" == "Y" ]; then
+      return 0
+    fi
+    return 1
+  fi
+  read -r -p "$prompt [${default}/n]: " value
+  value="${value:-$default}"
+  if [[ "$value" =~ ^[Yy]$ ]]; then
+    return 0
+  fi
+  return 1
+}
+
+set_cors_from_domain() {
+  local domain="$1"
+  domain="${domain#https://}"
+  domain="${domain#http://}"
+  if [ -z "$domain" ]; then
+    return 1
+  fi
+  write_env_kv "CORS_ORIGINS" "https://$domain"
+  export CORS_ORIGINS="https://$domain"
+  return 0
+}
+
 show_menu() {
   if ! is_tty; then
     return 0
@@ -253,7 +290,23 @@ if is_placeholder "${POSTGRES_USER:-}"; then
   prompt_value "POSTGRES_USER" "Postgres user" "budget_user"
 fi
 if is_placeholder "${POSTGRES_PASSWORD:-}"; then
-  prompt_value "POSTGRES_PASSWORD" "Postgres password" "" "secret"
+  if [ "$AUTO_DB_PASSWORD" == "true" ]; then
+    db_pass="$(generate_secret)"
+    write_env_kv "POSTGRES_PASSWORD" "$db_pass"
+    export POSTGRES_PASSWORD="$db_pass"
+  else
+    if [ "$AUTO_DB_PASSWORD" == "false" ]; then
+      prompt_value "POSTGRES_PASSWORD" "Postgres password" "" "secret"
+    else
+      if prompt_yes_no "Generate DB password automatically?" "yes"; then
+        db_pass="$(generate_secret)"
+        write_env_kv "POSTGRES_PASSWORD" "$db_pass"
+        export POSTGRES_PASSWORD="$db_pass"
+      else
+        prompt_value "POSTGRES_PASSWORD" "Postgres password" "" "secret"
+      fi
+    fi
+  fi
 fi
 if is_placeholder "${POSTGRES_DB:-}"; then
   prompt_value "POSTGRES_DB" "Postgres database name" "budget_app"
@@ -291,12 +344,32 @@ if is_placeholder "${CORS_ALLOW_ALL:-}"; then
 fi
 
 if is_placeholder "${CORS_ORIGINS:-}"; then
-  prompt_value "CORS_ORIGINS" "Allowed CORS origins (comma-separated)" "http://localhost:3000,http://localhost:5173"
+  if [ "$AUTO_CORS_ORIGINS" == "true" ]; then
+    if [ -z "$CORS_DOMAIN" ]; then
+      prompt_value "CORS_DOMAIN" "Domain for CORS (example: moneycheckos.duckdns.org)" ""
+      CORS_DOMAIN="${CORS_DOMAIN:-}"
+    fi
+    if ! set_cors_from_domain "$CORS_DOMAIN"; then
+      prompt_value "CORS_ORIGINS" "Allowed CORS origins (comma-separated)" "http://localhost:3000,http://localhost:5173"
+    fi
+  elif [ "$AUTO_CORS_ORIGINS" == "false" ]; then
+    prompt_value "CORS_ORIGINS" "Allowed CORS origins (comma-separated)" "http://localhost:3000,http://localhost:5173"
+  else
+    if prompt_yes_no "Auto-set CORS_ORIGINS from domain?" "no"; then
+      prompt_value "CORS_DOMAIN" "Domain for CORS (example: moneycheckos.duckdns.org)" ""
+      CORS_DOMAIN="${CORS_DOMAIN:-}"
+      if ! set_cors_from_domain "$CORS_DOMAIN"; then
+        prompt_value "CORS_ORIGINS" "Allowed CORS origins (comma-separated)" "http://localhost:3000,http://localhost:5173"
+      fi
+    else
+      prompt_value "CORS_ORIGINS" "Allowed CORS origins (comma-separated)" "http://localhost:3000,http://localhost:5173"
+    fi
+  fi
 fi
 
 # Proxy
 if is_placeholder "${TRUST_PROXY:-}"; then
-  prompt_value "TRUST_PROXY" "Behind reverse proxy? (true/false)" "false"
+  prompt_value "TRUST_PROXY" "Behind reverse proxy (nginx/Cloudflare)? (true/false)" "false"
 fi
 
 # Rate limiting

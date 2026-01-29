@@ -40,6 +40,7 @@
 - [x] **Ops**: Добавлен интерактивный `scripts/ensure_env.sh` для заполнения .env.
 - [x] **Ops**: Добавлено меню сценариев (reset env / wipe DB / stop) перед запуском.
 - [x] **Ops**: Добавлены preflight проверки зависимостей, .env и несовпадения кредов БД.
+- [x] **Ops**: Добавлены опциональные авто‑флаги `AUTO_DB_PASSWORD` и `AUTO_CORS_ORIGINS`.
 
 ## 🚧 In Progress / Next Steps (For Codex Agent)
 - [ ] **Clawd.bot Deployment**: SSH into Stockholm server (16.171.28.19) and run deployment

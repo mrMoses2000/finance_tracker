@@ -17,7 +17,7 @@
 ## Current Agent Stamp
 - **Agent**: Codex
 - **Date**: 2026-01-29
-- **Status**: **UPDATED**. Added preflight checks and DB-credential mismatch detection in run.sh.
+- **Status**: **UPDATED**. Added optional auto env flags (DB password/CORS) in ensure_env.sh.
 
 ## Handover Note for Codex
 Welcome! The project is in a very stable state.

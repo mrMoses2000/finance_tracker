@@ -1,8 +1,8 @@
 # Commit Message Template
 
 Type: Feat
-Subject: preflight safety checks
+Subject: optional env automation
 
 Body:
-- Added preflight dependency/env checks and DB-credential mismatch detection.
-- Warns about occupied ports and invalid .env lines.
+- Added AUTO_DB_PASSWORD and AUTO_CORS_ORIGINS options.
+- Updated docs for new env automation flags.
