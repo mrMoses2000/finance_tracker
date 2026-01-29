@@ -151,6 +151,13 @@ SEED_ADMIN_NAME="Admin User"
 ```
 This script builds and launches Frontend (:3000), Backend (:4000), and Postgres (:5432).
 
+### Быстрое обновление контейнеров
+Если вы изменили UI/Backend и хотите только пересобрать контейнеры без настроек окружения:
+```bash
+RUN_ACTION=update ./run.sh
+```
+Также доступно в интерактивном меню `run.sh` (пункт «Быстрое обновление контейнеров»).
+
 ### Production Profile (Docker)
 Use the production compose file and migration-based startup.
 ```bash

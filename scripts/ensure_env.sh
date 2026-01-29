@@ -322,11 +322,12 @@ show_menu() {
   echo "2) Пересоздать .env из .env.example и заполнить"
   echo "3) Снести БД (volume) и пересоздать .env (ОПАСНО)"
   echo "4) Авто‑режим (минимум вопросов, больше автогенерации)"
-  echo "5) Остановить контейнеры и выйти"
-  echo "6) Выйти без изменений"
+  echo "5) Быстрое обновление контейнеров (RUN_ACTION=update)"
+  echo "6) Остановить контейнеры и выйти"
+  echo "7) Выйти без изменений"
   echo ""
   local choice=""
-  read -r -p "Выберите вариант [1-6]: " choice
+  read -r -p "Выберите вариант [1-7]: " choice
 
   case "$choice" in
     1|"")
@@ -342,9 +343,12 @@ show_menu() {
       ENV_SETUP_MODE="auto"
       ;;
     5)
-      ENV_SETUP_MODE="stop"
+      ENV_SETUP_MODE="update"
       ;;
     6)
+      ENV_SETUP_MODE="stop"
+      ;;
+    7)
       ENV_SETUP_MODE="exit"
       ;;
     *)
@@ -422,6 +426,11 @@ apply_mode() {
           : > "$ENV_FILE"
         fi
       fi
+      ;;
+    update)
+      export RUN_ACTION="update"
+      echo "[INFO] Быстрый режим: RUN_ACTION=update"
+      exit 0
       ;;
     stop)
       compose_down "" || true

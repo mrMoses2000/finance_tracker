@@ -29,6 +29,7 @@ Base currency can be changed from the dashboard header (separate from display cu
 Changing base currency recalculates stored amounts using the latest FX rates.
 Dashboard payment calendar shows only schedule items and follows the selected month.
 FullCalendar uses RU/DE locales when language is switched.
+Quick update mode (no env/HTTPS prompts): `RUN_ACTION=update ./run.sh` (also available in the interactive menu).
 
 ### 2.1 Production Profile
 ```bash

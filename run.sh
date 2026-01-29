@@ -25,6 +25,7 @@ DUCKDNS_DOMAIN="${DUCKDNS_DOMAIN:-}"
 RUN_MODE="${RUN_MODE:-dev}"
 CORS_DOMAIN="${CORS_DOMAIN:-}"
 COMPOSE_PROJECT_NAME="${COMPOSE_PROJECT_NAME:-$(basename "$ROOT_DIR")}"
+RUN_ACTION="${RUN_ACTION:-}"
 ENABLE_HTTPS=0
 SERVER_NAMES="_"
 SSL_CERT=""
@@ -84,6 +85,15 @@ print_warn() {
 
 print_info() {
     echo -e "${YELLOW}[INFO] $1${NC}"
+}
+
+is_update_mode() {
+    case "${RUN_ACTION:-}" in
+        update|rebuild|restart|quick)
+            return 0
+            ;;
+    esac
+    return 1
 }
 
 if [ "${#CLI_UNUSED_ARGS[@]}" -gt 0 ]; then
@@ -193,6 +203,14 @@ check_port_in_use() {
         if lsof -iTCP:"$port" -sTCP:LISTEN >/dev/null 2>&1; then
             print_warn "Порт $port занят. Если это не Docker, запуск может упасть."
         fi
+    fi
+}
+
+detect_https_from_nginx() {
+    if [ -f "$NGINX_CONF_PATH" ] && grep -q "listen 443 ssl" "$NGINX_CONF_PATH"; then
+        ENABLE_HTTPS=1
+    else
+        ENABLE_HTTPS=0
     fi
 }
 
@@ -931,6 +949,9 @@ check_db_env_mismatch() {
 preflight_checks
 
 echo -e "\n${YELLOW}[Step 1] Проверка окружения...${NC}"
+if is_update_mode; then
+    print_info "Быстрый режим обновления: пропускаю настройку HTTPS/сертификатов и вопросы по .env."
+fi
 if ! check_cmd docker; then
     if [ "$OS_TYPE" == "Linux" ]; then
         install_docker_linux
@@ -986,18 +1007,31 @@ if [ ! -f "$COMPOSE_FILE" ]; then
 fi
 
 # HTTPS setup (early, to auto-fill CORS domain if needed)
-prompt_https_mode
-prompt_https_domain
-
-# Ensure env is present and valid (interactive menu if needed)
-if [ -x "$ROOT_DIR/scripts/ensure_env.sh" ]; then
-    COMPOSE_CMD="$COMPOSE_CMD" COMPOSE_FILE="$COMPOSE_FILE" bash "$ROOT_DIR/scripts/ensure_env.sh"
+if ! is_update_mode; then
+    prompt_https_mode
+    prompt_https_domain
+else
+    detect_https_from_nginx
 fi
 
-validate_env_file "$ROOT_DIR/.env"
-load_env_file "$ROOT_DIR/.env"
-validate_env_values
-check_db_env_mismatch
+# Ensure env is present and valid (interactive menu if needed)
+if ! is_update_mode; then
+    if [ -x "$ROOT_DIR/scripts/ensure_env.sh" ]; then
+        COMPOSE_CMD="$COMPOSE_CMD" COMPOSE_FILE="$COMPOSE_FILE" bash "$ROOT_DIR/scripts/ensure_env.sh"
+    fi
+    validate_env_file "$ROOT_DIR/.env"
+    load_env_file "$ROOT_DIR/.env"
+    validate_env_values
+    check_db_env_mismatch
+else
+    if [ ! -f "$ROOT_DIR/.env" ]; then
+        print_error ".env не найден. Для первого запуска используйте обычный режим."
+        exit 1
+    fi
+    validate_env_file "$ROOT_DIR/.env"
+    load_env_file "$ROOT_DIR/.env"
+    validate_env_values
+fi
 
 check_port_in_use 3000
 check_port_in_use 4000
@@ -1005,7 +1039,9 @@ check_port_in_use 5432
 check_port_in_use 443
 
 # Ubuntu remote setup
-configure_remote_access
+if ! is_update_mode; then
+    configure_remote_access
+fi
 
 # 4. Оптимизация и Запуск
 echo -e "\n${YELLOW}[Step 2] Сборка и запуск контейнеров...${NC}"
@@ -1015,15 +1051,21 @@ echo "Это обеспечит изолированную работу прил
 mkdir -p "$ROOT_DIR/certs/config" "$ROOT_DIR/certs/selfsigned"
 
 # Останавливаем старые контейнеры если есть
-$COMPOSE_CMD -f "$COMPOSE_FILE" down 2>/dev/null
+if ! is_update_mode; then
+    $COMPOSE_CMD -f "$COMPOSE_FILE" down 2>/dev/null
+fi
 
 # Update DuckDNS if configured
-update_duckdns
+if ! is_update_mode; then
+    update_duckdns
+fi
 
 # HTTPS certificates + nginx config
-ensure_certificates
-write_nginx_conf
-setup_cert_renewal
+if ! is_update_mode; then
+    ensure_certificates
+    write_nginx_conf
+    setup_cert_renewal
+fi
 
 # Запускаем в фоновом режиме (-d) с пересборкой (--build)
 if $COMPOSE_CMD -f "$COMPOSE_FILE" up -d --build; then
