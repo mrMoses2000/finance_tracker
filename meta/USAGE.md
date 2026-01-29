@@ -19,6 +19,7 @@ Optional automation flags:
 - `AUTO_DB_PASSWORD=true`
 - `AUTO_CORS_ORIGINS=true` + `CORS_DOMAIN=example.com`
 If `HTTPS_MODE=domain` and `DOMAIN` is provided, `CORS_DOMAIN` is auto-set and overrides localhost CORS.
+Wipe‑DB mode also removes the compose DB volume to prevent stale credentials.
 You can pass overrides as `VAR=value ./run.sh` or `./run.sh VAR=value`.
 Auto‑mode in the menu enables these options without extra flags.
 `.env` is parsed safely even when values contain spaces.

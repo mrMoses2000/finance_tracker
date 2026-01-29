@@ -42,6 +42,7 @@ cp .env.example .env
   - `AUTO_DB_PASSWORD=true` to auto-generate DB password.
   - `AUTO_CORS_ORIGINS=true` + `CORS_DOMAIN=example.com` to auto-set CORS.
 - If `HTTPS_MODE=domain` and `DOMAIN` is provided, `CORS_DOMAIN` is auto-set and overrides localhost CORS defaults.
+- Wipe‑DB mode removes the compose volume and double-checks DB volume cleanup.
 - You can pass env overrides as `VAR=value ./run.sh` or `./run.sh VAR=value`.
 - Auto‑mode in the menu enables these options without long command lines.
 - `.env` with spaces is handled safely; scripts parse it without `source`.

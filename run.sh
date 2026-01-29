@@ -24,6 +24,7 @@ DUCKDNS_TOKEN="${DUCKDNS_TOKEN:-}"
 DUCKDNS_DOMAIN="${DUCKDNS_DOMAIN:-}"
 RUN_MODE="${RUN_MODE:-dev}"
 CORS_DOMAIN="${CORS_DOMAIN:-}"
+COMPOSE_PROJECT_NAME="${COMPOSE_PROJECT_NAME:-$(basename "$ROOT_DIR")}"
 ENABLE_HTTPS=0
 SERVER_NAMES="_"
 SSL_CERT=""
@@ -845,6 +846,17 @@ preflight_checks() {
     fi
 }
 
+remove_db_volume() {
+    local project volume
+    project="${COMPOSE_PROJECT_NAME:-$(basename "$ROOT_DIR")}"
+    volume="${project}_postgres_data"
+
+    if $DOCKER_CMD volume ls --format '{{.Name}}' 2>/dev/null | grep -qx "$volume"; then
+        $DOCKER_CMD volume rm "$volume" >/dev/null 2>&1 || true
+        echo -e "${YELLOW}[INFO] Удалён volume БД: ${volume}${NC}"
+    fi
+}
+
 check_db_env_mismatch() {
     if ! $DOCKER_CMD ps --format '{{.Names}}' | grep -q '^budget_db$'; then
         return 0
@@ -870,6 +882,7 @@ check_db_env_mismatch() {
             read -r -p "Удалить БД и пересоздать (docker compose down -v)? [y/N]: " confirm
             if [[ "$confirm" =~ ^[Yy]$ ]]; then
                 $COMPOSE_CMD -f "$COMPOSE_FILE" down -v || true
+                remove_db_volume
             else
                 print_warn "Продолжаю без удаления. Если будет P1010 — нужно пересоздать volume."
             fi

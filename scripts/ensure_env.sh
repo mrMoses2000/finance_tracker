@@ -33,6 +33,34 @@ resolve_compose_cmd() {
   return 1
 }
 
+compose_project_name() {
+  if [ -n "${COMPOSE_PROJECT_NAME:-}" ]; then
+    echo "$COMPOSE_PROJECT_NAME"
+  else
+    basename "$ROOT_DIR"
+  fi
+}
+
+remove_db_volume() {
+  local project volume removed=0
+  project="$(compose_project_name)"
+  volume="${project}_postgres_data"
+
+  if docker volume ls --format '{{.Name}}' 2>/dev/null | grep -qx "$volume"; then
+    docker volume rm "$volume" >/dev/null 2>&1 || true
+    removed=1
+  elif command -v sudo >/dev/null 2>&1; then
+    if sudo docker volume ls --format '{{.Name}}' 2>/dev/null | grep -qx "$volume"; then
+      sudo docker volume rm "$volume" >/dev/null 2>&1 || true
+      removed=1
+    fi
+  fi
+
+  if [ "$removed" -eq 1 ]; then
+    echo "[INFO] Удалён volume БД: $volume"
+  fi
+}
+
 compose_down() {
   local extra="${1-}"
   if ! resolve_compose_cmd; then
@@ -350,6 +378,7 @@ apply_mode() {
           echo "[INFO] Удаление отменено."
         else
           compose_down "-v" || true
+          remove_db_volume || true
           if [ -f "$EXAMPLE_FILE" ]; then
             cp "$EXAMPLE_FILE" "$ENV_FILE"
           else
@@ -358,6 +387,7 @@ apply_mode() {
         fi
       else
         compose_down "-v" || true
+        remove_db_volume || true
         if [ -f "$EXAMPLE_FILE" ]; then
           cp "$EXAMPLE_FILE" "$ENV_FILE"
         else

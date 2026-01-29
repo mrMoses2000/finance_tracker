@@ -2,6 +2,7 @@
 
 | Date | Agent | Action | Result |
 |------|-------|--------|--------|
+| 2026-01-29 | Codex | Wipe-DB Hardening | Added DB volume removal after compose down to avoid stale credentials. |
 | 2026-01-29 | Codex | CORS Auto-Override | Auto-set CORS for domain even if .env has localhost defaults. |
 | 2026-01-29 | Codex | Env Robustness | Added env arg overrides in run.sh, CORS auto from HTTPS domain, safer .env sanitization/quoting, and stricter env normalization. |
 | 2026-01-29 | Codex | Clawd.bot Integration Plan | Added implementation plan document for bot/server/messenger integration. |
