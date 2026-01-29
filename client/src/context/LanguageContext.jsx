@@ -51,6 +51,16 @@ const translations = {
             budget_warning: 'You are close to exceeding the limit in:',
             variance: 'Variance'
         },
+        base_currency: {
+            title: 'Choose base currency',
+            desc: 'All amounts are stored in this currency. Display currency can be changed separately.',
+            label: 'Base currency',
+            save: 'Save',
+            error_auth: 'Please log in again to set base currency.'
+        },
+        display_currency: {
+            label: 'Display currency'
+        },
         kpi: {
             actual_expenses: 'Actual Expenses',
             actual_income: 'Actual Income',
@@ -118,6 +128,7 @@ const translations = {
             welcome: 'Welcome Back',
             login_subtitle: 'Login to your financial dashboard',
             create_account: 'Create Account',
+            currency_label: 'Base currency',
             join_platform: 'Join the professional financial platform',
             name: 'Full Name',
             email: 'Email',
@@ -310,6 +321,16 @@ const translations = {
             budget_warning: 'Вы близки к лимиту по:',
             variance: 'Отклонение от плана'
         },
+        base_currency: {
+            title: 'Выберите основную валюту',
+            desc: 'Все суммы сохраняются в этой валюте. Валюту отображения можно менять отдельно.',
+            label: 'Основная валюта',
+            save: 'Сохранить',
+            error_auth: 'Перелогиньтесь, чтобы сохранить валюту.'
+        },
+        display_currency: {
+            label: 'Валюта отображения'
+        },
         kpi: {
             actual_expenses: 'Фактические расходы',
             actual_income: 'Фактические доходы',
@@ -377,6 +398,7 @@ const translations = {
             welcome: 'С Возвращением',
             login_subtitle: 'Войдите в ваш финансовый дашборд',
             create_account: 'Создать Аккаунт',
+            currency_label: 'Основная валюта',
             join_platform: 'Присоединяйтесь к профессиональной платформе',
             name: 'Полное Имя',
             email: 'Email',
@@ -569,6 +591,16 @@ const translations = {
             budget_warning: 'Nahe am Limit in:',
             variance: 'Abweichung'
         },
+        base_currency: {
+            title: 'Basiswährung wählen',
+            desc: 'Alle Beträge werden in dieser Währung gespeichert. Die Anzeigewährung kann separat geändert werden.',
+            label: 'Basiswährung',
+            save: 'Speichern',
+            error_auth: 'Bitte erneut anmelden, um die Währung zu speichern.'
+        },
+        display_currency: {
+            label: 'Anzeigewährung'
+        },
         kpi: {
             actual_expenses: 'Ausgaben (Ist)',
             actual_income: 'Einnahmen (Ist)',
@@ -636,6 +668,7 @@ const translations = {
             welcome: 'Willkommen zurück',
             login_subtitle: 'Login in Ihr Finanz-Dashboard',
             create_account: 'Konto erstellen',
+            currency_label: 'Basiswährung',
             join_platform: 'Treten Sie der professionellen Plattform bei',
             name: 'Vollständiger Name',
             email: 'E-Mail',

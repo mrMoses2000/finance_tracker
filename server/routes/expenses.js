@@ -2,10 +2,11 @@ import { Router } from 'express';
 import prisma from '../db/prisma.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { ensureCategoryOwnership } from '../utils/ownership.js';
-import { convertToUSD, normalizeCurrency } from '../utils/currency.js';
+import { normalizeCurrency } from '../utils/currency.js';
 import { toDecimal } from '../utils/money.js';
 import { formatExpense } from '../utils/serializers.js';
 import { logAudit } from '../services/auditLog.js';
+import { resolveAmountBase } from '../services/currencyService.js';
 
 const router = Router();
 
@@ -17,18 +18,8 @@ router.get('/data', asyncHandler(async (req, res) => {
   return res.json({ expenses: expenses.map(formatExpense) });
 }));
 
-const resolveAmountUSD = ({ amountUSD, amountLocal, currency }) => {
-  let parsedAmount = Number.parseFloat(amountUSD);
-  if (!Number.isFinite(parsedAmount)) {
-    if (amountLocal !== undefined) {
-      parsedAmount = convertToUSD(amountLocal, currency);
-    }
-  }
-  return parsedAmount;
-};
-
 router.post('/expenses', asyncHandler(async (req, res) => {
-  const { amountUSD, amountLocal, description, categoryId, date, type, currency } = req.body || {};
+  const { amountUSD, amountLocal, amount, description, categoryId, date, type, currency } = req.body || {};
 
   if (!categoryId) {
     return res.status(400).json({ error: 'categoryId is required' });
@@ -36,20 +27,26 @@ router.post('/expenses', asyncHandler(async (req, res) => {
 
   await ensureCategoryOwnership(req.user.id, categoryId);
 
-  const parsedAmount = resolveAmountUSD({ amountUSD, amountLocal, currency });
-  if (!Number.isFinite(parsedAmount) || parsedAmount <= 0) {
-    return res.status(400).json({ error: 'amountUSD is required' });
+  const { amountBase, baseCurrency } = await resolveAmountBase({
+    userId: req.user.id,
+    amount,
+    amountLocal,
+    amountUSD,
+    currency,
+  });
+  if (!Number.isFinite(amountBase) || amountBase <= 0) {
+    return res.status(400).json({ error: 'amount is required' });
   }
 
   const expense = await prisma.expense.create({
     data: {
       userId: req.user.id,
-      amountUSD: toDecimal(parsedAmount),
+      amountUSD: toDecimal(amountBase),
       description: description || '',
       categoryId,
       date: date ? new Date(date) : new Date(),
       type: type || 'expense',
-      currency: normalizeCurrency(currency || 'USD'),
+      currency: normalizeCurrency(currency || baseCurrency),
     },
   });
 
@@ -67,7 +64,7 @@ router.post('/expenses', asyncHandler(async (req, res) => {
 
 router.put('/expenses/:id', asyncHandler(async (req, res) => {
   const { id } = req.params;
-  const { amountUSD, amountLocal, description, categoryId, date, type, currency } = req.body || {};
+  const { amountUSD, amountLocal, amount, description, categoryId, date, type, currency } = req.body || {};
 
   const expense = await prisma.expense.findFirst({
     where: { id, userId: req.user.id },
@@ -80,17 +77,23 @@ router.put('/expenses/:id', asyncHandler(async (req, res) => {
     await ensureCategoryOwnership(req.user.id, categoryId);
   }
 
-  const parsedAmount = resolveAmountUSD({ amountUSD, amountLocal, currency });
+  const { amountBase, baseCurrency } = await resolveAmountBase({
+    userId: req.user.id,
+    amount,
+    amountLocal,
+    amountUSD,
+    currency,
+  });
 
   const updated = await prisma.expense.update({
     where: { id },
     data: {
-      amountUSD: Number.isFinite(parsedAmount) ? toDecimal(parsedAmount) : expense.amountUSD,
+      amountUSD: Number.isFinite(amountBase) ? toDecimal(amountBase) : expense.amountUSD,
       description: description ?? expense.description,
       categoryId: categoryId || expense.categoryId,
       date: date ? new Date(date) : expense.date,
       type: type || expense.type,
-      currency: currency ? normalizeCurrency(currency) : expense.currency,
+      currency: currency ? normalizeCurrency(currency || baseCurrency) : expense.currency,
     },
   });
 

@@ -6,6 +6,7 @@ import { ensureCategoryOwnership } from '../utils/ownership.js';
 import { toDecimal } from '../utils/money.js';
 import { formatCategory } from '../utils/serializers.js';
 import { logAudit } from '../services/auditLog.js';
+import { resolveAmountBase } from '../services/currencyService.js';
 
 const router = Router();
 
@@ -19,7 +20,8 @@ router.get('/categories', asyncHandler(async (req, res) => {
 router.post('/categories', asyncHandler(async (req, res) => {
   const label = (req.body.label || '').trim();
   const type = req.body.type === 'income' ? 'income' : 'expense';
-  const limit = Number.parseFloat(req.body.limit || 0);
+  const limitInput = req.body.limit;
+  const currency = req.body.currency;
 
   if (!label) {
     return res.status(400).json({ error: 'Label is required' });
@@ -31,12 +33,19 @@ router.post('/categories', asyncHandler(async (req, res) => {
   const color = req.body.color || pickCategoryColor(existing.map((cat) => cat.color));
 
   try {
+    const { amountBase } = await resolveAmountBase({
+      userId: req.user.id,
+      amount: limitInput,
+      currency,
+    });
+    const limitValue = Number.isNaN(Number(amountBase)) ? toDecimal(0) : toDecimal(amountBase);
+
     const category = await prisma.category.create({
       data: {
         userId: req.user.id,
         label,
         color,
-        limit: Number.isNaN(limit) ? toDecimal(0) : toDecimal(limit),
+        limit: limitValue,
         type,
       },
     });
@@ -61,17 +70,20 @@ router.post('/categories', asyncHandler(async (req, res) => {
 
 router.put('/categories/:id', asyncHandler(async (req, res) => {
   const { id } = req.params;
-  const { label, color, limit, type } = req.body;
+  const { label, color, limit, type, currency } = req.body;
 
   await ensureCategoryOwnership(req.user.id, id);
 
   const limitProvided = limit !== undefined;
-  const parsedLimit = limitProvided ? Number.parseFloat(limit) : null;
-  const limitValue = limitProvided
-    ? Number.isNaN(parsedLimit)
-      ? toDecimal(0)
-      : toDecimal(parsedLimit)
-    : undefined;
+  let limitValue;
+  if (limitProvided) {
+    const { amountBase } = await resolveAmountBase({
+      userId: req.user.id,
+      amount: limit,
+      currency,
+    });
+    limitValue = Number.isNaN(Number(amountBase)) ? toDecimal(0) : toDecimal(amountBase);
+  }
 
   try {
     const updated = await prisma.category.update({

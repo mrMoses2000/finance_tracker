@@ -12,7 +12,7 @@ const BudgetPlan = () => {
     const token = localStorage.getItem('token');
     const { t, lang } = useLanguage();
     const { month, setMonth } = useBudgetMonth();
-    const { currency, convert, toUSD, formatMoney } = useCurrency();
+    const { currency, convert, formatMoney } = useCurrency();
 
     const toMonthLabel = (value) => {
         if (!value) return '';
@@ -53,14 +53,14 @@ const BudgetPlan = () => {
     });
 
     const itemMutation = useMutation({
-        mutationFn: async ({ categoryId, plannedAmount }) => {
+        mutationFn: async ({ categoryId, plannedAmount, currency: payloadCurrency }) => {
             const res = await fetch('/api/budgets/item', {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
                     Authorization: `Bearer ${token}`
                 },
-                body: JSON.stringify({ month, categoryId, plannedAmount })
+                body: JSON.stringify({ month, categoryId, plannedAmount, currency: payloadCurrency })
             });
             return res.json();
         },
@@ -88,14 +88,14 @@ const BudgetPlan = () => {
     });
 
     const incomeMutation = useMutation({
-        mutationFn: async ({ incomePlanned }) => {
+        mutationFn: async ({ incomePlanned, currency: payloadCurrency }) => {
             const res = await fetch('/api/budgets/income', {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
                     Authorization: `Bearer ${token}`
                 },
-                body: JSON.stringify({ month, incomePlanned })
+                body: JSON.stringify({ month, incomePlanned, currency: payloadCurrency })
             });
             return res.json();
         },
@@ -200,7 +200,7 @@ const BudgetPlan = () => {
                         <span className="text-slate-400 text-sm">{currency}</span>
                         {incomeDirty && (
                             <button
-                                onClick={() => incomeMutation.mutate({ incomePlanned: toUSD(incomeValue) })}
+                                onClick={() => incomeMutation.mutate({ incomePlanned: incomeValue, currency })}
                                 className="flex items-center justify-center gap-2 bg-emerald-600/20 text-emerald-200 hover:bg-emerald-600/30 px-4 py-2 rounded-lg text-sm font-bold transition-all border border-emerald-500/20"
                             >
                                 <Save size={16} />
@@ -252,7 +252,6 @@ const BudgetPlan = () => {
                                 onDelete={deleteItemMutation.mutate}
                                 t={t}
                                 convert={convert}
-                                toUSD={toUSD}
                                 currency={currency}
                             />
                         ))}
@@ -269,7 +268,7 @@ const BudgetPlan = () => {
     );
 };
 
-const CategoryLimitCard = ({ category, plannedAmount, hasItem, onSave, onDelete, t, convert, toUSD, currency }) => {
+const CategoryLimitCard = ({ category, plannedAmount, hasItem, onSave, onDelete, t, convert, currency }) => {
     const [limit, setLimit] = useState(convert(plannedAmount));
     const [isDirty, setIsDirty] = useState(false);
 
@@ -279,7 +278,7 @@ const CategoryLimitCard = ({ category, plannedAmount, hasItem, onSave, onDelete,
     }, [plannedAmount, convert]);
 
     const handleSave = () => {
-        onSave({ categoryId: category.id, plannedAmount: toUSD(limit) });
+        onSave({ categoryId: category.id, plannedAmount: limit, currency });
         setIsDirty(false);
     };
 

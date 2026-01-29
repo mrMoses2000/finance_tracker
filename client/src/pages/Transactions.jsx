@@ -255,7 +255,7 @@ const TransactionModal = ({ categories, item, onClose }) => {
     const queryClient = useQueryClient();
     const token = localStorage.getItem('token');
     const { t } = useLanguage();
-    const { currency, convert, toUSD } = useCurrency();
+    const { currency, convert } = useCurrency();
     const { month } = useBudgetMonth();
     const isEdit = !!item;
 
@@ -281,7 +281,8 @@ const TransactionModal = ({ categories, item, onClose }) => {
                 method,
                 headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
                 body: JSON.stringify({
-                    amountUSD: toUSD(values.amountLocal),
+                    amountLocal: values.amountLocal,
+                    currency,
                     description: values.description,
                     categoryId: values.categoryId,
                     date: values.date,

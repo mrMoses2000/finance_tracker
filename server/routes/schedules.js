@@ -6,6 +6,7 @@ import { getMonthRange, toMonthStart } from '../utils/date.js';
 import { toDecimal } from '../utils/money.js';
 import { formatScheduleItem } from '../utils/serializers.js';
 import { logAudit } from '../services/auditLog.js';
+import { resolveAmountBase } from '../services/currencyService.js';
 
 const router = Router();
 
@@ -34,7 +35,7 @@ router.get('/schedules', asyncHandler(async (req, res) => {
 }));
 
 router.post('/schedules', asyncHandler(async (req, res) => {
-  const { title, amountUSD, type, dueDate, recurrence, categoryId, debtId, status } = req.body || {};
+  const { title, amountUSD, amountLocal, amount, currency, type, dueDate, recurrence, categoryId, debtId, status } = req.body || {};
 
   if (categoryId) {
     await ensureCategoryOwnership(req.user.id, categoryId);
@@ -43,16 +44,22 @@ router.post('/schedules', asyncHandler(async (req, res) => {
     await ensureDebtOwnership(req.user.id, debtId);
   }
 
-  const parsedAmount = Number.parseFloat(amountUSD || 0);
-  if (!Number.isFinite(parsedAmount) || parsedAmount <= 0) {
-    return res.status(400).json({ error: 'amountUSD is required' });
+  const { amountBase } = await resolveAmountBase({
+    userId: req.user.id,
+    amount,
+    amountLocal,
+    amountUSD,
+    currency,
+  });
+  if (!Number.isFinite(amountBase) || amountBase <= 0) {
+    return res.status(400).json({ error: 'amount is required' });
   }
 
   const item = await prisma.scheduleItem.create({
     data: {
       userId: req.user.id,
       title,
-      amountUSD: toDecimal(parsedAmount),
+      amountUSD: toDecimal(amountBase),
       type: type || 'expense',
       dueDate: new Date(dueDate),
       recurrence: recurrence || 'once',
@@ -76,7 +83,7 @@ router.post('/schedules', asyncHandler(async (req, res) => {
 
 router.put('/schedules/:id', asyncHandler(async (req, res) => {
   const { id } = req.params;
-  const { title, amountUSD, type, dueDate, recurrence, categoryId, debtId, status } = req.body || {};
+  const { title, amountUSD, amountLocal, amount, currency, type, dueDate, recurrence, categoryId, debtId, status } = req.body || {};
 
   const existing = await prisma.scheduleItem.findFirst({
     where: { id, userId: req.user.id },
@@ -90,13 +97,19 @@ router.put('/schedules/:id', asyncHandler(async (req, res) => {
     await ensureDebtOwnership(req.user.id, debtId);
   }
 
-  const parsedAmount = amountUSD !== undefined ? Number.parseFloat(amountUSD) : existing.amountUSD;
+  const { amountBase } = await resolveAmountBase({
+    userId: req.user.id,
+    amount,
+    amountLocal,
+    amountUSD,
+    currency,
+  });
 
   const updated = await prisma.scheduleItem.update({
     where: { id },
     data: {
       title: title ?? existing.title,
-      amountUSD: Number.isFinite(parsedAmount) ? toDecimal(parsedAmount) : existing.amountUSD,
+      amountUSD: Number.isFinite(amountBase) ? toDecimal(amountBase) : existing.amountUSD,
       type: type || existing.type,
       dueDate: dueDate ? new Date(dueDate) : existing.dueDate,
       recurrence: recurrence || existing.recurrence,

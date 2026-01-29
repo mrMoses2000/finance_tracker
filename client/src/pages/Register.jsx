@@ -5,6 +5,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Loader2 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
+import { SUPPORTED_CURRENCIES } from '../data/currency';
 
 const Register = () => {
     const navigate = useNavigate();
@@ -12,11 +13,12 @@ const Register = () => {
     const [error, setError] = React.useState('');
 
     const formik = useFormik({
-        initialValues: { name: '', email: '', password: '' },
+        initialValues: { name: '', email: '', password: '', currency: 'USD' },
         validationSchema: Yup.object({
             name: Yup.string().required('Required'),
             email: Yup.string().email('Invalid email').required('Required'),
-            password: Yup.string().min(6, 'Must be at least 6 characters').required('Required')
+            password: Yup.string().min(6, 'Must be at least 6 characters').required('Required'),
+            currency: Yup.string().required('Required')
         }),
         onSubmit: async (values, { setSubmitting }) => {
             try {
@@ -102,6 +104,23 @@ const Register = () => {
                         {/* Validation error for password */}
                         {formik.touched.password && formik.errors.password ? (
                             <div className="text-rose-400 text-xs mt-1">{formik.errors.password}</div>
+                        ) : null}
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-slate-300 mb-2">{t?.auth?.currency_label || 'Base currency'}</label>
+                        <select
+                            {...formik.getFieldProps('currency')}
+                            className="w-full bg-slate-950/50 border border-white/10 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all"
+                        >
+                            {SUPPORTED_CURRENCIES.map((code) => (
+                                <option key={code} value={code} className="bg-slate-900 text-white">
+                                    {code}
+                                </option>
+                            ))}
+                        </select>
+                        {formik.touched.currency && formik.errors.currency ? (
+                            <div className="text-rose-400 text-xs mt-1">{formik.errors.currency}</div>
                         ) : null}
                     </div>
 

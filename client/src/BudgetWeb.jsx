@@ -50,7 +50,7 @@ class ErrorBoundary extends React.Component {
 const DashboardContent = () => {
     const { t, lang } = useLanguage();
     const { month, setMonth } = useBudgetMonth();
-    const { currency, setCurrency, formatMoney } = useCurrency();
+    const { currency, setCurrency, baseCurrency, setBaseCurrency, formatMoney } = useCurrency();
     const [view, setView] = useState(() => localStorage.getItem('dashboard_view') || 'actual');
 
     const { data, isLoading, isError } = useBudget(month);
@@ -82,6 +82,37 @@ const DashboardContent = () => {
     const plannedBalance = plannedIncomeValue - plannedExpensesTotal;
 
     const format = (value) => formatMoney(value, lang);
+
+    const handleBaseCurrencyChange = async (nextCurrency) => {
+        if (!nextCurrency || nextCurrency === baseCurrency) {
+            return;
+        }
+        const token = localStorage.getItem('token');
+        if (!token) {
+            window.alert(t?.base_currency?.error_auth || 'Please log in again to set base currency.');
+            return;
+        }
+        try {
+            const res = await fetch('/api/profile/me', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({ currency: nextCurrency }),
+            });
+            if (!res.ok) {
+                const data = await res.json().catch(() => ({}));
+                throw new Error(data?.error || 'Failed to update currency');
+            }
+            setBaseCurrency(nextCurrency);
+            setCurrency(nextCurrency);
+            localStorage.setItem('base_currency_confirmed', 'true');
+        } catch (err) {
+            console.error(err);
+            window.alert(err.message);
+        }
+    };
 
     const categoryMaps = useMemo(() => {
         const plannedMap = new Map();
@@ -217,6 +248,8 @@ const DashboardContent = () => {
                 setMonth={setMonth}
                 currency={currency}
                 setCurrency={setCurrency}
+                baseCurrency={baseCurrency}
+                onBaseCurrencyChange={handleBaseCurrencyChange}
             />
 
             <div className="max-w-7xl mx-auto px-4 sm:px-6 -mt-10 space-y-8 relative z-10">

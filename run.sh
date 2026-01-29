@@ -196,6 +196,41 @@ check_port_in_use() {
     fi
 }
 
+wait_for_container() {
+    local name="$1"
+    local retries="${2:-15}"
+    local delay="${3:-2}"
+    local status=""
+
+    for _ in $(seq 1 "$retries"); do
+        status="$($DOCKER_CMD inspect -f '{{.State.Status}}' "$name" 2>/dev/null || true)"
+        if [ "$status" == "running" ]; then
+            return 0
+        fi
+        sleep "$delay"
+    done
+    return 1
+}
+
+post_start_checks() {
+    echo -e "\n${YELLOW}[Step 3] Проверка контейнеров...${NC}"
+
+    if ! wait_for_container "budget_server" 20 2; then
+        print_error "Контейнер сервера не запустился (budget_server)."
+        $COMPOSE_CMD -f "$COMPOSE_FILE" logs --tail=120 server || true
+        exit 1
+    fi
+
+    if [ "${RATES_ENABLED:-true}" != "false" ]; then
+        if ! $COMPOSE_CMD -f "$COMPOSE_FILE" exec -T server curl --version >/dev/null 2>&1; then
+            print_error "В контейнере сервера нет curl. Курсы валют не будут обновляться."
+            echo "Пересоберите контейнеры: $COMPOSE_CMD -f \"$COMPOSE_FILE\" up -d --build"
+            exit 1
+        fi
+        echo -e "${GREEN}[OK] curl доступен внутри сервера.${NC}"
+    fi
+}
+
 install_cmd() {
     local pkg="$1"
     local cask="$2"
@@ -992,6 +1027,7 @@ setup_cert_renewal
 
 # Запускаем в фоновом режиме (-d) с пересборкой (--build)
 if $COMPOSE_CMD -f "$COMPOSE_FILE" up -d --build; then
+    post_start_checks
     echo -e "\n${GREEN}=== УСПЕХ! Приложение запущено ===${NC}"
     if [ "$ENABLE_HTTPS" -eq 1 ]; then
         echo -e "Frontend:  ${YELLOW}https://localhost${NC}"

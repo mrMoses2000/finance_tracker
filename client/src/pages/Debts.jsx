@@ -181,7 +181,7 @@ const DebtModal = ({ categories, item, onClose }) => {
     const queryClient = useQueryClient();
     const token = localStorage.getItem('token');
     const { t } = useLanguage();
-    const { currency, convert, toUSD } = useCurrency();
+    const { currency, convert } = useCurrency();
     const isEdit = !!item;
 
     const formik = useFormik({
@@ -211,13 +211,14 @@ const DebtModal = ({ categories, item, onClose }) => {
                 body: JSON.stringify({
                     name: values.name,
                     type: values.type,
-                    principal: toUSD(values.principalLocal),
-                    balance: values.balanceLocal !== '' ? toUSD(values.balanceLocal) : undefined,
+                    principal: values.principalLocal,
+                    balance: values.balanceLocal !== '' ? values.balanceLocal : undefined,
+                    currency,
                     interestRate: values.interestRate,
                     startDate: values.startDate,
                     termMonths: values.termMonths,
                     nextPaymentDate: values.nextPaymentDate,
-                    monthlyPaymentUSD: values.monthlyPaymentLocal !== '' ? toUSD(values.monthlyPaymentLocal) : undefined,
+                    monthlyPayment: values.monthlyPaymentLocal !== '' ? values.monthlyPaymentLocal : undefined,
                     categoryId: values.categoryId
                 })
             });

@@ -23,6 +23,10 @@ Wipe‑DB mode also removes the compose DB volume to prevent stale credentials.
 You can pass overrides as `VAR=value ./run.sh` or `./run.sh VAR=value`.
 Auto‑mode in the menu enables these options without extra flags.
 `.env` is parsed safely even when values contain spaces.
+Exchange rates are pulled from the Central Bank (CBR) twice daily via cron inside the server container.
+After startup, run.sh verifies that the server container is running and that `curl` is available inside it.
+Base currency can be changed from the dashboard header (separate from display currency).
+Changing base currency recalculates stored amounts using the latest FX rates.
 
 ### 2.1 Production Profile
 ```bash

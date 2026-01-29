@@ -1,10 +1,3 @@
-export const RATES = {
-  USD: 1,
-  EUR: 0.92,
-  KZT: 505,
-  RUB: 96,
-};
-
 export const SYMBOLS = {
   USD: '$',
   EUR: '€',
@@ -12,4 +5,11 @@ export const SYMBOLS = {
   RUB: '₽',
 };
 
-export const DEFAULT_CURRENCY = 'KZT';
+export const SUPPORTED_CURRENCIES = Object.keys(SYMBOLS);
+export const DEFAULT_CURRENCY = 'USD';
+export const DEFAULT_RATES = {
+  EUR: 1,
+  USD: 1.08,
+  KZT: 505,
+  RUB: 96,
+};

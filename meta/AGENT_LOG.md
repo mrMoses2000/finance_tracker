@@ -2,6 +2,8 @@
 
 | Date | Agent | Action | Result |
 |------|-------|--------|--------|
+| 2026-01-29 | Codex | Dynamic FX + Base Currency | Added ECB rate fetch/cron, exchange rates table, and base-currency conversions in API/client. |
+| 2026-01-29 | Codex | Money Precision | Increased Decimal precision to 4 for USD storage to prevent rounding drift in local currencies. |
 | 2026-01-29 | Codex | Wipe-DB Hardening | Added DB volume removal after compose down to avoid stale credentials. |
 | 2026-01-29 | Codex | CORS Auto-Override | Auto-set CORS for domain even if .env has localhost defaults. |
 | 2026-01-29 | Codex | Env Robustness | Added env arg overrides in run.sh, CORS auto from HTTPS domain, safer .env sanitization/quoting, and stricter env normalization. |
@@ -36,3 +38,7 @@
 - **[2026-01-28] Clawd.bot Integration (Antigravity)**: Added `/api/clawd/*` endpoints for expense parsing, monthly summaries, budget alerts, and category listing. Added DuckDNS support to run.sh. Created separate `clawdbot-config` repository for Stockholm server deployment.
 - **[2026-01-28] Security + Currency + Refactor (Codex)**: Fixed Clawd budget endpoints + currency conversion, added ownership checks/CORS/JWT expiry, modularized server routes, replaced tests.
 - **[2026-01-28] Decimal + Audit + Rate Limit + Prod Compose (Codex)**: Converted money fields to Prisma Decimal with migration, added audit logs + rate limiting, and introduced `docker-compose.prod.yml`.
+- **[2026-01-29] FX Fetch via curl (Codex)**: Central bank rates now fetched with `curl` in the server container; cron defaults adjusted to twice daily.
+- **[2026-01-29] run.sh Post‑Start Checks (Codex)**: Added server container readiness check and `curl` verification inside the container.
+- **[2026-01-29] Base Currency Control (Codex)**: Added base currency selector in dashboard header and localized labels.
+- **[2026-01-29] Base Currency Recalc (Codex)**: Changing base currency now converts all stored amounts using latest FX rates.

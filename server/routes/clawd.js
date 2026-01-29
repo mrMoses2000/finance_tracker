@@ -2,11 +2,12 @@ import { Router } from 'express';
 import prisma from '../db/prisma.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { parseExpenseText, CATEGORY_KEYWORDS } from '../utils/parseExpense.js';
-import { convertFromUSD, convertToUSD, getCurrencySymbol, normalizeCurrency } from '../utils/currency.js';
+import { getCurrencySymbol, normalizeCurrency } from '../utils/currency.js';
 import { getMonthRange, toMonthKey, toMonthStart } from '../utils/date.js';
 import { toDecimal } from '../utils/money.js';
 import { formatBudgetMonth, formatCategory, formatExpense } from '../utils/serializers.js';
 import { logAudit } from '../services/auditLog.js';
+import { getLatestRates, convertAmount } from '../services/exchangeRates.js';
 
 const router = Router();
 
@@ -35,7 +36,10 @@ router.post('/expense', asyncHandler(async (req, res) => {
   }
 
   const targetCurrency = await resolveUserCurrency(req.user.id, currency);
-  const amountUSD = convertToUSD(parsed.amount, targetCurrency);
+  const baseCurrency = await resolveUserCurrency(req.user.id);
+  const ratesData = await getLatestRates();
+  const converted = convertAmount(parsed.amount, targetCurrency, baseCurrency, ratesData);
+  const amountBase = converted.amount;
 
   let category = null;
   if (parsed.categoryKey) {
@@ -67,7 +71,7 @@ router.post('/expense', asyncHandler(async (req, res) => {
     data: {
       userId: req.user.id,
       categoryId: category.id,
-      amountUSD: toDecimal(amountUSD),
+      amountUSD: toDecimal(amountBase),
       description: parsed.description,
       date: date ? new Date(date) : new Date(),
       type: parsed.type,
@@ -77,7 +81,7 @@ router.post('/expense', asyncHandler(async (req, res) => {
   });
 
   const symbol = getCurrencySymbol(targetCurrency);
-  const amountLocal = convertFromUSD(amountUSD, targetCurrency);
+  const amountLocal = parsed.amount;
 
   await logAudit({
     req,
@@ -93,7 +97,7 @@ router.post('/expense', asyncHandler(async (req, res) => {
     expense: formatExpense(expense),
     parsed: {
       ...parsed,
-      amountUSD,
+      amountBase,
       amountLocal,
       currency: targetCurrency,
     },
@@ -103,8 +107,10 @@ router.post('/expense', asyncHandler(async (req, res) => {
 
 router.get('/summary', asyncHandler(async (req, res) => {
   const monthStr = req.query.month;
+  const baseCurrency = await resolveUserCurrency(req.user.id);
   const currency = await resolveUserCurrency(req.user.id, req.query.currency);
   const symbol = getCurrencySymbol(currency);
+  const ratesData = await getLatestRates();
 
   const monthStart = toMonthStart(monthStr);
   const { start, end } = getMonthRange(monthStart);
@@ -144,27 +150,31 @@ router.get('/summary', asyncHandler(async (req, res) => {
     const label = e.category?.label || 'Other';
     const limitUSD = budgetLimits.get(e.categoryId) || e.category?.limit || 0;
     if (!byCategory[label]) {
-      byCategory[label] = { spent: 0, limit: convertFromUSD(limitUSD, currency) };
+      const limitConverted = convertAmount(limitUSD, baseCurrency, currency, ratesData);
+      byCategory[label] = { spent: 0, limit: limitConverted.amount };
     }
-    byCategory[label].spent += convertFromUSD(e.amountUSD, currency);
+    const spentConverted = convertAmount(e.amountUSD, baseCurrency, currency, ratesData);
+    byCategory[label].spent += spentConverted.amount;
   });
 
   return res.json({
     month: toMonthKey(monthStart),
     currency,
     symbol,
-    income: convertFromUSD(totalIncomeUSD, currency),
-    expenses: convertFromUSD(totalExpensesUSD, currency),
-    balance: convertFromUSD(totalIncomeUSD - totalExpensesUSD, currency),
-    plannedIncome: convertFromUSD(formattedBudget?.incomePlanned || 0, currency),
+    income: convertAmount(totalIncomeUSD, baseCurrency, currency, ratesData).amount,
+    expenses: convertAmount(totalExpensesUSD, baseCurrency, currency, ratesData).amount,
+    balance: convertAmount(totalIncomeUSD - totalExpensesUSD, baseCurrency, currency, ratesData).amount,
+    plannedIncome: convertAmount(formattedBudget?.incomePlanned || 0, baseCurrency, currency, ratesData).amount,
     byCategory,
   });
 }));
 
 router.get('/alerts', asyncHandler(async (req, res) => {
   const monthStr = req.query.month;
+  const baseCurrency = await resolveUserCurrency(req.user.id);
   const currency = await resolveUserCurrency(req.user.id, req.query.currency);
   const symbol = getCurrencySymbol(currency);
+  const ratesData = await getLatestRates();
 
   const monthStart = toMonthStart(monthStr);
   const { start, end } = getMonthRange(monthStart);
@@ -218,8 +228,8 @@ router.get('/alerts', asyncHandler(async (req, res) => {
 
     for (const threshold of thresholds) {
       if (percent >= threshold.percent) {
-        const spentLocal = convertFromUSD(spentUSD, currency);
-        const limitLocal = convertFromUSD(limitUSD, currency);
+        const spentLocal = convertAmount(spentUSD, baseCurrency, currency, ratesData).amount;
+        const limitLocal = convertAmount(limitUSD, baseCurrency, currency, ratesData).amount;
         alerts.push({
           categoryId: category.id,
           category: category.label,

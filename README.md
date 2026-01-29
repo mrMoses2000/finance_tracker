@@ -46,6 +46,10 @@ cp .env.example .env
 - You can pass env overrides as `VAR=value ./run.sh` or `./run.sh VAR=value`.
 - Auto‑mode in the menu enables these options without long command lines.
 - `.env` with spaces is handled safely; scripts parse it without `source`.
+
+### Currency model
+- Amounts are stored in the user's profile currency.
+- UI can display another currency using live FX rates from the central bank.
 ```bash
 ./run.sh
 ```
@@ -78,12 +82,26 @@ RATE_LIMIT_AUTH_MAX=20
 # Audit log
 AUDIT_LOG_ENABLED=true
 
+# Exchange rates (Central Bank)
+RATES_ENABLED=true
+RATES_CRON="0 6,18 * * *"
+RATES_TIMEZONE=UTC
+RATES_SOURCE=cbr
+RATES_BASE=RUB
+
 # Optional admin seed
 SEED_ADMIN=false
 SEED_ADMIN_EMAIL=admin@example.com
 SEED_ADMIN_PASSWORD=change_me_strong
 SEED_ADMIN_NAME="Admin User"
 ```
+
+### Модель валют
+- Суммы хранятся в валюте профиля пользователя.
+- UI может отображать другую валюту по актуальному курсу ЦБ.
+- Курсы обновляются 2 раза в сутки через `curl` (по cron).
+- Основную валюту можно менять в верхней панели дашборда (отдельно от валюты отображения).
+- При смене основной валюты все сохранённые суммы пересчитываются по текущему курсу.
 
 ### Пример `.env` (RU)
 ```env
@@ -112,6 +130,13 @@ RATE_LIMIT_AUTH_MAX=20
 
 # Аудит-лог
 AUDIT_LOG_ENABLED=true
+
+# Курсы валют (Центральный банк)
+RATES_ENABLED=true
+RATES_CRON="0 6,18 * * *"
+RATES_TIMEZONE=UTC
+RATES_SOURCE=cbr
+RATES_BASE=RUB
 
 # Опциональный seed администратора
 SEED_ADMIN=false

@@ -1,5 +1,5 @@
 # Project Index Report
-Generated on Thu 29 Jan 2026 14:11:01 +05
+Generated on Thu 29 Jan 2026 16:02:09 +05
 
 ## File Structure
 ```
@@ -63,6 +63,7 @@ Generated on Thu 29 Jan 2026 14:11:01 +05
 ./server/routes/expenses.js
 ./server/routes/debts.js
 ./server/routes/clawd.js
+./server/routes/rates.js
 ./server/routes/schedules.js
 ./server/routes/api.js
 ./server/routes/overview.js
@@ -70,8 +71,11 @@ Generated on Thu 29 Jan 2026 14:11:01 +05
 ./server/routes/notifications.js
 ./server/app.js
 ./server/services
+./server/services/exchangeRatesCron.js
 ./server/services/seed.js
+./server/services/exchangeRates.js
 ./server/services/auditLog.js
+./server/services/currencyService.js
 ./run.sh
 ./README.md
 ./certs

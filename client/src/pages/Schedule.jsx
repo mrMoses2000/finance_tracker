@@ -346,7 +346,7 @@ const ScheduleModal = ({ categories, item, onClose }) => {
     const queryClient = useQueryClient();
     const token = localStorage.getItem('token');
     const { t, lang } = useLanguage();
-    const { currency, convert, toUSD } = useCurrency();
+    const { currency, convert } = useCurrency();
     const isEdit = !!item;
 
     const formik = useFormik({
@@ -372,7 +372,8 @@ const ScheduleModal = ({ categories, item, onClose }) => {
                 headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
                 body: JSON.stringify({
                     title: values.title,
-                    amountUSD: toUSD(values.amountLocal),
+                    amountLocal: values.amountLocal,
+                    currency,
                     type: values.type,
                     dueDate: values.dueDate,
                     recurrence: values.recurrence,

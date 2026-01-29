@@ -31,6 +31,13 @@ const Login = () => {
 
                 localStorage.setItem('token', data.token);
                 localStorage.setItem('user', JSON.stringify(data.user));
+                if (data.user?.currency) {
+                    localStorage.setItem('base_currency', data.user.currency);
+                    if (!localStorage.getItem('app_currency')) {
+                        localStorage.setItem('app_currency', data.user.currency);
+                    }
+                }
+                window.dispatchEvent(new Event('app:auth'));
                 navigate('/dashboard');
             } catch (err) {
                 setError(err.message);

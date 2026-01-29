@@ -6,6 +6,7 @@ import { ensureCategoryOwnership } from '../utils/ownership.js';
 import { toDecimal } from '../utils/money.js';
 import { formatBudgetItem, formatBudgetMonth } from '../utils/serializers.js';
 import { logAudit } from '../services/auditLog.js';
+import { resolveAmountBase } from '../services/currencyService.js';
 
 const router = Router();
 
@@ -35,11 +36,15 @@ router.get('/budgets', asyncHandler(async (req, res) => {
 }));
 
 router.put('/budgets/income', asyncHandler(async (req, res) => {
-  const { month, incomePlanned } = req.body || {};
+  const { month, incomePlanned, currency } = req.body || {};
   const monthStart = toMonthStart(month);
 
-  const parsedIncome = Number.parseFloat(incomePlanned || 0);
-  const incomeValue = Number.isNaN(parsedIncome) ? toDecimal(0) : toDecimal(parsedIncome);
+  const { amountBase } = await resolveAmountBase({
+    userId: req.user.id,
+    amount: incomePlanned,
+    currency,
+  });
+  const incomeValue = Number.isNaN(Number(amountBase)) ? toDecimal(0) : toDecimal(amountBase);
 
   const budgetMonth = await prisma.budgetMonth.upsert({
     where: { userId_month: { userId: req.user.id, month: monthStart } },
@@ -68,7 +73,7 @@ router.put('/budgets/income', asyncHandler(async (req, res) => {
 }));
 
 router.put('/budgets/item', asyncHandler(async (req, res) => {
-  const { month, categoryId, plannedAmount } = req.body || {};
+  const { month, categoryId, plannedAmount, currency } = req.body || {};
   const monthStart = toMonthStart(month);
 
   if (!categoryId) {
@@ -87,8 +92,12 @@ router.put('/budgets/item', asyncHandler(async (req, res) => {
     },
   });
 
-  const parsedAmount = Number.parseFloat(plannedAmount || 0);
-  const amountValue = Number.isNaN(parsedAmount) ? toDecimal(0) : toDecimal(parsedAmount);
+  const { amountBase } = await resolveAmountBase({
+    userId: req.user.id,
+    amount: plannedAmount,
+    currency,
+  });
+  const amountValue = Number.isNaN(Number(amountBase)) ? toDecimal(0) : toDecimal(amountBase);
 
   const updatedItem = await prisma.budgetItem.upsert({
     where: {

@@ -2,6 +2,7 @@ import 'dotenv/config';
 import app from './app.js';
 import { PORT, SEED_ADMIN, validateEnv } from './config/env.js';
 import { seedAdminUser } from './services/seed.js';
+import { startExchangeRatesCron } from './services/exchangeRatesCron.js';
 
 try {
   validateEnv();
@@ -17,3 +18,7 @@ if (SEED_ADMIN) {
 }
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
+startExchangeRatesCron().catch((err) => {
+  console.error('[Rates] Cron start failed:', err.message);
+});

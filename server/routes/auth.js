@@ -4,6 +4,7 @@ import jwt from 'jsonwebtoken';
 import prisma from '../db/prisma.js';
 import { DEFAULT_CATEGORIES } from '../data/defaultCategories.js';
 import { JWT_EXPIRES_IN, JWT_SECRET } from '../config/env.js';
+import { normalizeCurrency } from '../utils/currency.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { toDecimal } from '../utils/money.js';
 import { logAudit } from '../services/auditLog.js';
@@ -11,7 +12,7 @@ import { logAudit } from '../services/auditLog.js';
 const router = Router();
 
 router.post('/register', asyncHandler(async (req, res) => {
-  const { email, password, name } = req.body || {};
+  const { email, password, name, currency } = req.body || {};
 
   if (!email || !password) {
     return res.status(400).json({ error: 'Email and password are required' });
@@ -24,7 +25,7 @@ router.post('/register', asyncHandler(async (req, res) => {
 
   const hashedPassword = await bcrypt.hash(password, 10);
   const user = await prisma.user.create({
-    data: { email, passwordHash: hashedPassword, name },
+    data: { email, passwordHash: hashedPassword, name, currency: normalizeCurrency(currency || 'USD') },
   });
 
   await prisma.category.createMany({

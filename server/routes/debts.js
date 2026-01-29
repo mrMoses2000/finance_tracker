@@ -5,6 +5,7 @@ import { ensureCategoryOwnership } from '../utils/ownership.js';
 import { toDecimal } from '../utils/money.js';
 import { formatDebt } from '../utils/serializers.js';
 import { logAudit } from '../services/auditLog.js';
+import { resolveAmountBase } from '../services/currencyService.js';
 
 const router = Router();
 
@@ -22,18 +23,25 @@ router.post('/debts', asyncHandler(async (req, res) => {
     type,
     principal,
     balance,
+    currency,
     interestRate,
     startDate,
     termMonths,
     nextPaymentDate,
-    monthlyPaymentUSD,
+    monthlyPayment,
     categoryId,
   } = req.body || {};
 
-  const parsedPrincipal = Number.parseFloat(principal || 0);
-  const parsedBalance = balance !== undefined && balance !== '' ? Number.parseFloat(balance) : parsedPrincipal;
+  const principalConverted = await resolveAmountBase({
+    userId: req.user.id,
+    amount: principal,
+    currency,
+  });
+  const balanceConverted = balance !== undefined && balance !== ''
+    ? await resolveAmountBase({ userId: req.user.id, amount: balance, currency })
+    : principalConverted;
 
-  if (!Number.isFinite(parsedPrincipal) || parsedPrincipal <= 0) {
+  if (!Number.isFinite(principalConverted.amountBase) || principalConverted.amountBase <= 0) {
     return res.status(400).json({ error: 'principal is required' });
   }
 
@@ -46,8 +54,10 @@ router.post('/debts', asyncHandler(async (req, res) => {
       userId: req.user.id,
       name,
       type: type || 'debt',
-      principal: toDecimal(parsedPrincipal),
-      balance: Number.isFinite(parsedBalance) ? toDecimal(parsedBalance) : toDecimal(parsedPrincipal),
+      principal: toDecimal(principalConverted.amountBase),
+      balance: Number.isFinite(balanceConverted.amountBase)
+        ? toDecimal(balanceConverted.amountBase)
+        : toDecimal(principalConverted.amountBase),
       interestRate: toDecimal(Number.parseFloat(interestRate || 0)),
       startDate: startDate ? new Date(startDate) : new Date(),
       termMonths: termMonths ? Number.parseInt(termMonths, 10) : null,
@@ -56,13 +66,15 @@ router.post('/debts', asyncHandler(async (req, res) => {
     },
   });
 
-  const parsedMonthly = Number.parseFloat(monthlyPaymentUSD);
-  if (Number.isFinite(parsedMonthly) && parsedMonthly > 0 && nextPaymentDate) {
+  const monthlyConverted = monthlyPayment !== undefined && monthlyPayment !== ''
+    ? await resolveAmountBase({ userId: req.user.id, amount: monthlyPayment, currency })
+    : null;
+  if (monthlyConverted && Number.isFinite(monthlyConverted.amountBase) && monthlyConverted.amountBase > 0 && nextPaymentDate) {
     await prisma.scheduleItem.create({
       data: {
         userId: req.user.id,
         title: `${name} \u043f\u043b\u0430\u0442\u0435\u0436`,
-        amountUSD: toDecimal(parsedMonthly),
+        amountUSD: toDecimal(monthlyConverted.amountBase),
         type: type === 'loan' ? 'income' : 'expense',
         dueDate: new Date(nextPaymentDate),
         recurrence: 'monthly',
@@ -92,6 +104,7 @@ router.put('/debts/:id', asyncHandler(async (req, res) => {
     type,
     principal,
     balance,
+    currency,
     interestRate,
     startDate,
     termMonths,
@@ -104,8 +117,12 @@ router.put('/debts/:id', asyncHandler(async (req, res) => {
   });
   if (!existing) return res.sendStatus(404);
 
-  const parsedPrincipal = principal !== undefined && principal !== '' ? Number.parseFloat(principal) : existing.principal;
-  const parsedBalance = balance !== undefined && balance !== '' ? Number.parseFloat(balance) : existing.balance;
+  const principalConverted = principal !== undefined && principal !== ''
+    ? await resolveAmountBase({ userId: req.user.id, amount: principal, currency })
+    : { amountBase: existing.principal };
+  const balanceConverted = balance !== undefined && balance !== ''
+    ? await resolveAmountBase({ userId: req.user.id, amount: balance, currency })
+    : { amountBase: existing.balance };
   const parsedRate = interestRate !== undefined && interestRate !== '' ? Number.parseFloat(interestRate) : existing.interestRate;
 
   const updated = await prisma.debt.update({
@@ -113,8 +130,8 @@ router.put('/debts/:id', asyncHandler(async (req, res) => {
     data: {
       name: name ?? existing.name,
       type: type ?? existing.type,
-      principal: toDecimal(parsedPrincipal),
-      balance: toDecimal(parsedBalance),
+      principal: toDecimal(principalConverted.amountBase),
+      balance: toDecimal(balanceConverted.amountBase),
       interestRate: toDecimal(parsedRate),
       startDate: startDate ? new Date(startDate) : existing.startDate,
       termMonths: termMonths ? Number.parseInt(termMonths, 10) : existing.termMonths,

@@ -21,7 +21,7 @@ const COLOR_SWATCHES = [
 
 const CategoryManager = ({ categories = [], mode = 'inline', onClose, title, subtitle }) => {
   const { t } = useLanguage();
-  const { currency, convert, toUSD } = useCurrency();
+  const { currency, convert } = useCurrency();
   const { month } = useBudgetMonth();
   const queryClient = useQueryClient();
   const token = localStorage.getItem('token');
@@ -135,7 +135,8 @@ const CategoryManager = ({ categories = [], mode = 'inline', onClose, title, sub
       label: form.label.trim(),
       type: form.type,
       color: form.color,
-      limit: toUSD(form.limitLocal || 0)
+      limit: form.limitLocal || 0,
+      currency
     };
 
     if (!payload.label) {

@@ -2,7 +2,7 @@ import React from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
 
-const Header = ({ month, setMonth, currency, setCurrency }) => {
+const Header = ({ month, setMonth, currency, setCurrency, baseCurrency, onBaseCurrencyChange }) => {
     const { t, lang } = useLanguage();
 
     const toMonthLabel = (value) => {
@@ -42,7 +42,7 @@ const Header = ({ month, setMonth, currency, setCurrency }) => {
                 </div>
 
                 {/* Controls Section */}
-                <div className="flex gap-4 items-center bg-black/40 p-1.5 rounded-2xl backdrop-blur-md border border-white/10 shadow-lg">
+                <div className="flex flex-col lg:flex-row gap-3 items-center bg-black/40 p-2 rounded-2xl backdrop-blur-md border border-white/10 shadow-lg">
                     {/* Month Selector */}
                     <div className="flex items-center gap-1 bg-white/5 rounded-xl p-1">
                         <button
@@ -73,12 +73,32 @@ const Header = ({ month, setMonth, currency, setCurrency }) => {
                         </button>
                     </div>
 
-                    {/* Currency Selector */}
-                    <div className="relative">
+                    {/* Base Currency Selector */}
+                    <div className="flex flex-col items-start gap-1 px-2">
+                        <span className="text-[11px] uppercase tracking-wide text-emerald-200/80">
+                            {t?.base_currency?.label || 'Base currency'}
+                        </span>
+                        <select
+                            value={baseCurrency}
+                            onChange={(e) => onBaseCurrencyChange(e.target.value)}
+                            className="bg-transparent text-white text-sm font-bold pl-2 pr-8 py-2 rounded-xl border border-transparent hover:bg-white/5 focus:ring-0 cursor-pointer appearance-none transition-colors"
+                        >
+                            <option value="USD" className="bg-slate-900 text-white">USD $</option>
+                            <option value="EUR" className="bg-slate-900 text-white">EUR €</option>
+                            <option value="KZT" className="bg-slate-900 text-white">KZT ₸</option>
+                            <option value="RUB" className="bg-slate-900 text-white">RUB ₽</option>
+                        </select>
+                    </div>
+
+                    {/* Display Currency Selector */}
+                    <div className="flex flex-col items-start gap-1 px-2">
+                        <span className="text-[11px] uppercase tracking-wide text-slate-300/80">
+                            {t?.display_currency?.label || 'Display'}
+                        </span>
                         <select
                             value={currency}
                             onChange={(e) => setCurrency(e.target.value)}
-                            className="bg-transparent text-white text-sm font-bold pl-3 pr-8 py-2.5 rounded-xl border border-transparent hover:bg-white/5 focus:ring-0 cursor-pointer appearance-none transition-colors"
+                            className="bg-transparent text-white text-sm font-bold pl-2 pr-8 py-2 rounded-xl border border-transparent hover:bg-white/5 focus:ring-0 cursor-pointer appearance-none transition-colors"
                         >
                             <option value="USD" className="bg-slate-900 text-white">USD $</option>
                             <option value="EUR" className="bg-slate-900 text-white">EUR €</option>

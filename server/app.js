@@ -5,6 +5,7 @@ import { corsOptions } from './config/cors.js';
 import authRouter from './routes/auth.js';
 import apiRouter from './routes/api.js';
 import clawdRouter from './routes/clawd.js';
+import ratesRouter from './routes/rates.js';
 import { errorHandler, notFound } from './middleware/error.js';
 import { requireAuth } from './middleware/auth.js';
 import { authLimiter, apiLimiter } from './middleware/rateLimit.js';
@@ -31,6 +32,7 @@ if (shouldRateLimit) {
   app.use('/auth', authRouter);
 }
 
+app.use('/api', ratesRouter);
 app.use('/api', apiRouter);
 app.use('/api/clawd', requireAuth, clawdRouter);
 

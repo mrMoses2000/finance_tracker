@@ -28,6 +28,15 @@ export const RATE_LIMIT_AUTH_MAX = Number.parseInt(process.env.RATE_LIMIT_AUTH_M
 
 export const AUDIT_LOG_ENABLED = process.env.AUDIT_LOG_ENABLED !== 'false';
 
+export const RATES_ENABLED = process.env.RATES_ENABLED !== 'false';
+export const RATES_CRON = process.env.RATES_CRON || '0 6,18 * * *';
+export const RATES_TIMEZONE = process.env.RATES_TIMEZONE || 'UTC';
+export const RATES_SOURCE = process.env.RATES_SOURCE || 'cbr';
+export const RATES_BASE = process.env.RATES_BASE || (RATES_SOURCE === 'ecb' ? 'EUR' : 'RUB');
+export const RATES_FALLBACK = process.env.RATES_FALLBACK
+  ? JSON.parse(process.env.RATES_FALLBACK)
+  : null;
+
 export const validateEnv = () => {
   if (NODE_ENV === 'production') {
     if (!JWT_SECRET) {
