@@ -2,7 +2,7 @@
 
 | Date | Agent | Action | Result |
 |------|-------|--------|--------|
-| 2026-01-29 | Codex | Env Auto-Fill Script | Added optional AUTO_DB_PASSWORD/AUTO_CORS_ORIGINS automation flags and clarified proxy prompt. |
+| 2026-01-29 | Codex | Env Auto-Fill Script | Added auto-mode menu, Russian prompts, auto JWT, and nginx proxy detection for TRUST_PROXY. |
 | 2026-01-28 | Codex | Decimal + Audit + Rate Limit + Prod Compose | Money fields to Decimal, audit logs, API rate limiting, docker-compose.prod.yml. |
 | 2026-01-28 | Codex | Security + Clawd Currency + Refactor | Modular server, currency conversion for Clawd, ownership checks, new tests. |
 | 2026-01-22 | Antigravity | Full Stack Refactor | Split into Client/Server, added Auth, Dockerized. |

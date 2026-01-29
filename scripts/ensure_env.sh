@@ -11,6 +11,8 @@ ENV_SETUP_MODE="${ENV_SETUP_MODE:-}"
 AUTO_DB_PASSWORD="${AUTO_DB_PASSWORD:-}"
 AUTO_CORS_ORIGINS="${AUTO_CORS_ORIGINS:-}"
 CORS_DOMAIN="${CORS_DOMAIN:-}"
+AUTO_MODE="${AUTO_MODE:-}"
+AUTO_JWT_SECRET="${AUTO_JWT_SECRET:-}"
 
 is_tty() {
   [ -t 0 ]
@@ -34,7 +36,7 @@ resolve_compose_cmd() {
 compose_down() {
   local extra="${1-}"
   if ! resolve_compose_cmd; then
-    echo "[WARN] Docker Compose not available; skipping compose actions." >&2
+    echo "[WARN] Docker Compose недоступен; пропускаю действия с compose." >&2
     return 1
   fi
   local cmd_parts=()
@@ -124,8 +126,14 @@ prompt_value() {
   local secret="${4-}"
   local value=""
 
+  if [ "${AUTO_MODE:-}" == "true" ] && [ -n "$default" ] && [ "$secret" != "secret" ]; then
+    write_env_kv "$key" "$default"
+    export "$key=$default"
+    return
+  fi
+
   if ! is_tty; then
-    echo "[ERROR] Missing $key and no TTY available. Set it in $ENV_FILE." >&2
+    echo "[ERROR] Нет $key и нет TTY. Укажи в $ENV_FILE." >&2
     exit 1
   fi
 
@@ -182,21 +190,30 @@ set_cors_from_domain() {
   return 0
 }
 
+detect_nginx_proxy() {
+  local conf="$ROOT_DIR/client/nginx.conf"
+  if [ -f "$conf" ] && grep -q "proxy_pass http://server:4000" "$conf"; then
+    return 0
+  fi
+  return 1
+}
+
 show_menu() {
   if ! is_tty; then
     return 0
   fi
 
   echo ""
-  echo "=== Environment Setup ==="
-  echo "1) Use existing .env (fill missing only)"
-  echo "2) Reset .env from .env.example and prompt"
-  echo "3) Wipe database volumes and reset .env (DESTRUCTIVE)"
-  echo "4) Stop containers and exit"
-  echo "5) Exit without changes"
+  echo "=== Настройка окружения ==="
+  echo "1) Использовать существующий .env (заполнить только пропуски)"
+  echo "2) Пересоздать .env из .env.example и заполнить"
+  echo "3) Снести БД (volume) и пересоздать .env (ОПАСНО)"
+  echo "4) Авто‑режим (минимум вопросов, больше автогенерации)"
+  echo "5) Остановить контейнеры и выйти"
+  echo "6) Выйти без изменений"
   echo ""
   local choice=""
-  read -r -p "Choose an option [1-5]: " choice
+  read -r -p "Выберите вариант [1-6]: " choice
 
   case "$choice" in
     1|"")
@@ -209,13 +226,16 @@ show_menu() {
       ENV_SETUP_MODE="wipe-db"
       ;;
     4)
-      ENV_SETUP_MODE="stop"
+      ENV_SETUP_MODE="auto"
       ;;
     5)
+      ENV_SETUP_MODE="stop"
+      ;;
+    6)
       ENV_SETUP_MODE="exit"
       ;;
     *)
-      echo "[WARN] Unknown choice, defaulting to option 1."
+      echo "[WARN] Неизвестный выбор, использую вариант 1."
       ENV_SETUP_MODE="keep"
       ;;
   esac
@@ -240,9 +260,9 @@ apply_mode() {
       ;;
     wipe-db)
       if is_tty; then
-        read -r -p "This will DELETE the database volume. Continue? [y/N]: " confirm
+        read -r -p "Это удалит данные БД (volume). Продолжить? [y/N]: " confirm
         if [[ ! "$confirm" =~ ^[Yy]$ ]]; then
-          echo "[INFO] Cancelled wipe."
+          echo "[INFO] Удаление отменено."
         else
           compose_down "-v" || true
           if [ -f "$EXAMPLE_FILE" ]; then
@@ -258,6 +278,29 @@ apply_mode() {
         else
           : > "$ENV_FILE"
         fi
+      fi
+      ;;
+    auto)
+      if is_tty; then
+        read -r -p "Запустить авто‑режим (минимум вопросов)? [y/N]: " confirm
+        if [[ ! "$confirm" =~ ^[Yy]$ ]]; then
+          ENV_SETUP_MODE="keep"
+        else
+          AUTO_MODE="true"
+          AUTO_DB_PASSWORD="true"
+          AUTO_CORS_ORIGINS="true"
+          AUTO_JWT_SECRET="true"
+          if [ -f "$EXAMPLE_FILE" ]; then
+            cp "$EXAMPLE_FILE" "$ENV_FILE"
+          else
+            : > "$ENV_FILE"
+          fi
+        fi
+      else
+        AUTO_MODE="true"
+        AUTO_DB_PASSWORD="true"
+        AUTO_CORS_ORIGINS="true"
+        AUTO_JWT_SECRET="true"
       fi
       ;;
     stop)
@@ -287,7 +330,7 @@ is_placeholder() {
 
 # Database credentials
 if is_placeholder "${POSTGRES_USER:-}"; then
-  prompt_value "POSTGRES_USER" "Postgres user" "budget_user"
+  prompt_value "POSTGRES_USER" "Пользователь Postgres" "budget_user"
 fi
 if is_placeholder "${POSTGRES_PASSWORD:-}"; then
   if [ "$AUTO_DB_PASSWORD" == "true" ]; then
@@ -296,34 +339,38 @@ if is_placeholder "${POSTGRES_PASSWORD:-}"; then
     export POSTGRES_PASSWORD="$db_pass"
   else
     if [ "$AUTO_DB_PASSWORD" == "false" ]; then
-      prompt_value "POSTGRES_PASSWORD" "Postgres password" "" "secret"
+      prompt_value "POSTGRES_PASSWORD" "Пароль Postgres" "" "secret"
     else
-      if prompt_yes_no "Generate DB password automatically?" "yes"; then
+      if prompt_yes_no "Сгенерировать пароль БД автоматически?" "yes"; then
         db_pass="$(generate_secret)"
         write_env_kv "POSTGRES_PASSWORD" "$db_pass"
         export POSTGRES_PASSWORD="$db_pass"
       else
-        prompt_value "POSTGRES_PASSWORD" "Postgres password" "" "secret"
+        prompt_value "POSTGRES_PASSWORD" "Пароль Postgres" "" "secret"
       fi
     fi
   fi
 fi
 if is_placeholder "${POSTGRES_DB:-}"; then
-  prompt_value "POSTGRES_DB" "Postgres database name" "budget_app"
+  prompt_value "POSTGRES_DB" "Имя базы Postgres" "budget_app"
 fi
 
 # JWT
 if is_placeholder "${JWT_SECRET:-}"; then
-  if is_tty; then
+  if [ "$AUTO_JWT_SECRET" == "true" ]; then
+    jwt_secret="$(generate_secret)"
+    write_env_kv "JWT_SECRET" "$jwt_secret"
+    export JWT_SECRET="$jwt_secret"
+  elif is_tty; then
     local_choice=""
-    read -r -p "Generate JWT_SECRET automatically? [Y/n]: " local_choice
+    read -r -p "Сгенерировать JWT_SECRET автоматически? [Y/n]: " local_choice
     local_choice="${local_choice:-Y}"
     if [[ "$local_choice" =~ ^[Yy]$ ]]; then
       jwt_secret="$(generate_secret)"
       write_env_kv "JWT_SECRET" "$jwt_secret"
       export JWT_SECRET="$jwt_secret"
     else
-      prompt_value "JWT_SECRET" "JWT secret (long random string)" "" "secret"
+      prompt_value "JWT_SECRET" "JWT секрет (длинная случайная строка)" "" "secret"
     fi
   else
     jwt_secret="$(generate_secret)"
@@ -346,30 +393,34 @@ fi
 if is_placeholder "${CORS_ORIGINS:-}"; then
   if [ "$AUTO_CORS_ORIGINS" == "true" ]; then
     if [ -z "$CORS_DOMAIN" ]; then
-      prompt_value "CORS_DOMAIN" "Domain for CORS (example: moneycheckos.duckdns.org)" ""
+      prompt_value "CORS_DOMAIN" "Домен для CORS (пример: moneycheckos.duckdns.org)" ""
       CORS_DOMAIN="${CORS_DOMAIN:-}"
     fi
     if ! set_cors_from_domain "$CORS_DOMAIN"; then
-      prompt_value "CORS_ORIGINS" "Allowed CORS origins (comma-separated)" "http://localhost:3000,http://localhost:5173"
+      prompt_value "CORS_ORIGINS" "Разрешённые CORS домены (через запятую)" "http://localhost:3000,http://localhost:5173"
     fi
   elif [ "$AUTO_CORS_ORIGINS" == "false" ]; then
-    prompt_value "CORS_ORIGINS" "Allowed CORS origins (comma-separated)" "http://localhost:3000,http://localhost:5173"
+    prompt_value "CORS_ORIGINS" "Разрешённые CORS домены (через запятую)" "http://localhost:3000,http://localhost:5173"
   else
-    if prompt_yes_no "Auto-set CORS_ORIGINS from domain?" "no"; then
-      prompt_value "CORS_DOMAIN" "Domain for CORS (example: moneycheckos.duckdns.org)" ""
+    if prompt_yes_no "Автонастройка CORS по домену?" "no"; then
+      prompt_value "CORS_DOMAIN" "Домен для CORS (пример: moneycheckos.duckdns.org)" ""
       CORS_DOMAIN="${CORS_DOMAIN:-}"
       if ! set_cors_from_domain "$CORS_DOMAIN"; then
-        prompt_value "CORS_ORIGINS" "Allowed CORS origins (comma-separated)" "http://localhost:3000,http://localhost:5173"
+        prompt_value "CORS_ORIGINS" "Разрешённые CORS домены (через запятую)" "http://localhost:3000,http://localhost:5173"
       fi
     else
-      prompt_value "CORS_ORIGINS" "Allowed CORS origins (comma-separated)" "http://localhost:3000,http://localhost:5173"
+      prompt_value "CORS_ORIGINS" "Разрешённые CORS домены (через запятую)" "http://localhost:3000,http://localhost:5173"
     fi
   fi
 fi
 
 # Proxy
 if is_placeholder "${TRUST_PROXY:-}"; then
-  prompt_value "TRUST_PROXY" "Behind reverse proxy (nginx/Cloudflare)? (true/false)" "false"
+  if detect_nginx_proxy; then
+    prompt_value "TRUST_PROXY" "Backend за reverse‑proxy (nginx/Cloudflare)? (true/false)" "true"
+  else
+    prompt_value "TRUST_PROXY" "Backend за reverse‑proxy (nginx/Cloudflare)? (true/false)" "false"
+  fi
 fi
 
 # Rate limiting
@@ -435,14 +486,14 @@ validate_required() {
   fi
 
   if [ "${#missing[@]}" -gt 0 ]; then
-    echo "[ERROR] Missing or placeholder values in .env: ${missing[*]}" >&2
-    echo "[HINT] Re-run with ENV_SETUP_MODE=reset-env or edit .env manually." >&2
+    echo "[ERROR] В .env отсутствуют или стоят заглушки: ${missing[*]}" >&2
+    echo "[HINT] Запусти с ENV_SETUP_MODE=reset-env или поправь .env вручную." >&2
     exit 1
   fi
 }
 
 validate_required
 
-echo "[OK] Environment file is ready: $ENV_FILE"
-echo "[INFO] If you changed DB credentials for an existing DB volume, you may need:"
+echo "[OK] Файл окружения готов: $ENV_FILE"
+echo "[INFO] Если меняли креды БД при старом volume, выполните:"
 echo "       docker compose down -v && docker compose up -d --build"

@@ -17,7 +17,7 @@
 ## Current Agent Stamp
 - **Agent**: Codex
 - **Date**: 2026-01-29
-- **Status**: **UPDATED**. Added optional auto env flags (DB password/CORS) in ensure_env.sh.
+- **Status**: **UPDATED**. Added auto-mode menu, Russian prompts, and nginx proxy detection for TRUST_PROXY.
 
 ## Handover Note for Codex
 Welcome! The project is in a very stable state.

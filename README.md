@@ -38,9 +38,10 @@ cp .env.example .env
 - `JWT_SECRET` can be auto-generated.
 - The script offers a startup menu (keep env, reset env, wipe DB volume, stop).
 - Preflight checks validate dependencies, .env, and DB-credential mismatch before запуск.
- - Optional automation:
-   - `AUTO_DB_PASSWORD=true` to auto-generate DB password.
-   - `AUTO_CORS_ORIGINS=true` + `CORS_DOMAIN=example.com` to auto-set CORS.
+- Optional automation:
+  - `AUTO_DB_PASSWORD=true` to auto-generate DB password.
+  - `AUTO_CORS_ORIGINS=true` + `CORS_DOMAIN=example.com` to auto-set CORS.
+ - Auto‑mode in the menu enables these options without long command lines.
 ```bash
 ./run.sh
 ```

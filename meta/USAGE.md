@@ -18,6 +18,7 @@ Preflight also validates dependencies, .env correctness, and warns about DB cred
 Optional automation flags:
 - `AUTO_DB_PASSWORD=true`
 - `AUTO_CORS_ORIGINS=true` + `CORS_DOMAIN=example.com`
+Auto‑mode in the menu enables these options without extra flags.
 
 ### 2.1 Production Profile
 ```bash

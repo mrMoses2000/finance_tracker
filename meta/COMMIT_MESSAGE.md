@@ -1,8 +1,8 @@
 # Commit Message Template
 
 Type: Feat
-Subject: optional env automation
+Subject: Russian env menu + auto mode
 
 Body:
-- Added AUTO_DB_PASSWORD and AUTO_CORS_ORIGINS options.
-- Updated docs for new env automation flags.
+- Added Russian interactive prompts and auto-mode option.
+- Auto-detects nginx proxy to default TRUST_PROXY.
