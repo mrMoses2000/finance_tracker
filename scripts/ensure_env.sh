@@ -241,7 +241,7 @@ load_env
 is_placeholder() {
   local val="$1"
   case "$val" in
-    ""|change_me|change_me_secure|admin@example.com|user)
+    ""|change_me|change_me_secure|admin@example.com|user|password|dev_secret_for_tests)
       return 0
       ;;
   esac
@@ -344,6 +344,31 @@ if is_placeholder "${SEED_ADMIN_NAME:-}"; then
   write_env_kv "SEED_ADMIN_NAME" "Admin User"
   export SEED_ADMIN_NAME="Admin User"
 fi
+
+validate_required() {
+  local missing=()
+  local key
+
+  for key in POSTGRES_USER POSTGRES_PASSWORD POSTGRES_DB JWT_SECRET; do
+    if is_placeholder "${!key:-}"; then
+      missing+=("$key")
+    fi
+  done
+
+  if [[ "${CORS_ALLOW_ALL:-false}" != "true" ]]; then
+    if is_placeholder "${CORS_ORIGINS:-}"; then
+      missing+=("CORS_ORIGINS")
+    fi
+  fi
+
+  if [ "${#missing[@]}" -gt 0 ]; then
+    echo "[ERROR] Missing or placeholder values in .env: ${missing[*]}" >&2
+    echo "[HINT] Re-run with ENV_SETUP_MODE=reset-env or edit .env manually." >&2
+    exit 1
+  fi
+}
+
+validate_required
 
 echo "[OK] Environment file is ready: $ENV_FILE"
 echo "[INFO] If you changed DB credentials for an existing DB volume, you may need:"

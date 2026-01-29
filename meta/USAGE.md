@@ -14,6 +14,7 @@ cp .env.example .env
 ```
 This requires Docker. It will start Frontend (:3000), Backend (:4000), and Postgres (:5432).
 `run.sh` calls `scripts/ensure_env.sh` to prompt for missing `.env` values and shows a menu (keep env, reset env, wipe DB volume, stop).
+Preflight also validates dependencies, .env correctness, and warns about DB credential mismatch.
 
 ### 2.1 Production Profile
 ```bash

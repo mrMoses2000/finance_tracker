@@ -17,7 +17,7 @@
 ## Current Agent Stamp
 - **Agent**: Codex
 - **Date**: 2026-01-29
-- **Status**: **UPDATED**. Added interactive env menu, env sanitization, and run.sh hook.
+- **Status**: **UPDATED**. Added preflight checks and DB-credential mismatch detection in run.sh.
 
 ## Handover Note for Codex
 Welcome! The project is in a very stable state.

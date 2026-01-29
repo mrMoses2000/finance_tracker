@@ -59,6 +59,114 @@ check_cmd() {
     fi
 }
 
+is_tty() {
+    [ -t 0 ]
+}
+
+print_error() {
+    echo -e "${RED}[ERROR] $1${NC}"
+}
+
+print_warn() {
+    echo -e "${YELLOW}[WARN] $1${NC}"
+}
+
+print_info() {
+    echo -e "${YELLOW}[INFO] $1${NC}"
+}
+
+require_file() {
+    local path="$1"
+    local hint="$2"
+    if [ ! -f "$path" ]; then
+        print_error "Не найден файл: $path"
+        [ -n "$hint" ] && echo "$hint"
+        exit 1
+    fi
+}
+
+validate_env_file() {
+    local env_file="$1"
+    if [ ! -f "$env_file" ]; then
+        print_error ".env отсутствует: $env_file"
+        exit 1
+    fi
+
+    local invalid_lines=0
+    while IFS= read -r line || [ -n "$line" ]; do
+        if [[ -z "$line" || "$line" =~ ^[[:space:]]*# ]]; then
+            continue
+        fi
+        if ! [[ "$line" =~ ^[A-Za-z_][A-Za-z0-9_]*= ]]; then
+            invalid_lines=$((invalid_lines+1))
+        fi
+    done < "$env_file"
+
+    if [ "$invalid_lines" -gt 0 ]; then
+        print_warn ".env содержит строки без KEY=VALUE. Скрипт ensure_env.sh их закомментирует."
+    fi
+}
+
+is_placeholder_value() {
+    case "$1" in
+        ""|change_me|change_me_secure|admin@example.com|user|password|dev_secret_for_tests)
+            return 0
+            ;;
+    esac
+    return 1
+}
+
+load_env_file() {
+    local env_file="$1"
+    # ensure_env.sh already sanitizes, but run safe
+    set -a
+    # shellcheck disable=SC1090
+    source "$env_file"
+    set +a
+}
+
+validate_env_values() {
+    local missing=()
+
+    if is_placeholder_value "${POSTGRES_USER:-}"; then
+        missing+=("POSTGRES_USER")
+    fi
+    if is_placeholder_value "${POSTGRES_PASSWORD:-}"; then
+        missing+=("POSTGRES_PASSWORD")
+    fi
+    if is_placeholder_value "${POSTGRES_DB:-}"; then
+        missing+=("POSTGRES_DB")
+    fi
+    if is_placeholder_value "${JWT_SECRET:-}"; then
+        missing+=("JWT_SECRET")
+    fi
+
+    if [ "${CORS_ALLOW_ALL:-false}" != "true" ] && is_placeholder_value "${CORS_ORIGINS:-}"; then
+        missing+=("CORS_ORIGINS")
+    fi
+
+    if [ "${#missing[@]}" -gt 0 ]; then
+        print_error "Недостаточно настроен .env: ${missing[*]}"
+        echo "Запустите: ENV_SETUP_MODE=reset-env ./run.sh"
+        exit 1
+    fi
+}
+
+check_port_in_use() {
+    local port="$1"
+    if command -v ss >/dev/null 2>&1; then
+        if ss -ltn | awk '{print $4}' | grep -qE "[:.]$port$"; then
+            print_warn "Порт $port занят. Если это не Docker, запуск может упасть."
+        fi
+        return 0
+    fi
+    if command -v lsof >/dev/null 2>&1; then
+        if lsof -iTCP:"$port" -sTCP:LISTEN >/dev/null 2>&1; then
+            print_warn "Порт $port занят. Если это не Docker, запуск может упасть."
+        fi
+    fi
+}
+
 install_cmd() {
     local pkg="$1"
     local cask="$2"
@@ -671,12 +779,68 @@ start_docker_service() {
     return 1
 }
 
-# 3. Проверка Docker/Git
-echo -e "\n${YELLOW}[Step 1] Проверка окружения...${NC}"
-if ! check_cmd git; then
-    install_cmd git
-fi
+preflight_checks() {
+    echo -e "\n${YELLOW}[Step 0] Предстартовая проверка...${NC}"
 
+    if [ ! -d "$ROOT_DIR/server" ] || [ ! -d "$ROOT_DIR/client" ]; then
+        print_error "Структура проекта повреждена: нет server/ или client/."
+        exit 1
+    fi
+
+    require_file "$ROOT_DIR/docker-compose.yml" "Проверьте, что вы запускаете скрипт из корня проекта."
+    require_file "$ROOT_DIR/.env.example" "Нет .env.example — скрипт не сможет создать .env."
+
+    if [ ! -x "$ROOT_DIR/scripts/ensure_env.sh" ]; then
+        print_error "Не найден или не исполняем scripts/ensure_env.sh."
+        exit 1
+    fi
+
+    if ! check_cmd git; then
+        install_cmd git
+    fi
+    if ! check_cmd curl; then
+        install_cmd curl
+    fi
+}
+
+check_db_env_mismatch() {
+    if ! $DOCKER_CMD ps --format '{{.Names}}' | grep -q '^budget_db$'; then
+        return 0
+    fi
+
+    local db_env
+    db_env="$($DOCKER_CMD inspect budget_db --format '{{range .Config.Env}}{{println .}}{{end}}' 2>/dev/null || true)"
+    local existing_user existing_pass existing_db
+    existing_user="$(printf '%s\n' "$db_env" | awk -F= '/^POSTGRES_USER=/{print $2}')"
+    existing_pass="$(printf '%s\n' "$db_env" | awk -F= '/^POSTGRES_PASSWORD=/{print $2}')"
+    existing_db="$(printf '%s\n' "$db_env" | awk -F= '/^POSTGRES_DB=/{print $2}')"
+
+    if [ -z "$existing_user" ] && [ -z "$existing_pass" ] && [ -z "$existing_db" ]; then
+        return 0
+    fi
+
+    if [ "$existing_user" != "$POSTGRES_USER" ] || [ "$existing_pass" != "$POSTGRES_PASSWORD" ] || [ "$existing_db" != "$POSTGRES_DB" ]; then
+        print_warn "Найдена БД с другими кредами. Это может привести к падению сервера."
+        echo "Контейнер: budget_db"
+        echo "В контейнере: POSTGRES_USER=$existing_user POSTGRES_DB=$existing_db"
+        echo "В .env:       POSTGRES_USER=$POSTGRES_USER POSTGRES_DB=$POSTGRES_DB"
+        if is_tty; then
+            read -r -p "Удалить БД и пересоздать (docker compose down -v)? [y/N]: " confirm
+            if [[ "$confirm" =~ ^[Yy]$ ]]; then
+                $COMPOSE_CMD -f "$COMPOSE_FILE" down -v || true
+            else
+                print_warn "Продолжаю без удаления. Если будет P1010 — нужно пересоздать volume."
+            fi
+        else
+            print_warn "Нет TTY для подтверждения. Если будет P1010 — пересоздай volume вручную."
+        fi
+    fi
+}
+
+# 3. Проверка Docker/Git
+preflight_checks
+
+echo -e "\n${YELLOW}[Step 1] Проверка окружения...${NC}"
 if ! check_cmd docker; then
     if [ "$OS_TYPE" == "Linux" ]; then
         install_docker_linux
@@ -727,7 +891,7 @@ if [ "$RUN_MODE" == "prod" ] || [ "$RUN_MODE" == "production" ]; then
 fi
 
 if [ ! -f "$COMPOSE_FILE" ]; then
-    echo -e "${RED}[ERROR] Файл compose не найден: $COMPOSE_FILE${NC}"
+    print_error "Файл compose не найден: $COMPOSE_FILE"
     exit 1
 fi
 
@@ -735,6 +899,16 @@ fi
 if [ -x "$ROOT_DIR/scripts/ensure_env.sh" ]; then
     COMPOSE_CMD="$COMPOSE_CMD" COMPOSE_FILE="$COMPOSE_FILE" bash "$ROOT_DIR/scripts/ensure_env.sh"
 fi
+
+validate_env_file "$ROOT_DIR/.env"
+load_env_file "$ROOT_DIR/.env"
+validate_env_values
+check_db_env_mismatch
+
+check_port_in_use 3000
+check_port_in_use 4000
+check_port_in_use 5432
+check_port_in_use 443
 
 # HTTPS setup (interactive)
 prompt_https_mode

@@ -1,8 +1,8 @@
 # Commit Message Template
 
 Type: Feat
-Subject: interactive env menu
+Subject: preflight safety checks
 
 Body:
-- Added interactive menu to reset env / wipe DB / stop.
-- Sanitized .env lines before sourcing to avoid shell errors.
+- Added preflight dependency/env checks and DB-credential mismatch detection.
+- Warns about occupied ports and invalid .env lines.

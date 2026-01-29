@@ -36,7 +36,8 @@ cp .env.example .env
 `run.sh` now calls `scripts/ensure_env.sh` to auto-fill missing `.env` values.
 - If a value is missing, it will ask you in the console.
 - `JWT_SECRET` can be auto-generated.
- - The script offers a startup menu (keep env, reset env, wipe DB volume, stop).
+- The script offers a startup menu (keep env, reset env, wipe DB volume, stop).
+- Preflight checks validate dependencies, .env, and DB-credential mismatch before запуск.
 ```bash
 ./run.sh
 ```
