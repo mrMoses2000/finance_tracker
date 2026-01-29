@@ -17,7 +17,7 @@
 ## Current Agent Stamp
 - **Agent**: Codex
 - **Date**: 2026-01-29
-- **Status**: **UPDATED**. Added interactive env bootstrap script and run.sh hook.
+- **Status**: **UPDATED**. Added interactive env menu, env sanitization, and run.sh hook.
 
 ## Handover Note for Codex
 Welcome! The project is in a very stable state.

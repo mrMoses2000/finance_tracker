@@ -36,6 +36,7 @@ cp .env.example .env
 `run.sh` now calls `scripts/ensure_env.sh` to auto-fill missing `.env` values.
 - If a value is missing, it will ask you in the console.
 - `JWT_SECRET` can be auto-generated.
+ - The script offers a startup menu (keep env, reset env, wipe DB volume, stop).
 ```bash
 ./run.sh
 ```

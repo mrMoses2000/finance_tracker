@@ -15,4 +15,4 @@
 6) Обновить Agent Stamp в meta/AGENTS.md и добавить запись в meta/AGENT_LOG.md.
 7) Секреты хранить только в `.env` на серверах/локально, не коммитить.
 8) Если добавляете новые переменные (rate limit, audit log, prod профили), обновляйте `.env.example` и README.
-9) `run.sh` вызывает `scripts/ensure_env.sh` для интерактивного заполнения `.env`.
+9) `run.sh` вызывает `scripts/ensure_env.sh` для интерактивного заполнения `.env` и выбора сценария (reset env / wipe DB / stop).

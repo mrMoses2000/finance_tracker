@@ -28,11 +28,6 @@ SERVER_NAMES="_"
 SSL_CERT=""
 SSL_KEY=""
 
-# Ensure env is present and valid (interactive if needed)
-if [ -x "$ROOT_DIR/scripts/ensure_env.sh" ]; then
-    bash "$ROOT_DIR/scripts/ensure_env.sh"
-fi
-
 # 1. Определение ОС
 OS="$(uname -s)"
 case "${OS}" in
@@ -734,6 +729,11 @@ fi
 if [ ! -f "$COMPOSE_FILE" ]; then
     echo -e "${RED}[ERROR] Файл compose не найден: $COMPOSE_FILE${NC}"
     exit 1
+fi
+
+# Ensure env is present and valid (interactive menu if needed)
+if [ -x "$ROOT_DIR/scripts/ensure_env.sh" ]; then
+    COMPOSE_CMD="$COMPOSE_CMD" COMPOSE_FILE="$COMPOSE_FILE" bash "$ROOT_DIR/scripts/ensure_env.sh"
 fi
 
 # HTTPS setup (interactive)

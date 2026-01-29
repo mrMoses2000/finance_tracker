@@ -13,7 +13,7 @@ cp .env.example .env
 ./run.sh
 ```
 This requires Docker. It will start Frontend (:3000), Backend (:4000), and Postgres (:5432).
-`run.sh` calls `scripts/ensure_env.sh` to prompt for missing `.env` values.
+`run.sh` calls `scripts/ensure_env.sh` to prompt for missing `.env` values and shows a menu (keep env, reset env, wipe DB volume, stop).
 
 ### 2.1 Production Profile
 ```bash

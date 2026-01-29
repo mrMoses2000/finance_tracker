@@ -1,8 +1,8 @@
 # Commit Message Template
 
 Type: Feat
-Subject: env bootstrap script
+Subject: interactive env menu
 
 Body:
-- Added scripts/ensure_env.sh for interactive .env setup.
-- Hooked run.sh to auto-generate missing env values.
+- Added interactive menu to reset env / wipe DB / stop.
+- Sanitized .env lines before sourcing to avoid shell errors.

@@ -38,6 +38,7 @@
 - [x] **Security**: Rate limiting для API и auth.
 - [x] **Observability**: AuditLog для всех mutating эндпоинтов.
 - [x] **Ops**: Добавлен интерактивный `scripts/ensure_env.sh` для заполнения .env.
+- [x] **Ops**: Добавлено меню сценариев (reset env / wipe DB / stop) перед запуском.
 
 ## 🚧 In Progress / Next Steps (For Codex Agent)
 - [ ] **Clawd.bot Deployment**: SSH into Stockholm server (16.171.28.19) and run deployment
