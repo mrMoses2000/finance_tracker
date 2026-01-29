@@ -1,5 +1,5 @@
 # Project Index Report
-Generated on Thu 29 Jan 2026 10:27:39 +05
+Generated on Thu 29 Jan 2026 12:54:27 +05
 
 ## File Structure
 ```
@@ -13,6 +13,7 @@ Generated on Thu 29 Jan 2026 10:27:39 +05
 ./meta/Info.md
 ./meta/CONTINUITY.md
 ./meta/COMMIT_MESSAGE.md
+./meta/PLAN_CLAWDBOT_INTEGRATION.md
 ./meta/n8n
 ./meta/n8n/budgetflow-upcoming-payments.json
 ./meta/AGENT_LOG.md
