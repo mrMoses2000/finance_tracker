@@ -1,8 +1,8 @@
 # Commit Message Template
 
 Type: Feat
-Subject: Russian env menu + auto mode
+Subject: safe env parsing
 
 Body:
-- Added Russian interactive prompts and auto-mode option.
-- Auto-detects nginx proxy to default TRUST_PROXY.
+- Parse .env without source to avoid "command not found".
+- Handle values with spaces safely.

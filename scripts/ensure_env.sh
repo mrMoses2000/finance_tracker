@@ -76,10 +76,24 @@ ensure_env_file() {
 
 load_env() {
   sanitize_env_file
-  set -a
-  # shellcheck disable=SC1090
-  source "$ENV_FILE"
-  set +a
+  while IFS= read -r line || [ -n "$line" ]; do
+    if [[ -z "$line" || "$line" =~ ^[[:space:]]*# ]]; then
+      continue
+    fi
+    if [[ "$line" =~ ^[A-Za-z_][A-Za-z0-9_]*= ]]; then
+      local key value
+      key="${line%%=*}"
+      value="${line#*=}"
+      value="${value#"${value%%[![:space:]]*}"}"
+      value="${value%"${value##*[![:space:]]}"}"
+      if [[ "$value" =~ ^\".*\"$ ]]; then
+        value="${value:1:${#value}-2}"
+      elif [[ "$value" =~ ^\'.*\'$ ]]; then
+        value="${value:1:${#value}-2}"
+      fi
+      export "$key=$value"
+    fi
+  done < "$ENV_FILE"
 }
 
 generate_secret() {
@@ -103,6 +117,9 @@ write_env_kv() {
   local tmp
   tmp="$(mktemp)"
   local found=0
+  if [[ "$value" =~ [[:space:]] ]] && [[ ! "$value" =~ ^\".*\"$ ]] && [[ ! "$value" =~ ^\'.*\'$ ]]; then
+    value="\"$value\""
+  fi
   while IFS= read -r line || [ -n "$line" ]; do
     if [[ "$line" == "$key="* ]]; then
       printf '%s=%s\n' "$key" "$value" >> "$tmp"

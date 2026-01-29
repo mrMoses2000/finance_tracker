@@ -19,6 +19,7 @@ Optional automation flags:
 - `AUTO_DB_PASSWORD=true`
 - `AUTO_CORS_ORIGINS=true` + `CORS_DOMAIN=example.com`
 Auto‑mode in the menu enables these options without extra flags.
+`.env` is parsed safely even when values contain spaces.
 
 ### 2.1 Production Profile
 ```bash

@@ -118,11 +118,24 @@ is_placeholder_value() {
 
 load_env_file() {
     local env_file="$1"
-    # ensure_env.sh already sanitizes, but run safe
-    set -a
-    # shellcheck disable=SC1090
-    source "$env_file"
-    set +a
+    while IFS= read -r line || [ -n "$line" ]; do
+        if [[ -z "$line" || "$line" =~ ^[[:space:]]*# ]]; then
+            continue
+        fi
+        if [[ "$line" =~ ^[A-Za-z_][A-Za-z0-9_]*= ]]; then
+            local key value
+            key="${line%%=*}"
+            value="${line#*=}"
+            value="${value#"${value%%[![:space:]]*}"}"
+            value="${value%"${value##*[![:space:]]}"}"
+            if [[ "$value" =~ ^\".*\"$ ]]; then
+                value="${value:1:${#value}-2}"
+            elif [[ "$value" =~ ^\'.*\'$ ]]; then
+                value="${value:1:${#value}-2}"
+            fi
+            export "$key=$value"
+        fi
+    done < "$env_file"
 }
 
 validate_env_values() {

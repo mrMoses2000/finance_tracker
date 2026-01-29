@@ -17,7 +17,7 @@
 ## Current Agent Stamp
 - **Agent**: Codex
 - **Date**: 2026-01-29
-- **Status**: **UPDATED**. Added auto-mode menu, Russian prompts, and nginx proxy detection for TRUST_PROXY.
+- **Status**: **UPDATED**. Added safe .env parsing and fixed auto-mode errors with spaces.
 
 ## Handover Note for Codex
 Welcome! The project is in a very stable state.

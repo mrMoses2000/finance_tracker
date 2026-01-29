@@ -18,3 +18,4 @@
 9) `run.sh` вызывает `scripts/ensure_env.sh` для интерактивного заполнения `.env` и выбора сценария (reset env / wipe DB / stop), а также делает preflight‑проверки.
 10) Опционально: `AUTO_DB_PASSWORD=true` и `AUTO_CORS_ORIGINS=true` + `CORS_DOMAIN=example.com`.
 11) Авто‑режим доступен в меню скрипта (без длинных параметров).
+12) `.env` можно оставлять с пробелами в значениях — скрипт читает безопасно.

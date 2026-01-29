@@ -41,7 +41,8 @@ cp .env.example .env
 - Optional automation:
   - `AUTO_DB_PASSWORD=true` to auto-generate DB password.
   - `AUTO_CORS_ORIGINS=true` + `CORS_DOMAIN=example.com` to auto-set CORS.
- - Auto‑mode in the menu enables these options without long command lines.
+- Auto‑mode in the menu enables these options without long command lines.
+- `.env` with spaces is handled safely; scripts parse it without `source`.
 ```bash
 ./run.sh
 ```
