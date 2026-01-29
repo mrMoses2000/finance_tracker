@@ -46,3 +46,5 @@
 - **[2026-01-29] i18n Calendar + Debts Categories (Codex)**: FullCalendar now respects RU/DE locales; debt category labels localized.
 - **[2026-01-29] run.sh Quick Update Mode (Codex)**: Added `RUN_ACTION=update` to rebuild containers without HTTPS/env prompts.
 - **[2026-01-29] run.sh Menu Update (Codex)**: Added interactive menu item for quick update mode.
+- **[2026-01-29] Ops SG Hint (Codex)**: Added explicit Security Group 443 warning in run.sh output and docs.
+- **[2026-01-29] Mobile UI Pass (Codex)**: Refined dashboard header + KPI cards for small screens.

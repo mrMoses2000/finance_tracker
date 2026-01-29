@@ -1087,6 +1087,7 @@ if $COMPOSE_CMD -f "$COMPOSE_FILE" up -d --build; then
                 echo -e "Remote:    ${YELLOW}https://${PUBLIC_IP}${NC}"
                 echo -e "HTTP:      ${YELLOW}http://${PUBLIC_IP}:3000${NC}"
                 echo -e "${YELLOW}[INFO] Для облачных серверов откройте порты 443/3000/4000 (TCP) в Security Group/Firewall.${NC}"
+                echo -e "${YELLOW}[INFO] Если домен не открывается (ERR_CONNECTION_REFUSED), проверьте inbound‑правила 443 в Security Group/NACL.${NC}"
             else
                 echo -e "Remote:    ${YELLOW}http://${PUBLIC_IP}:3000${NC}"
                 echo -e "${YELLOW}[INFO] Для облачных серверов откройте порты 3000/4000 (TCP) в Security Group/Firewall.${NC}"

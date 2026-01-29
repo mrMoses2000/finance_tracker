@@ -157,6 +157,7 @@ This script builds and launches Frontend (:3000), Backend (:4000), and Postgres 
 RUN_ACTION=update ./run.sh
 ```
 Также доступно в интерактивном меню `run.sh` (пункт «Быстрое обновление контейнеров»).
+> Если домен не открывается снаружи (ERR_CONNECTION_REFUSED), проверьте inbound‑правила 443 в Security Group/NACL.
 
 ### Production Profile (Docker)
 Use the production compose file and migration-based startup.
