@@ -350,6 +350,58 @@
     margin-bottom: 3px;
 }
 
+@media (max-width: 640px) {
+    .fc .fc-toolbar-title {
+        font-size: 0.95rem;
+    }
+
+    .fc .fc-button {
+        padding: 0.25rem 0.45rem;
+        font-size: 0.75rem;
+    }
+
+    .fc .fc-daygrid-day-frame {
+        min-height: 64px;
+        padding: 0.15rem;
+        border-radius: 0.6rem;
+    }
+
+    .fc-daygrid-day-number {
+        font-size: 0.7rem;
+    }
+
+    .fc-daygrid-event {
+        padding: 1px 3px;
+        font-size: 10px;
+    }
+
+    .fc-daygrid-day-events {
+        min-height: 1rem;
+    }
+}
+
+@media (max-width: 360px) {
+    .fc .fc-toolbar-title {
+        font-size: 0.85rem;
+    }
+
+    .fc .fc-button {
+        padding: 0.2rem 0.35rem;
+        font-size: 0.7rem;
+    }
+
+    .fc .fc-daygrid-day-frame {
+        min-height: 56px;
+        padding: 0.1rem;
+        border-radius: 0.5rem;
+    }
+
+    .fc-daygrid-event {
+        padding: 0 2px;
+        font-size: 9px;
+    }
+}
+
 /* Light theme calendar overrides */
 :root[data-theme='light'] .fc-daygrid-day-frame {
     background: rgba(0, 0, 0, 0.03);

@@ -49,3 +49,6 @@
 - **[2026-01-29] Ops SG Hint (Codex)**: Added explicit Security Group 443 warning in run.sh output and docs.
 - **[2026-01-29] Mobile UI Pass (Codex)**: Refined dashboard header + KPI cards for small screens.
 - **[2026-01-29] Mobile UI Pass (Codex)**: Improved mobile layouts for Transactions, Debts, Schedule, Budget Plan, Category Manager, and calendars.
+- **[2026-01-29] Sidebar Toggle + Calendar Density (Codex)**: Added logo‑toggle sidebar drawer and tightened calendar proportions on mobile.
+- **[2026-01-29] Mobile UX Enhancements (Codex)**: Added swipe-to-open sidebar, push-content effect, and ultra-small calendar tweaks.
+- **[2026-01-29] Mobile Sidebar Gestures (Codex)**: Added swipe glow, body scroll lock, and spring easing for drawer animations.
