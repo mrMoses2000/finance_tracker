@@ -1,7 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
+import { clearSessionAndRedirect, getToken } from '../lib/session';
 
 const fetchBudget = async (month) => {
-    const token = localStorage.getItem('token');
+    const token = getToken();
     if (!token) throw new Error('No token found');
 
     const res = await fetch(`/api/overview?month=${month}`, {
@@ -12,8 +13,7 @@ const fetchBudget = async (month) => {
 
     if (!res.ok) {
         if (res.status === 401 || res.status === 403) {
-            localStorage.removeItem('token');
-            window.location.href = '/login';
+            clearSessionAndRedirect();
         }
         throw new Error('Failed to fetch data');
     }

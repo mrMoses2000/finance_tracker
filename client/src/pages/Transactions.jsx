@@ -11,7 +11,7 @@ import CategoryManager from '../components/Categories/CategoryManager';
 
 const Transactions = () => {
     const { t, lang } = useLanguage();
-    const { currency, formatMoney } = useCurrency();
+    const { formatMoney } = useCurrency();
     const { month } = useBudgetMonth();
     const queryClient = useQueryClient();
     const token = localStorage.getItem('token');
@@ -98,16 +98,16 @@ const Transactions = () => {
                     <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">{t?.transactions?.title || t?.nav?.transactions || 'Operations'}</h1>
                     <p className="text-emerald-200 opacity-70 text-sm sm:text-base">{t?.transactions?.subtitle || 'Manage your financial records.'}</p>
                 </div>
-                <div className="flex flex-wrap items-center gap-3">
+                <div className="grid w-full gap-3 sm:flex sm:w-auto sm:flex-wrap sm:items-center">
                     <button
                         onClick={() => setCategoryModalOpen(true)}
-                        className="btn-secondary"
+                        className="btn-secondary w-full sm:w-auto"
                     >
                         <Layers size={18} /> {t?.category_manager?.title_short || 'Categories'}
                     </button>
                     <button
                         onClick={handleAddNew}
-                        className="btn-primary"
+                        className="btn-primary w-full sm:w-auto"
                     >
                         <Plus size={18} /> {t?.transactions?.add || 'Add Operation'}
                     </button>

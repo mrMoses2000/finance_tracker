@@ -19,9 +19,17 @@ const hexWithAlpha = (hex, alpha = '26') => {
     return `${hex}${alpha}`;
 };
 
+const isSameMonth = (dateValue, monthKey) => {
+    if (!dateValue || !monthKey) return true;
+    const date = new Date(dateValue);
+    const [yearStr, monthStr] = monthKey.split('-');
+    return date.getFullYear() === Number.parseInt(yearStr, 10)
+        && date.getMonth() + 1 === Number.parseInt(monthStr, 10);
+};
+
 const Schedule = () => {
     const { t, lang } = useLanguage();
-    const { currency, formatMoney } = useCurrency();
+    const { formatMoney } = useCurrency();
     const queryClient = useQueryClient();
     const token = localStorage.getItem('token');
     const { month, setMonth } = useBudgetMonth();
@@ -29,7 +37,10 @@ const Schedule = () => {
     const [selectedDate, setSelectedDate] = useState(() => new Date().toISOString().split('T')[0]);
     const [isModalOpen, setModalOpen] = useState(false);
     const [editingItem, setEditingItem] = useState(null);
+    const [isCompact, setIsCompact] = useState(false);
+    const [mobileView, setMobileView] = useState('agenda');
     const initialDate = month ? `${month}-01` : undefined;
+    const selectedDay = isSameMonth(selectedDate, month) ? selectedDate : `${month}-01`;
 
     const toMonthLabel = (value) => {
         if (!value) return '';
@@ -131,15 +142,29 @@ const Schedule = () => {
     }, [schedule, categoryMap]);
 
     const selectedItems = useMemo(() => {
-        if (!selectedDate) return [];
+        if (!selectedDay) return [];
         return (schedule || [])
-            .filter((item) => new Date(item.dueDate).toISOString().split('T')[0] === selectedDate)
+            .filter((item) => new Date(item.dueDate).toISOString().split('T')[0] === selectedDay)
             .sort((a, b) => b.amountUSD - a.amountUSD);
-    }, [schedule, selectedDate]);
+    }, [schedule, selectedDay]);
+
+    const mobileAgendaItems = useMemo(() => (
+        [...(schedule || [])].sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate))
+    ), [schedule]);
 
     const renderEventContent = (eventInfo) => {
         const { amountUSD, type, category, color } = eventInfo.event.extendedProps || {};
         const Icon = getCategoryIcon(getCategoryLabel(category, t), type);
+        if (isCompact) {
+            return (
+                <div className="flex items-center gap-1 text-[10px] min-w-0">
+                    <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: color }}></span>
+                    <span className="truncate font-semibold text-slate-100" title={eventInfo.event.title}>
+                        {eventInfo.event.title}
+                    </span>
+                </div>
+            );
+        }
         return (
             <div className="flex items-center gap-2 truncate text-xs">
                 <span
@@ -160,22 +185,22 @@ const Schedule = () => {
 
     const locale = lang === 'ru' ? 'ru-RU' : lang === 'de' ? 'de-DE' : 'en-US';
     const calendarLocale = lang === 'ru' ? ruLocale : lang === 'de' ? deLocale : undefined;
-    const selectedLabel = selectedDate
-        ? new Date(`${selectedDate}T00:00:00Z`).toLocaleDateString(locale, { day: 'numeric', month: 'long', year: 'numeric' })
-        : selectedDate;
+    const selectedLabel = selectedDay
+        ? new Date(`${selectedDay}T00:00:00Z`).toLocaleDateString(locale, { day: 'numeric', month: 'long', year: 'numeric' })
+        : selectedDay;
 
     useEffect(() => {
-        if (!month) return;
-        const [yearStr, monthStr] = month.split('-');
-        const selected = new Date(selectedDate);
-        const currentYear = selected.getFullYear();
-        const currentMonth = selected.getMonth() + 1;
-        const targetYear = parseInt(yearStr, 10);
-        const targetMonth = parseInt(monthStr, 10);
-        if (currentYear !== targetYear || currentMonth !== targetMonth) {
-            setSelectedDate(`${month}-01`);
+        if (typeof window === 'undefined') return;
+        const mq = window.matchMedia('(max-width: 640px)');
+        const update = () => setIsCompact(mq.matches);
+        update();
+        if (mq.addEventListener) {
+            mq.addEventListener('change', update);
+            return () => mq.removeEventListener('change', update);
         }
-    }, [month, selectedDate]);
+        mq.addListener(update);
+        return () => mq.removeListener(update);
+    }, []);
 
     return (
         <div className="space-y-8 pb-20">
@@ -240,124 +265,167 @@ const Schedule = () => {
                 <div className="flex justify-center p-20"><Loader2 className="animate-spin text-emerald-500" size={40} /></div>
             ) : (
                 <div className="grid grid-cols-1 xl:grid-cols-[1.7fr_1fr] gap-6">
-                    <div className="glass-panel rounded-2xl overflow-hidden p-4">
-                        <FullCalendar
-                            plugins={[dayGridPlugin, interactionPlugin]}
-                            initialView="dayGridMonth"
-                            height="auto"
-                            headerToolbar={{ left: 'prev,next today', center: 'title', right: '' }}
-                            dayMaxEventRows={3}
-                            initialDate={initialDate}
-                            key={month || 'schedule'}
-                            locales={[ruLocale, deLocale]}
-                            locale={calendarLocale || 'en'}
-                            events={events}
-                            eventContent={renderEventContent}
-                            eventClick={(info) => {
-                                setSelectedDate(info.event.startStr.split('T')[0]);
-                            }}
-                            dateClick={(info) => setSelectedDate(info.dateStr)}
-                            editable={true}
-                            eventStartEditable={true}
-                            eventDurationEditable={false}
-                            eventDrop={(info) => {
-                                const id = info.event.id;
-                                updateMutation.mutate({ id, payload: { dueDate: info.event.startStr } });
-                            }}
-                            datesSet={(info) => {
-                                const current = info.view?.currentStart || info.start;
-                                if (current) {
-                                    const nextMonth = `${current.getFullYear()}-${String(current.getMonth() + 1).padStart(2, '0')}`;
-                                    if (nextMonth !== month) {
-                                        setMonth(nextMonth);
-                                    }
-                                }
-                            }}
-                        />
-                    </div>
-
-                    <div className="glass-panel rounded-2xl p-4">
-                        <div className="text-xs uppercase tracking-[0.2em] text-slate-400 font-bold mb-4">
-                            {t?.schedule?.list_title || 'Payments for'} {selectedLabel}
+                    {isCompact && (
+                        <div className="glass-panel rounded-2xl p-2 sm:hidden">
+                            <div className="grid grid-cols-2 gap-2">
+                                <button
+                                    type="button"
+                                    onClick={() => setMobileView('agenda')}
+                                    className={`rounded-xl px-4 py-3 text-sm font-semibold transition-colors ${mobileView === 'agenda'
+                                        ? 'bg-emerald-500/15 text-emerald-300'
+                                        : 'text-slate-400 hover:bg-white/5 hover:text-slate-200'
+                                    }`}
+                                >
+                                    Agenda
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setMobileView('calendar')}
+                                    className={`rounded-xl px-4 py-3 text-sm font-semibold transition-colors ${mobileView === 'calendar'
+                                        ? 'bg-emerald-500/15 text-emerald-300'
+                                        : 'text-slate-400 hover:bg-white/5 hover:text-slate-200'
+                                    }`}
+                                >
+                                    Calendar
+                                </button>
+                            </div>
                         </div>
-                        <AnimatePresence mode="wait">
-                            {selectedItems.length === 0 ? (
-                                <motion.div
-                                    key="empty"
-                                    initial={{ opacity: 0, y: 10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    exit={{ opacity: 0, y: -10 }}
-                                    className="text-slate-500 text-sm"
-                                >
-                                    {t?.schedule?.empty || 'No scheduled items for this period.'}
-                                </motion.div>
-                            ) : (
-                                <motion.div
-                                    key="list"
-                                    initial={{ opacity: 0, y: 10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    exit={{ opacity: 0, y: -10 }}
-                                    className="space-y-3"
-                                >
-                                    {selectedItems.map((item) => {
-                                        const category = item.category || categoryMap.get(item.categoryId);
-                                        const Icon = getCategoryIcon(getCategoryLabel(category, t), item.type);
-                                        return (
-                                            <div
-                                                key={item.id}
-                                                className="bg-white/5 border border-white/5 rounded-xl p-3 space-y-3"
-                                            >
-                                                <div className="flex items-center justify-between gap-3">
-                                                    <div className="flex items-center gap-3">
-                                                        <span
-                                                            className="w-9 h-9 rounded-xl flex items-center justify-center"
-                                                            style={{ backgroundColor: hexWithAlpha(category?.color || '#94a3b8', '2e'), color: category?.color || '#94a3b8' }}
-                                                        >
-                                                            <Icon size={16} />
-                                                        </span>
-                                                        <div>
-                                                            <div className="text-sm font-semibold text-slate-100">{item.title}</div>
-                                                            <div className="text-xs text-slate-400">{getCategoryLabel(category, t) || t?.calendar?.uncategorized || 'Uncategorized'}</div>
+                    )}
+
+                    {(!isCompact || mobileView === 'calendar') && (
+                        <div className="glass-panel rounded-2xl overflow-hidden p-4">
+                            <FullCalendar
+                                plugins={[dayGridPlugin, interactionPlugin]}
+                                initialView="dayGridMonth"
+                                height="auto"
+                                headerToolbar={{ left: 'prev,next today', center: 'title', right: '' }}
+                                dayMaxEventRows={3}
+                                initialDate={initialDate}
+                                key={month || 'schedule'}
+                                locales={[ruLocale, deLocale]}
+                                locale={calendarLocale || 'en'}
+                                events={events}
+                                eventContent={renderEventContent}
+                                eventClick={(info) => {
+                                    setSelectedDate(info.event.startStr.split('T')[0]);
+                                    if (isCompact) {
+                                        setMobileView('agenda');
+                                    }
+                                }}
+                                dateClick={(info) => {
+                                    setSelectedDate(info.dateStr);
+                                    if (isCompact) {
+                                        setMobileView('agenda');
+                                    }
+                                }}
+                                editable={!isCompact}
+                                eventStartEditable={!isCompact}
+                                eventDurationEditable={false}
+                                eventDrop={(info) => {
+                                    const id = info.event.id;
+                                    updateMutation.mutate({ id, payload: { dueDate: info.event.startStr } });
+                                }}
+                                datesSet={(info) => {
+                                    const current = info.view?.currentStart || info.start;
+                                    if (current) {
+                                        const nextMonth = `${current.getFullYear()}-${String(current.getMonth() + 1).padStart(2, '0')}`;
+                                        if (nextMonth !== month) {
+                                            setMonth(nextMonth);
+                                        }
+                                    }
+                                }}
+                            />
+                        </div>
+                    )}
+
+                    {(!isCompact || mobileView === 'agenda') && (
+                        <div className="glass-panel rounded-2xl p-4">
+                            <div className="text-xs uppercase tracking-[0.2em] text-slate-400 font-bold mb-4">
+                                {isCompact ? (t?.schedule?.title || 'Payment Schedule') : `${t?.schedule?.list_title || 'Payments for'} ${selectedLabel}`}
+                            </div>
+                            <AnimatePresence mode="wait">
+                                {(isCompact ? mobileAgendaItems : selectedItems).length === 0 ? (
+                                    <motion.div
+                                        key="empty"
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0, y: -10 }}
+                                        className="text-slate-500 text-sm"
+                                    >
+                                        {t?.schedule?.empty || 'No scheduled items for this period.'}
+                                    </motion.div>
+                                ) : (
+                                    <motion.div
+                                        key="list"
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0, y: -10 }}
+                                        className="space-y-3"
+                                    >
+                                        {(isCompact ? mobileAgendaItems : selectedItems).map((item) => {
+                                            const category = item.category || categoryMap.get(item.categoryId);
+                                            const Icon = getCategoryIcon(getCategoryLabel(category, t), item.type);
+                                            return (
+                                                <div
+                                                    key={item.id}
+                                                    className="bg-white/5 border border-white/5 rounded-xl p-3 space-y-3"
+                                                >
+                                                    <div className="flex items-start justify-between gap-3">
+                                                        <div className="flex items-start gap-3 min-w-0">
+                                                            <span
+                                                                className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+                                                                style={{ backgroundColor: hexWithAlpha(category?.color || '#94a3b8', '2e'), color: category?.color || '#94a3b8' }}
+                                                            >
+                                                                <Icon size={16} />
+                                                            </span>
+                                                            <div className="min-w-0">
+                                                                <div className="text-sm font-semibold text-slate-100 truncate">{item.title}</div>
+                                                                <div className="text-xs text-slate-400">
+                                                                    {new Date(item.dueDate).toLocaleDateString(locale, { day: 'numeric', month: 'short' })}
+                                                                    {' · '}
+                                                                    {getCategoryLabel(category, t) || t?.calendar?.uncategorized || 'Uncategorized'}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div className={`text-sm font-bold flex-shrink-0 ${item.type === 'income' ? 'text-emerald-300' : 'text-rose-300'}`}>
+                                                            {formatMoney(item.amountUSD, lang)}
                                                         </div>
                                                     </div>
-                                                    <div className={`text-sm font-bold ${item.type === 'income' ? 'text-emerald-300' : 'text-rose-300'}`}>
-                                                        {formatMoney(item.amountUSD, lang)}
+
+                                                    <div className="flex items-center justify-between gap-2 text-xs">
+                                                        <span className={`px-3 py-1 rounded-full font-bold border ${item.status === 'paid' ? 'text-emerald-300 border-emerald-500/30 bg-emerald-500/10' : 'text-slate-300 border-white/10 bg-white/5'}`}>
+                                                            {item.status === 'paid' ? (t?.schedule?.filters?.paid || 'Paid') : (t?.schedule?.filters?.pending || 'Pending')}
+                                                        </span>
+
+                                                        <div className="flex items-center gap-2">
+                                                            <button
+                                                                onClick={() => updateMutation.mutate({ id: item.id, payload: { status: item.status === 'paid' ? 'pending' : 'paid' } })}
+                                                                className="p-2 rounded-lg hover:bg-white/10 text-slate-400 hover:text-emerald-400 transition-colors"
+                                                            >
+                                                                {item.status === 'paid' ? <Undo2 size={16} /> : <CheckCircle2 size={16} />}
+                                                            </button>
+                                                            <button
+                                                                onClick={() => handleEdit(item)}
+                                                                className="p-2 rounded-lg hover:bg-white/10 text-slate-400 hover:text-emerald-400 transition-colors"
+                                                            >
+                                                                <Edit2 size={16} />
+                                                            </button>
+                                                            <button
+                                                                onClick={() => deleteMutation.mutate(item.id)}
+                                                                className="p-2 rounded-lg hover:bg-rose-500/10 text-slate-400 hover:text-rose-400 transition-colors"
+                                                            >
+                                                                <Trash2 size={16} />
+                                                            </button>
+                                                        </div>
                                                     </div>
                                                 </div>
-
-                                                <div className="flex items-center justify-between gap-2 text-xs">
-                                                    <span className={`px-3 py-1 rounded-full font-bold border ${item.status === 'paid' ? 'text-emerald-300 border-emerald-500/30 bg-emerald-500/10' : 'text-slate-300 border-white/10 bg-white/5'}`}>
-                                                        {item.status === 'paid' ? (t?.schedule?.filters?.paid || 'Paid') : (t?.schedule?.filters?.pending || 'Pending')}
-                                                    </span>
-
-                                                    <div className="flex items-center gap-2">
-                                                        <button
-                                                            onClick={() => updateMutation.mutate({ id: item.id, payload: { status: item.status === 'paid' ? 'pending' : 'paid' } })}
-                                                            className="p-2 rounded-lg hover:bg-white/10 text-slate-400 hover:text-emerald-400 transition-colors"
-                                                        >
-                                                            {item.status === 'paid' ? <Undo2 size={16} /> : <CheckCircle2 size={16} />}
-                                                        </button>
-                                                        <button
-                                                            onClick={() => handleEdit(item)}
-                                                            className="p-2 rounded-lg hover:bg-white/10 text-slate-400 hover:text-emerald-400 transition-colors"
-                                                        >
-                                                            <Edit2 size={16} />
-                                                        </button>
-                                                        <button
-                                                            onClick={() => deleteMutation.mutate(item.id)}
-                                                            className="p-2 rounded-lg hover:bg-rose-500/10 text-slate-400 hover:text-rose-400 transition-colors"
-                                                        >
-                                                            <Trash2 size={16} />
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        );
-                                    })}
-                                </motion.div>
-                            )}
-                        </AnimatePresence>
-                    </div>
+                                            );
+                                        })}
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+                        </div>
+                    )}
                 </div>
             )}
 
@@ -375,7 +443,7 @@ const Schedule = () => {
 const ScheduleModal = ({ categories, item, onClose }) => {
     const queryClient = useQueryClient();
     const token = localStorage.getItem('token');
-    const { t, lang } = useLanguage();
+    const { t } = useLanguage();
     const { currency, convert } = useCurrency();
     const isEdit = !!item;
 

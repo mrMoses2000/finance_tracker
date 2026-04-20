@@ -14,30 +14,40 @@ const hexWithAlpha = (hex, alpha = '26') => {
     return `${hex}${alpha}`;
 };
 
+const isSameMonth = (dateValue, monthKey) => {
+    if (!dateValue || !monthKey) return true;
+    const date = new Date(dateValue);
+    const [yearStr, monthStr] = monthKey.split('-');
+    return date.getFullYear() === Number.parseInt(yearStr, 10)
+        && date.getMonth() + 1 === Number.parseInt(monthStr, 10);
+};
+
 const ExpenseCalendar = ({ calendarItems, categories, formatMoney, t, lang = 'en', variant = 'actual', month, onMonthChange }) => {
     const categoryMap = useMemo(() => new Map(categories.map((cat) => [cat.id, cat])), [categories]);
     const [selectedDate, setSelectedDate] = useState(() => new Date().toISOString().split('T')[0]);
+    const [isCompact, setIsCompact] = useState(false);
     const initialDate = month ? `${month}-01` : undefined;
+    const selectedDay = isSameMonth(selectedDate, month) ? selectedDate : `${month}-01`;
 
     useEffect(() => {
-        if (!month) return;
-        const [yearStr, monthStr] = month.split('-');
-        const selected = new Date(selectedDate);
-        const currentYear = selected.getFullYear();
-        const currentMonth = selected.getMonth() + 1;
-        const targetYear = parseInt(yearStr, 10);
-        const targetMonth = parseInt(monthStr, 10);
-        if (currentYear !== targetYear || currentMonth !== targetMonth) {
-            setSelectedDate(`${month}-01`);
+        if (typeof window === 'undefined') return;
+        const mq = window.matchMedia('(max-width: 640px)');
+        const update = () => setIsCompact(mq.matches);
+        update();
+        if (mq.addEventListener) {
+            mq.addEventListener('change', update);
+            return () => mq.removeEventListener('change', update);
         }
-    }, [month, selectedDate]);
+        mq.addListener(update);
+        return () => mq.removeListener(update);
+    }, []);
 
     const events = useMemo(() => {
         return (calendarItems || []).map((item) => {
             const category = item.category || categoryMap.get(item.categoryId);
             const color = category?.color || '#94a3b8';
             return {
-                id: String(item.id || Math.random()),
+                id: String(item.id || `${item.date}-${item.description}`),
                 title: item.description,
                 start: item.date,
                 allDay: true,
@@ -55,15 +65,25 @@ const ExpenseCalendar = ({ calendarItems, categories, formatMoney, t, lang = 'en
     }, [calendarItems, categoryMap]);
 
     const selectedItems = useMemo(() => {
-        if (!selectedDate) return [];
+        if (!selectedDay) return [];
         return (calendarItems || [])
-            .filter((item) => new Date(item.date).toISOString().split('T')[0] === selectedDate)
+            .filter((item) => new Date(item.date).toISOString().split('T')[0] === selectedDay)
             .sort((a, b) => b.amountUSD - a.amountUSD);
-    }, [calendarItems, selectedDate]);
+    }, [calendarItems, selectedDay]);
 
     const renderEventContent = (eventInfo) => {
         const { amountUSD, type, category, color } = eventInfo.event.extendedProps || {};
         const Icon = getCategoryIcon(getCategoryLabel(category, t), type);
+        if (isCompact) {
+            return (
+                <div className="flex items-center gap-1 text-[10px] min-w-0">
+                    <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: color }}></span>
+                    <span className="truncate font-semibold text-slate-100" title={eventInfo.event.title}>
+                        {eventInfo.event.title}
+                    </span>
+                </div>
+            );
+        }
         return (
             <div className="flex items-center gap-1.5 text-xs min-w-0">
                 <span
@@ -86,9 +106,9 @@ const ExpenseCalendar = ({ calendarItems, categories, formatMoney, t, lang = 'en
 
     const locale = lang === 'ru' ? 'ru-RU' : lang === 'de' ? 'de-DE' : 'en-US';
     const calendarLocale = lang === 'ru' ? ruLocale : lang === 'de' ? deLocale : undefined;
-    const selectedLabel = selectedDate
-        ? new Date(`${selectedDate}T00:00:00Z`).toLocaleDateString(locale, { day: 'numeric', month: 'long', year: 'numeric' })
-        : selectedDate;
+    const selectedLabel = selectedDay
+        ? new Date(`${selectedDay}T00:00:00Z`).toLocaleDateString(locale, { day: 'numeric', month: 'long', year: 'numeric' })
+        : selectedDay;
 
     return (
         <div className="glass-panel p-4 sm:p-8 rounded-3xl relative overflow-hidden">

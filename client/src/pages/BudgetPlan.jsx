@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Loader2, Save, ChevronLeft, ChevronRight, AlertTriangle, Trash2 } from 'lucide-react';
 import { useLanguage, getCategoryLabel } from '../context/LanguageContext';
@@ -6,6 +6,8 @@ import { useBudgetMonth } from '../hooks/useBudgetMonth';
 import { useCurrency } from '../context/CurrencyContext';
 import ExpenseChart from '../components/Budget/ExpenseChart';
 import CategoryManager from '../components/Categories/CategoryManager';
+
+const EMPTY_BUDGET = { id: null, incomePlanned: 0, items: [] };
 
 const BudgetPlan = () => {
     const queryClient = useQueryClient();
@@ -105,28 +107,24 @@ const BudgetPlan = () => {
         }
     });
 
-    const [incomeValue, setIncomeValue] = useState(0);
+    const [incomeValue, setIncomeValue] = useState('');
     const [incomeDirty, setIncomeDirty] = useState(false);
-
-    useEffect(() => {
-        if (budget?.incomePlanned !== undefined) {
-            setIncomeValue(convert(budget.incomePlanned));
-            setIncomeDirty(false);
-        }
-    }, [budget?.incomePlanned, convert]);
+    const activeBudget = budget || EMPTY_BUDGET;
+    const syncedIncomeValue = convert(activeBudget.incomePlanned || 0);
+    const displayedIncomeValue = incomeDirty ? incomeValue : syncedIncomeValue;
 
     const budgetItemsByCategory = useMemo(() => new Map(
-        (budget?.items || []).map((item) => [item.categoryId, item])
-    ), [budget?.items]);
+        (activeBudget.items || []).map((item) => [item.categoryId, item])
+    ), [activeBudget.items]);
 
     const expenseCategories = (categories || []).filter((cat) => cat.type !== 'income');
 
-    const plannedExpensesTotal = (budget?.items || []).reduce((acc, item) => acc + (item.plannedAmount || 0), 0);
-    const plannedBalance = (budget?.incomePlanned || 0) - plannedExpensesTotal;
+    const plannedExpensesTotal = (activeBudget.items || []).reduce((acc, item) => acc + (item.plannedAmount || 0), 0);
+    const plannedBalance = (activeBudget.incomePlanned || 0) - plannedExpensesTotal;
 
     const chartDataPlanned = useMemo(() => {
         const byCategory = {};
-        (budget?.items || []).forEach((item) => {
+        (activeBudget.items || []).forEach((item) => {
             const category = categories?.find((cat) => cat.id === item.categoryId);
             if (!category) return;
             const label = getCategoryLabel(category, t);
@@ -141,7 +139,7 @@ const BudgetPlan = () => {
                 percent: plannedExpensesTotal > 0 ? (value / plannedExpensesTotal) * 100 : 0
             };
         });
-    }, [budget?.items, categories, plannedExpensesTotal, t]);
+    }, [activeBudget.items, categories, plannedExpensesTotal, t]);
 
     const isLoading = isCategoriesLoading || isBudgetLoading;
 
@@ -193,14 +191,17 @@ const BudgetPlan = () => {
                     <div className="flex flex-col sm:flex-row sm:items-center gap-3">
                         <input
                             type="number"
-                            value={incomeValue}
+                            value={displayedIncomeValue}
                             onChange={(e) => { setIncomeValue(e.target.value); setIncomeDirty(true); }}
                             className="bg-transparent text-2xl sm:text-3xl font-mono font-bold text-white border-b border-white/10 focus:border-emerald-500 outline-none w-full transition-colors pb-1 text-right"
                         />
                         <span className="text-slate-400 text-sm">{currency}</span>
                         {incomeDirty && (
                             <button
-                                onClick={() => incomeMutation.mutate({ incomePlanned: incomeValue, currency })}
+                                onClick={() => {
+                                    incomeMutation.mutate({ incomePlanned: displayedIncomeValue, currency });
+                                    setIncomeDirty(false);
+                                }}
                                 className="w-full sm:w-auto flex items-center justify-center gap-2 bg-emerald-600/20 text-emerald-200 hover:bg-emerald-600/30 px-4 py-2 rounded-lg text-sm font-bold transition-all border border-emerald-500/20"
                             >
                                 <Save size={16} />
@@ -269,16 +270,13 @@ const BudgetPlan = () => {
 };
 
 const CategoryLimitCard = ({ category, plannedAmount, hasItem, onSave, onDelete, t, convert, currency }) => {
-    const [limit, setLimit] = useState(convert(plannedAmount));
+    const [limit, setLimit] = useState('');
     const [isDirty, setIsDirty] = useState(false);
-
-    useEffect(() => {
-        setLimit(convert(plannedAmount));
-        setIsDirty(false);
-    }, [plannedAmount, convert]);
+    const syncedLimit = convert(plannedAmount);
+    const displayedLimit = isDirty ? limit : syncedLimit;
 
     const handleSave = () => {
-        onSave({ categoryId: category.id, plannedAmount: limit, currency });
+        onSave({ categoryId: category.id, plannedAmount: displayedLimit, currency });
         setIsDirty(false);
     };
 
@@ -295,7 +293,7 @@ const CategoryLimitCard = ({ category, plannedAmount, hasItem, onSave, onDelete,
                 <div className="flex items-center gap-2">
                     <input
                         type="number"
-                        value={limit}
+                        value={displayedLimit}
                         onChange={(e) => { setLimit(e.target.value); setIsDirty(true); }}
                         className="bg-transparent text-xl font-mono font-bold text-white border-b border-white/10 focus:border-emerald-500 outline-none w-full transition-colors pb-1"
                     />

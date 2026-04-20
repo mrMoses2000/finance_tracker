@@ -159,6 +159,10 @@ RUN_ACTION=update ./run.sh
 Также доступно в интерактивном меню `run.sh` (пункт «Быстрое обновление контейнеров»).
 > Если домен не открывается снаружи (ERR_CONNECTION_REFUSED), проверьте inbound‑правила 443 в Security Group/NACL.
 
+### Ускорение без Cloudflare
+Nginx настроен на gzip и агрессивное кеширование статики. HTML отдаётся с `no-cache`,
+чтобы изменения UI быстрее доходили до пользователей.
+
 ### Production Profile (Docker)
 Use the production compose file and migration-based startup.
 ```bash

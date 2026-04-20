@@ -8,7 +8,7 @@ import { useCurrency } from '../context/CurrencyContext';
 
 const Debts = () => {
     const { t, lang } = useLanguage();
-    const { currency, formatMoney } = useCurrency();
+    const { formatMoney } = useCurrency();
     const queryClient = useQueryClient();
     const token = localStorage.getItem('token');
     const [isModalOpen, setModalOpen] = useState(false);
@@ -63,7 +63,7 @@ const Debts = () => {
                     <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">{t?.debts?.title || 'Debts & Loans'}</h1>
                     <p className="text-emerald-200 opacity-70 text-sm sm:text-base">{t?.debts?.subtitle || 'Track obligations and incoming repayments.'}</p>
                 </div>
-                <button onClick={handleAddNew} className="btn-primary">
+                <button onClick={handleAddNew} className="btn-primary w-full md:w-auto">
                     <Plus size={18} /> {t?.debts?.add || 'Add Obligation'}
                 </button>
             </div>

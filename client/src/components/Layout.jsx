@@ -1,8 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Wallet, CreditCard, LogOut, Landmark, CalendarClock, Moon, Sun } from 'lucide-react';
+import { LayoutDashboard, Wallet, CreditCard, LogOut, Landmark, CalendarClock, Moon, Sun, Menu, X } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import { useTheme } from '../context/ThemeContext';
+import { clearSession } from '../lib/session';
 
 const Layout = () => {
     const navigate = useNavigate();
@@ -13,6 +14,13 @@ const Layout = () => {
     const [isSwiping, setIsSwiping] = useState(false);
     const [swipeProgress, setSwipeProgress] = useState(0);
     const touchStartRef = useRef({ x: 0, y: 0 });
+    const navItems = [
+        { to: '/dashboard', icon: <LayoutDashboard size={22} />, shortIcon: LayoutDashboard, label: t?.nav?.dashboard || 'Dashboard' },
+        { to: '/transactions', icon: <CreditCard size={22} />, shortIcon: CreditCard, label: t?.nav?.transactions || 'Transactions' },
+        { to: '/budget', icon: <Wallet size={22} />, shortIcon: Wallet, label: t?.nav?.budget || 'Budget Plan' },
+        { to: '/debts', icon: <Landmark size={22} />, shortIcon: Landmark, label: t?.nav?.debts || 'Debts & Loans' },
+        { to: '/schedule', icon: <CalendarClock size={22} />, shortIcon: CalendarClock, label: t?.nav?.schedule || 'Schedule' },
+    ];
 
     const toggleSidebar = () => {
         if (typeof window !== 'undefined' && window.innerWidth < 1024) {
@@ -97,12 +105,12 @@ const Layout = () => {
     };
 
     const handleLogout = () => {
-        localStorage.removeItem('token');
+        clearSession();
         navigate('/login');
     };
 
     return (
-        <div className="app-shell flex h-screen w-full overflow-hidden" onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd}>
+        <div className="app-shell flex min-h-[100dvh] w-full overflow-hidden" onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd}>
             {/* Ambient Background */}
             <div className="fixed inset-0 z-0 pointer-events-none">
                 <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-[rgba(16,185,129,0.15)] blur-[140px] rounded-full"></div>
@@ -126,32 +134,47 @@ const Layout = () => {
 
             {/* --- SIDEBAR --- */}
             <aside
-                className={`fixed lg:relative z-30 h-screen flex-shrink-0 flex flex-col app-panel border-r border-white/5 transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+                className={`fixed lg:relative z-30 h-[100dvh] flex-shrink-0 flex flex-col app-panel border-r border-white/5 transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
                     isCollapsed ? 'lg:w-20' : 'lg:w-64'
                 } w-64 transform ${isMobileOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0`}
             >
-                <button
-                    type="button"
-                    onClick={toggleSidebar}
-                    className={`h-20 flex items-center justify-center lg:justify-start lg:px-6 border-b border-white/5 w-full transition-colors hover:bg-white/5 ${
-                        isCollapsed ? 'lg:px-4' : ''
-                    }`}
-                    aria-label={t?.brand || 'Toggle sidebar'}
-                >
-                    <div className="w-10 h-10 bg-gradient-to-br from-emerald-400 to-amber-400 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-500/20">
-                        <span className="font-bold text-white text-xl">BF</span>
-                    </div>
-                    <span className={`hidden lg:block ml-3 font-bold text-lg tracking-tight text-white ${isCollapsed ? 'lg:hidden' : ''}`}>
-                        Budget<span className="text-amber-300">Flow</span>
-                    </span>
-                </button>
+                <div className="h-20 flex items-center justify-between border-b border-white/5 px-4 lg:px-6">
+                    <button
+                        type="button"
+                        onClick={toggleSidebar}
+                        className={`flex items-center transition-colors hover:bg-white/5 rounded-2xl p-2 -m-2 ${
+                            isCollapsed ? 'lg:px-2' : ''
+                        }`}
+                        aria-label={t?.brand || 'Toggle sidebar'}
+                    >
+                        <div className="w-10 h-10 bg-gradient-to-br from-emerald-400 to-amber-400 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-500/20">
+                            <span className="font-bold text-white text-xl">BF</span>
+                        </div>
+                        <span className={`hidden lg:block ml-3 font-bold text-lg tracking-tight text-white ${isCollapsed ? 'lg:hidden' : ''}`}>
+                            Budget<span className="text-amber-300">Flow</span>
+                        </span>
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => setIsMobileOpen(false)}
+                        className="lg:hidden w-10 h-10 rounded-xl border border-white/10 text-slate-300 hover:text-white hover:bg-white/5 flex items-center justify-center"
+                        aria-label="Close menu"
+                    >
+                        <X size={18} />
+                    </button>
+                </div>
 
                 <nav className="flex-1 py-6 px-3 space-y-2">
-                    <NavItem to="/dashboard" icon={<LayoutDashboard size={22} />} label={t?.nav?.dashboard || "Dashboard"} collapsed={isCollapsed} onNavigate={() => setIsMobileOpen(false)} />
-                    <NavItem to="/transactions" icon={<CreditCard size={22} />} label={t?.nav?.transactions || "Transactions"} collapsed={isCollapsed} onNavigate={() => setIsMobileOpen(false)} />
-                    <NavItem to="/budget" icon={<Wallet size={22} />} label={t?.nav?.budget || "Budget Plan"} collapsed={isCollapsed} onNavigate={() => setIsMobileOpen(false)} />
-                    <NavItem to="/debts" icon={<Landmark size={22} />} label={t?.nav?.debts || "Debts & Loans"} collapsed={isCollapsed} onNavigate={() => setIsMobileOpen(false)} />
-                    <NavItem to="/schedule" icon={<CalendarClock size={22} />} label={t?.nav?.schedule || "Schedule"} collapsed={isCollapsed} onNavigate={() => setIsMobileOpen(false)} />
+                    {navItems.map((item) => (
+                        <NavItem
+                            key={item.to}
+                            to={item.to}
+                            icon={item.icon}
+                            label={item.label}
+                            collapsed={isCollapsed}
+                            onNavigate={() => setIsMobileOpen(false)}
+                        />
+                    ))}
                 </nav>
 
                 <div className="p-4 border-t border-white/5 space-y-2">
@@ -180,21 +203,50 @@ const Layout = () => {
                     isMobileOpen ? 'translate-x-64' : 'translate-x-0'
                 } lg:translate-x-0`}
             >
-                <div className="lg:hidden sticky top-0 z-20 bg-slate-900/80 backdrop-blur-xl border-b border-white/5 px-4 py-3 flex items-center gap-3">
+                <div className="lg:hidden sticky top-0 z-20 bg-slate-900/80 backdrop-blur-xl border-b border-white/5 px-4 py-3 flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                        <button
+                            type="button"
+                            onClick={toggleSidebar}
+                            className="w-10 h-10 rounded-xl border border-white/10 text-slate-100 hover:bg-white/5 flex items-center justify-center"
+                            aria-label={t?.brand || 'Open menu'}
+                        >
+                            <Menu size={18} />
+                        </button>
+                        <div className="w-10 h-10 bg-gradient-to-br from-emerald-400 to-amber-400 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-500/20">
+                            <span className="font-bold text-white text-lg">BF</span>
+                        </div>
+                    </div>
+                    <div className="min-w-0 flex-1">
+                        <div className="text-white font-bold truncate">{t?.brand || 'BudgetFlow'}</div>
+                        <div className="text-[11px] uppercase tracking-[0.22em] text-emerald-200/70 truncate">Mobile workspace</div>
+                    </div>
                     <button
                         type="button"
-                        onClick={toggleSidebar}
-                        className="w-10 h-10 bg-gradient-to-br from-emerald-400 to-amber-400 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-500/20"
-                        aria-label={t?.brand || 'Open menu'}
+                        onClick={toggleTheme}
+                        className="w-10 h-10 rounded-xl border border-white/10 text-slate-100 hover:bg-white/5 flex items-center justify-center"
+                        aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
                     >
-                        <span className="font-bold text-white text-lg">BF</span>
+                        {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
                     </button>
-                    <span className="text-white font-bold">{t?.brand || 'BudgetFlow'}</span>
                 </div>
-                <div className="p-4 sm:p-6 md:p-10 max-w-7xl mx-auto">
+                <div className="p-4 pb-28 sm:p-6 md:p-10 lg:pb-10 max-w-7xl mx-auto">
                     <Outlet />
                 </div>
             </main>
+
+            <nav className="lg:hidden fixed bottom-0 inset-x-0 z-30 border-t border-white/10 bg-slate-950/90 backdrop-blur-2xl px-2 pb-[max(env(safe-area-inset-bottom),0.5rem)] pt-2">
+                <div className="grid grid-cols-5 gap-1">
+                    {navItems.map((item) => (
+                        <BottomNavItem
+                            key={item.to}
+                            to={item.to}
+                            icon={item.shortIcon}
+                            label={item.label}
+                        />
+                    ))}
+                </div>
+            </nav>
         </div>
     );
 };
@@ -219,6 +271,21 @@ const NavItem = ({ to, icon, label, collapsed, onNavigate }) => (
                 <span className={`hidden lg:block ml-3 font-medium ${collapsed ? 'lg:hidden' : ''}`}>{label}</span>
             </>
         )}
+    </NavLink>
+);
+
+const BottomNavItem = ({ to, icon: Icon, label }) => (
+    <NavLink
+        to={to}
+        className={({ isActive }) =>
+            `flex flex-col items-center justify-center gap-1 rounded-2xl px-2 py-2 text-[11px] font-medium transition-colors ${isActive
+                ? 'bg-emerald-500/12 text-emerald-300'
+                : 'text-slate-400 hover:bg-white/5 hover:text-slate-200'
+            }`
+        }
+    >
+        <Icon size={18} />
+        <span className="truncate max-w-full">{label}</span>
     </NavLink>
 );
 

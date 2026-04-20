@@ -648,6 +648,8 @@ server {
 server {
     listen 443 ssl http2;
     server_name ${SERVER_NAMES};
+    server_tokens off;
+    client_max_body_size 10m;
 
     ssl_certificate ${SSL_CERT};
     ssl_certificate_key ${SSL_KEY};
@@ -657,8 +659,27 @@ server {
     root /usr/share/nginx/html;
     index index.html;
 
+    gzip on;
+    gzip_comp_level 5;
+    gzip_min_length 1024;
+    gzip_vary on;
+    gzip_types text/plain text/css application/javascript application/json application/xml image/svg+xml;
+
+    location /assets/ {
+        try_files \$uri =404;
+        add_header Cache-Control "public, max-age=31536000, immutable" always;
+    }
+
+    location ~* \.(?:css|js|woff2?|ttf|eot|svg|png|jpg|jpeg|gif|ico)$ {
+        try_files \$uri =404;
+        add_header Cache-Control "public, max-age=31536000, immutable" always;
+    }
+
     location / {
         try_files \$uri \$uri/ /index.html;
+        add_header Cache-Control "no-cache" always;
+        add_header X-Content-Type-Options "nosniff" always;
+        add_header Referrer-Policy "strict-origin-when-cross-origin" always;
     }
 
     location /api/ {
@@ -667,10 +688,24 @@ server {
         proxy_set_header Upgrade \$http_upgrade;
         proxy_set_header Connection "upgrade";
         proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+        proxy_set_header X-Forwarded-Host \$host;
+        proxy_redirect off;
+        proxy_read_timeout 60s;
     }
 
     location /auth/ {
         proxy_pass http://server:4000;
+        proxy_http_version 1.1;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+        proxy_set_header X-Forwarded-Host \$host;
+        proxy_redirect off;
+        proxy_read_timeout 60s;
     }
 }
 EOF
@@ -681,12 +716,33 @@ EOF
 server {
     listen 80;
     server_name _;
+    server_tokens off;
+    client_max_body_size 10m;
 
     root /usr/share/nginx/html;
     index index.html;
 
+    gzip on;
+    gzip_comp_level 5;
+    gzip_min_length 1024;
+    gzip_vary on;
+    gzip_types text/plain text/css application/javascript application/json application/xml image/svg+xml;
+
+    location /assets/ {
+        try_files \$uri =404;
+        add_header Cache-Control "public, max-age=31536000, immutable" always;
+    }
+
+    location ~* \.(?:css|js|woff2?|ttf|eot|svg|png|jpg|jpeg|gif|ico)$ {
+        try_files \$uri =404;
+        add_header Cache-Control "public, max-age=31536000, immutable" always;
+    }
+
     location / {
         try_files \$uri \$uri/ /index.html;
+        add_header Cache-Control "no-cache" always;
+        add_header X-Content-Type-Options "nosniff" always;
+        add_header Referrer-Policy "strict-origin-when-cross-origin" always;
     }
 
     location /api/ {
@@ -695,10 +751,24 @@ server {
         proxy_set_header Upgrade \$http_upgrade;
         proxy_set_header Connection "upgrade";
         proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+        proxy_set_header X-Forwarded-Host \$host;
+        proxy_redirect off;
+        proxy_read_timeout 60s;
     }
 
     location /auth/ {
         proxy_pass http://server:4000;
+        proxy_http_version 1.1;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+        proxy_set_header X-Forwarded-Host \$host;
+        proxy_redirect off;
+        proxy_read_timeout 60s;
     }
 }
 EOF
@@ -803,14 +873,15 @@ configure_remote_access() {
     echo -e "\n${YELLOW}[Step 1.5] Подготовка для удаленного доступа...${NC}"
     if check_cmd ufw; then
         if $SUDO ufw status | grep -q "Status: active"; then
-            echo -e "${YELLOW}[INFO] UFW активен. Открываю порты 3000 и 4000.${NC}"
-            $SUDO ufw allow 3000/tcp || true
-            $SUDO ufw allow 4000/tcp || true
             $SUDO ufw allow 22/tcp || true
-            if [ "$HTTPS_MODE" != "off" ]; then
-                echo -e "${YELLOW}[INFO] HTTPS включен. Открываю порты 80 и 443.${NC}"
+            if [ "$RUN_MODE" == "prod" ] || [ "$HTTPS_MODE" != "off" ]; then
+                echo -e "${YELLOW}[INFO] Открываю публичные порты 80 и 443 для мобильного доступа.${NC}"
                 $SUDO ufw allow 80/tcp || true
                 $SUDO ufw allow 443/tcp || true
+            else
+                echo -e "${YELLOW}[INFO] Dev-режим: открываю порты 3000 и 4000.${NC}"
+                $SUDO ufw allow 3000/tcp || true
+                $SUDO ufw allow 4000/tcp || true
             fi
         else
             echo -e "${YELLOW}[INFO] UFW установлен, но не активен. Порты не меняю.${NC}"

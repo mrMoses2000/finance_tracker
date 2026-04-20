@@ -10,6 +10,12 @@ import { useBudgetMonth } from './hooks/useBudgetMonth';
 import { useLanguage, getCategoryLabel } from './context/LanguageContext';
 import { useCurrency } from './context/CurrencyContext';
 import { AlertTriangle, Sparkles } from 'lucide-react';
+import { getToken } from './lib/session';
+
+const EMPTY_TRANSACTIONS = [];
+const EMPTY_SCHEDULE = [];
+const EMPTY_CATEGORIES = [];
+const EMPTY_BUDGET = { incomePlanned: 0, items: [] };
 
 class ErrorBoundary extends React.Component {
     constructor(props) {
@@ -54,18 +60,14 @@ const DashboardContent = () => {
     const [view, setView] = useState(() => localStorage.getItem('dashboard_view') || 'actual');
 
     const { data, isLoading, isError } = useBudget(month);
+    const transactions = data?.transactions ?? EMPTY_TRANSACTIONS;
+    const scheduleItems = data?.schedule ?? EMPTY_SCHEDULE;
+    const categories = data?.categories ?? EMPTY_CATEGORIES;
+    const budget = data?.budget ?? EMPTY_BUDGET;
 
     useEffect(() => {
         localStorage.setItem('dashboard_view', view);
     }, [view]);
-
-    if (isLoading) return <div className="flex h-screen items-center justify-center text-emerald-400"><div className="animate-spin h-8 w-8 border-2 border-current border-t-transparent rounded-full" /></div>;
-    if (isError) return <div className="p-10 text-center text-rose-400">Error loading data.</div>;
-
-    const transactions = data?.transactions || [];
-    const scheduleItems = data?.schedule || [];
-    const categories = data?.categories || [];
-    const budget = data?.budget || { incomePlanned: 0, items: [] };
 
     const expenses = transactions.filter((item) => item.type !== 'income');
     const incomes = transactions.filter((item) => item.type === 'income');
@@ -87,7 +89,7 @@ const DashboardContent = () => {
         if (!nextCurrency || nextCurrency === baseCurrency) {
             return;
         }
-        const token = localStorage.getItem('token');
+        const token = getToken();
         if (!token) {
             window.alert(t?.base_currency?.error_auth || 'Please log in again to set base currency.');
             return;
@@ -220,6 +222,9 @@ const DashboardContent = () => {
         income: t?.kpi?.planned_income || 'Planned Income',
         balance: t?.kpi?.planned_balance || 'Planned Balance'
     };
+
+    if (isLoading) return <div className="flex h-screen items-center justify-center text-emerald-400"><div className="animate-spin h-8 w-8 border-2 border-current border-t-transparent rounded-full" /></div>;
+    if (isError) return <div className="p-10 text-center text-rose-400">Error loading data.</div>;
 
     return (
         <div className="min-h-screen pb-20">

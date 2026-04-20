@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState } from 'react';
 
 const LanguageContext = createContext();
 
@@ -816,14 +816,10 @@ const translations = {
 };
 
 export const LanguageProvider = ({ children }) => {
-    const [lang, setLang] = useState('ru'); // Default to Russian as requested
-
-    useEffect(() => {
+    const [lang, setLang] = useState(() => {
         const saved = localStorage.getItem('language');
-        if (saved && translations[saved]) {
-            setLang(saved);
-        }
-    }, []);
+        return saved && translations[saved] ? saved : 'ru';
+    });
 
     const switchLang = (l) => {
         setLang(l);

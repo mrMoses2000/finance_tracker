@@ -52,3 +52,5 @@
 - **[2026-01-29] Sidebar Toggle + Calendar Density (Codex)**: Added logo‑toggle sidebar drawer and tightened calendar proportions on mobile.
 - **[2026-01-29] Mobile UX Enhancements (Codex)**: Added swipe-to-open sidebar, push-content effect, and ultra-small calendar tweaks.
 - **[2026-01-29] Mobile Sidebar Gestures (Codex)**: Added swipe glow, body scroll lock, and spring easing for drawer animations.
+- **[2026-01-29] Nginx Speedup (Codex)**: Enabled gzip + long-lived cache headers for static assets and no-cache for HTML.
+- **[2026-01-29] Calendar Compact Mode (Codex)**: Reduced calendar cell height and simplified event rendering on small screens.

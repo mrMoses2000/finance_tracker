@@ -2,6 +2,8 @@ import React, { createContext, useContext, useEffect, useMemo, useState } from '
 import { DEFAULT_CURRENCY, DEFAULT_RATES, SUPPORTED_CURRENCIES, SYMBOLS } from '../data/currency';
 
 const CurrencyContext = createContext();
+const getStoredBaseCurrency = () => localStorage.getItem('base_currency') || DEFAULT_CURRENCY;
+const getStoredDisplayCurrency = (fallbackCurrency) => localStorage.getItem('app_currency') || fallbackCurrency;
 
 const getLocale = (lang) => {
   if (lang === 'ru') return 'ru-RU';
@@ -10,8 +12,8 @@ const getLocale = (lang) => {
 };
 
 export const CurrencyProvider = ({ children }) => {
-  const [baseCurrency, setBaseCurrency] = useState(() => localStorage.getItem('base_currency') || DEFAULT_CURRENCY);
-  const [currency, setCurrency] = useState(() => localStorage.getItem('app_currency') || baseCurrency);
+  const [baseCurrency, setBaseCurrency] = useState(getStoredBaseCurrency);
+  const [currency, setCurrency] = useState(() => getStoredDisplayCurrency(getStoredBaseCurrency()));
   const [rates, setRates] = useState(DEFAULT_RATES);
   const [ratesBase, setRatesBase] = useState('EUR');
 
@@ -21,9 +23,6 @@ export const CurrencyProvider = ({ children }) => {
 
   useEffect(() => {
     localStorage.setItem('base_currency', baseCurrency);
-    if (!localStorage.getItem('app_currency')) {
-      setCurrency(baseCurrency);
-    }
   }, [baseCurrency]);
 
   useEffect(() => {

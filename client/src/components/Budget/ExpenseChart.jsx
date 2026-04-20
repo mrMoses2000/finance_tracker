@@ -23,7 +23,7 @@ const CustomTooltip = ({ payload, active, formatMoney }) => {
     );
 };
 
-const ExpenseChart = ({ totalExpenses, chartData, formatMoney, t, title }) => {
+const ExpenseChart = ({ chartData, formatMoney, t, title }) => {
     const formattedData = chartData.map(item => ({
         name: item.label,
         amount: item.value,
@@ -35,7 +35,7 @@ const ExpenseChart = ({ totalExpenses, chartData, formatMoney, t, title }) => {
     const totalValue = formattedData.reduce((acc, item) => acc + (item.amount || 0), 0);
 
     return (
-        <div className="glass-panel p-8 rounded-3xl relative overflow-hidden h-full">
+        <div className="glass-panel p-5 sm:p-8 rounded-3xl relative overflow-hidden h-full">
             <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-white/10 to-transparent"></div>
             {/* Background Icon */}
             <div className="absolute top-0 right-0 p-8 opacity-5 pointer-events-none">
